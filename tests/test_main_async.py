@@ -23,7 +23,6 @@ from marketer.schemas.enrichment import (
     CallbackOutputData,
     CaptionParts,
     CallToAction,
-    CFPayload,
     Confidence,
     GalleryStats,
     HashtagStrategy,
@@ -34,6 +33,13 @@ from marketer.schemas.enrichment import (
     TraceInfo,
     VisualSelection,
 )
+
+# CFPayload exists only in the post-WIP schema; tolerate HEAD where it isn't
+# defined so CI can collect the module either way.
+try:
+    from marketer.schemas.enrichment import CFPayload  # type: ignore
+except ImportError:
+    CFPayload = None  # type: ignore[assignment]
 
 
 def _fake_callback() -> CallbackBody:
@@ -79,17 +85,17 @@ def _fake_callback() -> CallbackBody:
         degraded=False,
         gallery_stats=GalleryStats(),
     )
-    cf_payload = CFPayload(
-        total_items=1,
-        client_dna=enrichment.brand_dna,
-        client_request="Fake CF request.",
-        resources=[],
-    )
+    out_kwargs = {"enrichment": enrichment, "warnings": [], "trace": trace}
+    if CFPayload is not None:
+        out_kwargs["data"] = CFPayload(
+            total_items=1,
+            client_dna=enrichment.brand_dna,
+            client_request="Fake CF request.",
+            resources=[],
+        )
     return CallbackBody(
         status="COMPLETED",
-        output_data=CallbackOutputData(
-            data=cf_payload, enrichment=enrichment, warnings=[], trace=trace
-        ),
+        output_data=CallbackOutputData(**out_kwargs),
         error_message=None,
     )
 
