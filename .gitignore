@@ -24,3 +24,13 @@ reports/
 # The images used in scripts/vision_poc.py are not required for production.
 images/
 
+# Terraform
+**/.terraform/
+**/.terraform.lock.hcl
+**/terraform.tfstate
+**/terraform.tfstate.backup
+**/terraform.tfstate.*.backup
+**/tfplan
+**/terraform.tfvars
+# Keep examples, never commit real tfvars
+!**/terraform.tfvars.example

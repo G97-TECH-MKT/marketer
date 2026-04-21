@@ -68,7 +68,7 @@ terraform/
 ```hcl
 terraform {
   backend "s3" {
-    bucket         = "orbidi-terraform-state"
+    bucket         = "agent_marketing-terraform-state"
     key            = "marketer/prod/terraform.tfstate"
     region         = "us-east-1"
     encrypt        = true
@@ -82,15 +82,15 @@ terraform {
 ```bash
 # Create S3 bucket for state
 aws s3api create-bucket \
-  --bucket orbidi-terraform-state \
+  --bucket agent_marketing-terraform-state \
   --region us-east-1
 
 aws s3api put-bucket-versioning \
-  --bucket orbidi-terraform-state \
+  --bucket agent_marketing-terraform-state \
   --versioning-configuration Status=Enabled
 
 aws s3api put-bucket-encryption \
-  --bucket orbidi-terraform-state \
+  --bucket agent_marketing-terraform-state \
   --server-side-encryption-configuration '{
     "Rules": [{"ApplyServerSideEncryptionByDefault": {"SSEAlgorithm": "AES256"}}]
   }'

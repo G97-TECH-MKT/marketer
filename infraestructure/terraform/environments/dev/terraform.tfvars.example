@@ -1,0 +1,24 @@
+# Copy to terraform.tfvars — NEVER commit terraform.tfvars
+
+aws_region = "us-east-1"
+
+vpc_id             = "vpc-xxxxxxxxxxxxxxxxx"
+vpc_cidr           = "10.0.0.0/16"
+public_subnet_ids  = ["subnet-xxxxxxxxxxxxxxxxx", "subnet-yyyyyyyyyyyyyyyyy"]
+private_subnet_ids = ["subnet-xxxxxxxxxxxxxxxxx", "subnet-yyyyyyyyyyyyyyyyy"]
+
+certificate_arn  = "arn:aws:acm:us-east-1:ACCOUNT_ID:certificate/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+
+permission_boundary_arn = "arn:aws:iam::ACCOUNT_ID:policy/MarketerPermissionBoundary"
+
+image_tag        = "latest"
+gemini_model     = "gemini-2.5-flash-preview"
+
+# Secrets — prefer TF_VAR_* env vars over committing values
+gemini_api_key        = "REPLACE_ME"
+inbound_token         = "REPLACE_ME"
+orch_callback_api_key = "REPLACE_ME"
+
+# Dev-specific: true = no NAT gateway needed for Gemini egress
+assign_public_ip = true
+alert_email      = ""
