@@ -1,0 +1,167 @@
+{
+  "task_id": "aaaa1111-aaaa-1111-aaaa-111111111111",
+  "job_id": "bbbb2222-bbbb-2222-bbbb-222222222222",
+  "action_code": "create_web",
+  "action_id": "cccc3333-cccc-3333-cccc-333333333333",
+  "correlation_id": "web-20260420-001",
+  "callback_url": "https://d1lwu6lioovdrb.cloudfront.net/api/v1/tasks/aaaa1111-aaaa-1111-aaaa-111111111111/callback",
+  "payload": {
+    "client_request": {
+      "description": "Quiero destacar el servicio de urgencias 24h y la cámara de detección de fugas — eso nos diferencia. El tono debe ser de confianza, como el fontanero del barrio de toda la vida pero con tecnología moderna.",
+      "attachments": []
+    },
+    "context": {
+      "account_uuid": "rodriguez-uuid-0001",
+      "client_name": "Fontaneria Rodriguez"
+    },
+    "action_execution_gates": {
+      "brief": {
+        "passed": true,
+        "reason": "ok",
+        "status_code": 200,
+        "response": {
+          "status": "success",
+          "message": "ok",
+          "data": {
+            "name": "Fontaneria Rodriguez",
+            "industry": "plumbing",
+            "business_type": "plumbing",
+            "city": "Barcelona",
+            "region": "Cataluna",
+            "country": "Spain",
+            "address": "C. de Mallorca, 112",
+            "postal_code": "08036",
+            "lat": 41.3917,
+            "lng": 2.1531,
+            "service_area_radius_km": 30.0,
+            "phone": "+34 612 345 678",
+            "email": "info@fontaneriarod.es",
+            "website_current": "https://fontaneriarod.es",
+            "social_profiles": {
+              "instagram": "https://instagram.com/fontaneriarod",
+              "facebook": "https://facebook.com/fontaneriarod"
+            },
+            "services": [
+              "Reparación de averías urgentes",
+              "Instalación de tuberías",
+              "Fontanería industrial",
+              "Mantenimiento de calderas",
+              "Instalación de sistemas de calefacción",
+              "Detección de fugas con cámara"
+            ],
+            "description": "Fontaneria Rodriguez lleva más de 10 años resolviendo averías e instalaciones en Barcelona y área metropolitana. Servicio urgente 24h, presupuesto sin compromiso.",
+            "brief": "Quiero destacar el servicio de urgencias 24h y la cámara de detección de fugas — eso nos diferencia.",
+            "year_established": 2013,
+            "team_size": "2-5",
+            "review_count": 47,
+            "review_avg": 4.8,
+            "reviews": [
+              {"source": "google", "rating": 5.0, "text": "Vinieron en menos de una hora. Arreglaron la fuga rápidamente y a buen precio.", "author": "Carmen L."},
+              {"source": "google", "rating": 5.0, "text": "Muy profesionales. Explicaron todo antes de empezar y no hubo sorpresas en el presupuesto.", "author": "Marcos T."},
+              {"source": "google", "rating": 4.0, "text": "Buen trabajo en la instalación del baño nuevo. Algo de retraso pero el resultado final fue excelente.", "author": "Ana P."},
+              {"source": "google", "rating": 5.0, "text": "Los llamé a las 2 de la mañana por una fuga y en 45 minutos estaban en casa. Impresionante.", "author": "David M."},
+              {"source": "google", "rating": 5.0, "text": "Detectaron la fuga con cámara sin tener que romper nada. Ahorro enorme de tiempo y dinero.", "author": "Isabel V."}
+            ],
+            "photos_urls": [
+              "https://cdn.example/rodriguez/equipo-trabajo.jpg",
+              "https://cdn.example/rodriguez/instalacion-caldera.jpg",
+              "https://cdn.example/rodriguez/camara-deteccion.jpg",
+              "https://cdn.example/rodriguez/reforma-bano.jpg"
+            ],
+            "style_preferences": ["Limpio y profesional", "Transmitir rapidez y fiabilidad", "Fotos reales del trabajo, no stock"],
+            "style_dislikes": ["Nada demasiado corporativo", "Sin colores demasiado fríos"],
+            "reference_urls": ["https://sincro.es"],
+            "tone_preferences": ["cercano", "directo", "de confianza"],
+            "special_requests": ["El número de teléfono debe aparecer muy visible en la cabecera"],
+            "brand_completeness": "partial",
+            "brand_primary_color": "#1A3A5C",
+            "brand_accent_color": "#E8A020",
+            "brand_voice": "El fontanero de confianza del barrio, pero con herramientas del siglo XXI.",
+            "site_type": "landing_page",
+            "communication_language": "spanish"
+          }
+        }
+      },
+      "image_catalog": {
+        "passed": true,
+        "reason": "ok",
+        "status_code": 200,
+        "response": {
+          "status": "success",
+          "data": [
+            {
+              "url": "https://cdn.example/rodriguez/equipo-trabajo.jpg",
+              "name": "equipo-trabajo.jpg",
+              "extension": "jpg",
+              "size": 1500000,
+              "tags": ["equipo", "humano"],
+              "description": "El equipo posando en la furgoneta de trabajo",
+              "category": "team",
+              "role": "content",
+              "used_previously": false
+            },
+            {
+              "url": "https://cdn.example/rodriguez/instalacion-caldera.jpg",
+              "name": "instalacion-caldera.jpg",
+              "extension": "jpg",
+              "size": 1300000,
+              "tags": ["caldera", "instalacion"],
+              "description": "Instalación de caldera nueva en domicilio",
+              "category": "in_action",
+              "role": "content",
+              "used_previously": true
+            },
+            {
+              "url": "https://cdn.example/rodriguez/camara-deteccion.jpg",
+              "name": "camara-deteccion.jpg",
+              "extension": "jpg",
+              "size": 1400000,
+              "tags": ["camara", "tecnologia", "deteccion_fugas"],
+              "description": "Técnico usando la cámara de detección de fugas en una pared",
+              "category": "in_action",
+              "role": "content",
+              "used_previously": false
+            },
+            {
+              "url": "https://cdn.example/rodriguez/reforma-bano.jpg",
+              "name": "reforma-bano.jpg",
+              "extension": "jpg",
+              "size": 1600000,
+              "tags": ["bano", "reforma"],
+              "description": "Baño terminado tras reforma integral",
+              "category": "product_photo",
+              "role": "content",
+              "used_previously": true
+            },
+            {
+              "url": "https://cdn.example/rodriguez/reference-sincro.jpg",
+              "name": "reference-sincro.jpg",
+              "extension": "jpg",
+              "size": 500000,
+              "tags": ["referencia", "inspiracion"],
+              "description": "Captura de landing de sincro.es que el cliente toma como referencia de tono",
+              "category": "reference_screenshot",
+              "role": "reference",
+              "used_previously": false
+            }
+          ]
+        }
+      }
+    },
+    "agent_sequence": {
+      "current": {
+        "step_code": "marketing_enrichment",
+        "step_order": 1,
+        "task_id": "aaaa1111-aaaa-1111-aaaa-111111111111",
+        "agent_id": "5a258d4e-b01d-48dc-95b1-0e67d81b7f4c",
+        "agent_name": "marketer",
+        "endpoint": "https://marketer.internal/tasks",
+        "http_method": "POST",
+        "is_mandatory": true,
+        "timeout_seconds": 60,
+        "retry_count": 0
+      },
+      "previous": {}
+    }
+  }
+}

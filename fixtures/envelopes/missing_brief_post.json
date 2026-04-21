@@ -1,0 +1,27 @@
+{
+  "task_id": "33333333-3333-3333-3333-333333333333",
+  "job_id": "44444444-4444-4444-4444-444444444444",
+  "action_code": "create_post",
+  "correlation_id": "no-brief-001",
+  "callback_url": "https://example.com/api/v1/tasks/33333333-3333-3333-3333-333333333333/callback",
+  "payload": {
+    "client_request": {
+      "description": "Necesitamos un post sobre la nueva colección de primavera con enfoque en sostenibilidad y materiales reciclados, incluyendo un llamado suave a visitar la tienda online esta semana.",
+      "attachments": []
+    },
+    "context": {
+      "account_uuid": "bbbbbbbb-cccc-dddd-eeee-ffffffffffff",
+      "client_name": "No Brief Brand",
+      "platform": "instagram"
+    },
+    "action_execution_gates": {
+      "brief": {
+        "passed": false,
+        "reason": "brief_not_ready",
+        "status_code": 412,
+        "response": { "status": "error", "message": "Brief incomplete" }
+      }
+    },
+    "agent_sequence": { "current": {}, "previous": {} }
+  }
+}

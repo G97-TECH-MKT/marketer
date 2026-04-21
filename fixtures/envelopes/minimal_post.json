@@ -1,0 +1,43 @@
+{
+  "task_id": "11111111-1111-1111-1111-111111111111",
+  "job_id": "22222222-2222-2222-2222-222222222222",
+  "action_code": "create_post",
+  "correlation_id": "minimal-post-001",
+  "callback_url": "https://example.com/api/v1/tasks/11111111-1111-1111-1111-111111111111/callback",
+  "payload": {
+    "client_request": {
+      "description": "Publica un post corto de felicitación de fin de año para nuestros clientes, tono breve y agradecido sin promociones agresivas.",
+      "attachments": []
+    },
+    "context": {
+      "account_uuid": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+      "client_name": "Minimal SL",
+      "platform": "instagram"
+    },
+    "action_execution_gates": {
+      "brief": {
+        "passed": true,
+        "reason": "ok",
+        "status_code": 200,
+        "response": {
+          "status": "success",
+          "message": "ok",
+          "data": {
+            "profile": { "business_name": "Minimal SL" },
+            "brief": {
+              "form_values": {
+                "FIELD_COMPANY_NAME": "Minimal SL",
+                "FIELD_COMMUNICATION_LANGUAGE": "spanish",
+                "FIELD_LARGE_ANSWER": "Pequeña tienda local.",
+                "FIELD_VALUE_PROPOSITION": "Atención personal.",
+                "FIELD_TARGET_CUSTOMER_ANSWER": "Clientes del barrio.",
+                "FIELD_KEYWORDS_TAGS_INPUT": ["local"]
+              }
+            }
+          }
+        }
+      }
+    },
+    "agent_sequence": { "current": {}, "previous": {} }
+  }
+}

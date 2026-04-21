@@ -1,0 +1,32 @@
+# Keep image slim — only ship src/ + requirements.
+.git
+.gitignore
+.github
+.env
+.env.example
+.venv
+venv
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.vscode
+.idea
+__pycache__
+**/__pycache__
+**/*.py[cod]
+**/*$py.class
+*.egg-info
+dist
+build
+.coverage
+htmlcov
+
+# Dev-only dirs — not needed at runtime
+tests/
+fixtures/
+golden/
+samples/
+scripts/
+reports/
+docs/
+*.md

@@ -1,0 +1,913 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>MARKETER — Multi-Surface Test 2026-04-21</title>
+<style>
+  :root {
+    --bg:#0b0f17;--panel:#121826;--panel-2:#0f1422;--text:#e6ecf5;--muted:#8b97ad;
+    --line:#1f2738;--accent:#7c5cff;--accent-2:#00d4ff;--good:#2bd07b;--warn:#f5a524;
+    --bad:#ff5d6c;--code-bg:#0a0e17;--key:#7ee787;--string:#a5d6ff;
+    --post:#7c5cff;--story:#00c896;--reel:#ff6b6b;--carousel:#00d4ff;
+  }
+  @media(prefers-color-scheme:light){:root{
+    --bg:#f6f7fb;--panel:#fff;--panel-2:#fafbff;--text:#1a2030;--muted:#5b6577;
+    --line:#e6e8ef;--code-bg:#f1f3f9;--key:#166534;--string:#0f6cbf;
+  }}
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Inter,Roboto,sans-serif;}
+  .wrap{max-width:1320px;margin:0 auto;padding:28px 22px 80px;}
+
+  /* ── Hero ── */
+  header.hero{display:grid;grid-template-columns:1fr auto;gap:20px;align-items:end;
+    padding-bottom:22px;border-bottom:1px solid var(--line);margin-bottom:22px;}
+  .hero h1{margin:0;font-size:26px;letter-spacing:-.01em;}
+  .hero h1 .grad{background:linear-gradient(90deg,var(--accent),var(--accent-2));
+    -webkit-background-clip:text;background-clip:text;color:transparent;}
+  .hero p{margin:6px 0 0;color:var(--muted);max-width:820px;line-height:1.5;}
+  .meta{color:var(--muted);font-size:12.5px;text-align:right;line-height:1.7;}
+  .meta b{color:var(--text);font-weight:600;}
+
+  /* ── Table ── */
+  table.cmp{width:100%;border-collapse:collapse;margin:14px 0 28px;
+    font-size:13px;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;}
+  table.cmp th,table.cmp td{padding:10px 13px;text-align:left;border-bottom:1px solid var(--line);vertical-align:middle;}
+  table.cmp thead th{background:var(--panel-2);color:var(--muted);font-weight:600;
+    font-size:11px;letter-spacing:.06em;text-transform:uppercase;}
+  table.cmp tr:last-child td{border-bottom:none;}
+  table.cmp small{color:var(--muted);display:block;margin-top:2px;}
+  table.cmp code{font-size:12px;color:var(--accent-2);}
+  .ok{color:var(--good);font-weight:700;}
+  .bad{color:var(--bad);font-weight:700;}
+  .warn-text{color:var(--warn);}
+
+  /* ── Surface pills ── */
+  .sf{display:inline-block;font-size:11px;letter-spacing:.09em;text-transform:uppercase;
+    padding:3px 9px;border-radius:999px;font-weight:700;}
+  .sf.post   {color:var(--post);   background:rgba(124,92,255,.13); border:1px solid rgba(124,92,255,.35);}
+  .sf.story  {color:var(--story);  background:rgba(0,200,150,.12);  border:1px solid rgba(0,200,150,.35);}
+  .sf.reel   {color:var(--reel);   background:rgba(255,107,107,.12);border:1px solid rgba(255,107,107,.35);}
+  .sf.carousel{color:var(--carousel);background:rgba(0,212,255,.10);border:1px solid rgba(0,212,255,.30);}
+
+  /* ── Tabs ── */
+  .tabs-nav{display:flex;gap:6px;flex-wrap:wrap;margin:16px 0 20px;
+    padding-bottom:10px;border-bottom:1px solid var(--line);}
+  .tab-btn{font:inherit;cursor:pointer;background:transparent;color:var(--muted);
+    border:1px solid var(--line);padding:9px 14px;border-radius:10px;
+    display:flex;flex-direction:column;align-items:flex-start;gap:3px;
+    transition:all .15s;min-width:150px;}
+  .tab-btn:hover{color:var(--text);border-color:var(--accent);}
+  .tab-btn b{font-size:13.5px;font-weight:600;}
+  .tab-btn small{font-size:11px;color:var(--muted);}
+  .tab-btn.active{background:linear-gradient(135deg,rgba(124,92,255,.15),rgba(0,212,255,.12));
+    color:var(--text);border-color:var(--accent);}
+  .tab-btn.active small{color:var(--text);opacity:.75;}
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
+
+  /* ── Stat cards ── */
+  .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:4px 0 20px;}
+  @media(max-width:900px){.grid-4{grid-template-columns:repeat(2,1fr);}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;}
+  .card h3{margin:0 0 5px;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);}
+  .card .v{font-size:17px;font-weight:600;}
+  .card .v small{color:var(--muted);font-weight:400;font-size:12px;margin-left:6px;}
+
+  /* ── Section wrapper ── */
+  .section{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:18px 20px;margin:0 0 16px;}
+  .section-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+  .section-head h3{margin:0;font-size:16px;font-weight:700;}
+  .tag{font-size:11px;padding:3px 10px;border-radius:999px;border:1px solid;}
+  .tag.pub{background:rgba(43,208,123,.12);color:var(--good);border-color:rgba(43,208,123,.35);}
+  .tag.int{background:rgba(124,92,255,.12);color:var(--accent);border-color:rgba(124,92,255,.35);}
+  .tag.cf {background:rgba(0,212,255,.10);color:var(--accent-2);border-color:rgba(0,212,255,.30);}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 14px;line-height:1.5;}
+
+  /* ── brand_dna ── */
+  .dna-grid{display:grid;gap:12px;}
+  .dna-colors{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:4px;}
+  .swatch{display:flex;align-items:center;gap:8px;padding:8px 12px;
+    background:var(--panel-2);border:1px solid var(--line);border-radius:10px;}
+  .swatch-dot{width:26px;height:26px;border-radius:50%;flex-shrink:0;border:2px solid rgba(255,255,255,.12);}
+  .swatch-info{display:flex;flex-direction:column;gap:1px;}
+  .swatch-role{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);}
+  .swatch-hex{font-size:12.5px;font-family:ui-monospace,monospace;font-weight:600;}
+  .swatch-name{font-size:11px;color:var(--muted);}
+
+  .dna-block{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;overflow:hidden;}
+  .dna-block-label{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+    padding:8px 14px;border-bottom:1px solid var(--line);background:rgba(0,0,0,.1);}
+  .dna-block pre{margin:0;padding:14px 16px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:12px;line-height:1.55;white-space:pre-wrap;overflow:auto;max-height:320px;color:var(--text);}
+
+  .dna-style-table{width:100%;border-collapse:collapse;}
+  .dna-style-table tr{border-bottom:1px solid var(--line);}
+  .dna-style-table tr:last-child{border-bottom:none;}
+  .dna-style-table td{padding:9px 13px;font-size:13px;line-height:1.5;vertical-align:top;}
+  .dna-style-table td:first-child{font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--muted);white-space:nowrap;width:170px;background:rgba(0,0,0,.06);}
+
+  .dna-row-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;}
+  @media(max-width:700px){.dna-row-2{grid-template-columns:1fr;}}
+  .dna-inline{font-size:13.5px;line-height:1.55;}
+  .dna-contact{font-family:ui-monospace,monospace;font-size:12.5px;color:var(--accent-2);
+    word-break:break-all;margin-top:4px;}
+
+  /* ── cf_post_brief ── */
+  .brief-wrap{display:grid;grid-template-columns:1.2fr 1fr;gap:16px;}
+  @media(max-width:900px){.brief-wrap{grid-template-columns:1fr;}}
+
+  .brief-editorial{background:var(--panel-2);border:1px solid var(--line);
+    border-left:3px solid var(--accent-2);border-radius:0 10px 10px 0;
+    padding:14px 16px;margin-bottom:12px;}
+  .brief-editorial .lbl{font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--accent-2);margin-bottom:6px;}
+  .brief-editorial p{margin:0;font-size:13.5px;line-height:1.6;font-style:italic;color:var(--text);}
+
+  .brief-caption{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;
+    overflow:hidden;margin-bottom:12px;}
+  .brief-caption .caption-lbl{font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--muted);padding:7px 14px;border-bottom:1px solid var(--line);background:rgba(0,0,0,.08);}
+  .brief-caption .caption-hook{font-weight:700;font-size:14.5px;padding:12px 14px 6px;line-height:1.4;}
+  .brief-caption .caption-body{font-size:13.5px;padding:4px 14px 10px;line-height:1.6;
+    white-space:pre-wrap;color:var(--text);}
+  .brief-caption .caption-cta{font-size:13px;padding:8px 14px;border-top:1px solid var(--line);
+    color:var(--accent-2);font-weight:600;}
+
+  .brief-hashtags{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px;}
+  .htag{font-size:12px;padding:4px 10px;border-radius:999px;
+    background:rgba(124,92,255,.10);border:1px solid rgba(124,92,255,.25);color:var(--accent);}
+
+  /* Phone mockup wrapper */
+  .phone-mock{background:#1a1a2e;border:2px solid #2a2a4a;border-radius:22px;
+    padding:16px 14px;max-width:320px;font-size:13px;}
+  .phone-header{display:flex;align-items:center;gap:8px;margin-bottom:10px;
+    padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.08);}
+  .phone-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;}
+  .phone-username{font-weight:600;font-size:13px;}
+  .phone-loc{color:rgba(255,255,255,.4);font-size:11px;}
+  .phone-img{background:linear-gradient(135deg,var(--panel-2),var(--line));border-radius:10px;
+    height:180px;display:flex;align-items:center;justify-content:center;
+    color:var(--muted);font-size:12px;margin-bottom:10px;text-align:center;padding:10px;}
+  .phone-copy{line-height:1.5;color:#e8e8f0;font-size:12.5px;white-space:pre-wrap;}
+  .phone-copy b{color:#fff;}
+  .phone-tags{margin-top:6px;color:rgba(100,150,255,.8);font-size:11.5px;}
+
+  /* ── Decisions / Cap / Conf ── */
+  .split-2{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;}
+  @media(max-width:900px){.split-2{grid-template-columns:1fr;}}
+
+  .decision{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;
+    padding:10px 13px;margin-bottom:8px;}
+  .decision .label{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);}
+  .decision .chosen{margin-top:3px;font-weight:600;font-size:14px;}
+  .decision .alts{margin-top:5px;display:flex;flex-wrap:wrap;gap:5px;}
+  .decision .alt{font-size:11px;padding:2px 7px;border-radius:999px;border:1px dashed var(--line);color:var(--muted);text-decoration:line-through;}
+  .decision .why{margin-top:6px;font-size:12.5px;color:var(--text);line-height:1.5;opacity:.9;}
+  .decision .why::before{content:"↳ ";color:var(--muted);}
+
+  .cap{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:10px 13px;margin-bottom:8px;}
+  .cap .lbl{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);
+    display:flex;justify-content:space-between;}
+  .cap .txt{margin-top:5px;white-space:pre-wrap;line-height:1.5;font-size:13.5px;}
+  .cap.hook .txt{font-weight:600;}
+  .len-badge{font-size:10.5px;background:rgba(43,208,123,.12);color:var(--good);
+    padding:1px 7px;border-radius:999px;border:1px solid rgba(43,208,123,.25);}
+  .len-badge.over{background:rgba(255,93,108,.12);color:var(--bad);border-color:rgba(255,93,108,.3);}
+
+  .conf{display:flex;align-items:center;justify-content:space-between;
+    background:var(--panel-2);border:1px solid var(--line);border-radius:8px;
+    padding:7px 11px;font-size:12.5px;margin-bottom:6px;}
+  .conf .lvl{font-size:11px;padding:2px 8px;border-radius:999px;text-transform:uppercase;letter-spacing:.06em;}
+  .lvl.high  {background:rgba(43,208,123,.15);color:var(--good);}
+  .lvl.medium{background:rgba(245,165,36,.15); color:var(--warn);}
+  .lvl.low   {background:rgba(255,93,108,.15); color:var(--bad);}
+
+  .img-brief{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:10px 13px;margin-bottom:8px;}
+  .img-brief .lbl{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+  .img-brief .body{line-height:1.5;font-size:13px;}
+  .img-brief.gen .body{font-family:ui-monospace,monospace;font-size:12px;color:var(--accent-2);}
+  .img-brief.alt .body{color:var(--muted);font-style:italic;font-size:12.5px;}
+
+  .cta-card{display:flex;align-items:center;gap:10px;padding:10px 13px;
+    background:linear-gradient(90deg,rgba(124,92,255,.12),rgba(0,212,255,.10));
+    border:1px solid rgba(124,92,255,.30);border-radius:10px;}
+  .cta-card .ch{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;
+    font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+    padding:3px 10px;border-radius:999px;font-weight:700;}
+  .cta-card .lbl{font-weight:600;}
+  .cta-card .url{color:var(--muted);font-size:12px;word-break:break-all;}
+
+  .bi-grid{display:grid;grid-template-columns:160px 1fr;background:var(--panel-2);
+    border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:6px;}
+  .bi-row{display:contents;}
+  .bi-row>div{padding:8px 13px;border-bottom:1px solid var(--line);font-size:13px;}
+  .bi-row:last-child>div{border-bottom:none;}
+  .bi-label{color:var(--muted);font-size:11px;letter-spacing:.05em;text-transform:uppercase;background:rgba(0,0,0,.1);}
+
+  .pill-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+  .chip{display:inline-block;padding:4px 9px;border-radius:999px;
+    border:1px solid var(--line);background:var(--panel-2);font-size:12px;color:var(--muted);}
+
+  .warn-chip{font-size:11.5px;padding:3px 9px;border-radius:999px;
+    background:rgba(245,165,36,.12);color:var(--warn);border:1px solid rgba(245,165,36,.3);}
+
+  details.acc{margin-top:10px;}
+  details.acc>summary{cursor:pointer;color:var(--muted);font-size:13px;padding:8px 12px;
+    border:1px dashed var(--line);border-radius:8px;}
+  details.acc[open]>summary{color:var(--text);border-style:solid;}
+  pre.json{margin:0;padding:14px 16px;background:var(--code-bg);color:var(--text);
+    overflow:auto;max-height:480px;font-family:ui-monospace,monospace;
+    font-size:12px;line-height:1.5;border:1px solid var(--line);border-radius:0 0 8px 8px;border-top:none;}
+
+  footer{color:var(--muted);font-size:12px;margin-top:26px;text-align:center;}
+
+  h2.section-title{margin:24px 0 10px;font-size:16px;letter-spacing:.02em;color:var(--muted);font-weight:600;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <div>
+    <h1>MARKETER <span class="grad">multi-surface test</span></h1>
+    <p>4 verticales × 4 surfaces (post / story / reel / carousel). Valida los nuevos campos CF:
+      <b>brand_dna</b> en formato design-system (Colors · Design Style JSON · Typography · Logo · Contact)
+      y <b>cf_post_brief</b> (instrucción lista para Content Factory: editorial note + caption ensamblada + hashtags reales).</p>
+  </div>
+  <div class="meta">
+    <div><b>surfaces</b> post · story · reel · carousel</div>
+    <div><b>model</b> gemini-3-flash-preview</div>
+    <div><b>red flags</b> 0 / 4</div>
+    <div><b>generated</b> 2026-04-21</div>
+  </div>
+</header>
+
+<h2 class="section-title">Resumen cross-surface</h2>
+<table class="cmp">
+<thead><tr>
+  <th>Surface · Vertical</th><th>Status</th><th>Latency</th>
+  <th>Pillar</th><th>CTA</th><th>Emotional beat</th><th>Hashtags</th><th>Warnings</th>
+</tr></thead>
+<tbody>
+<tr>
+  <td><span class="sf post">POST</span> <b style="margin-left:6px">Verdea Studio</b><small>Moda sostenible · Barcelona</small></td>
+  <td class="ok">COMPLETED</td><td>24 947 ms</td><td>product</td>
+  <td><code>website</code></td><td>tranquilidad</td><td>6</td><td>0</td>
+</tr>
+<tr>
+  <td><span class="sf story">STORY</span> <b style="margin-left:6px">Casa Maruja</b><small>Restaurante de mercado · Ruzafa</small></td>
+  <td class="ok">COMPLETED</td><td>20 324 ms</td><td>product</td>
+  <td><code>dm</code></td><td>pertenencia</td><td>6</td>
+  <td><span class="ok">0</span> <span style="color:var(--muted);font-size:11px">(corregido)</span></td>
+</tr>
+<tr>
+  <td><span class="sf reel">REEL</span> <b style="margin-left:6px">Clínica Dental Eixample</b><small>Salud bucodental · Barcelona</small></td>
+  <td class="ok">COMPLETED</td><td>27 270 ms</td><td>education</td>
+  <td><code>dm</code></td><td>tranquilidad</td><td>6</td>
+  <td><span class="warn-chip">gallery_empty</span></td>
+</tr>
+<tr>
+  <td><span class="sf carousel">CAROUSEL</span> <b style="margin-left:6px">Pulsemetrics</b><small>SaaS B2B · Observabilidad</small></td>
+  <td class="ok">COMPLETED</td><td>23 913 ms</td><td>product</td>
+  <td><code>website</code></td><td>tranquilidad</td><td>7</td>
+  <td><span class="warn-chip">gallery_empty</span></td>
+</tr>
+</tbody>
+</table>
+
+<div class="tabs-nav">
+  <button class="tab-btn active" data-tab="0"><b>Verdea Studio</b><small>POST · moda sostenible</small></button>
+  <button class="tab-btn" data-tab="1"><b>Casa Maruja</b><small>STORY · restaurante</small></button>
+  <button class="tab-btn" data-tab="2"><b>Clínica Dental</b><small>REEL · salud</small></button>
+  <button class="tab-btn" data-tab="3"><b>Pulsemetrics</b><small>CAROUSEL · SaaS B2B</small></button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     TAB 0 · POST · Verdea Studio
+═══════════════════════════════════════════════════════════════ -->
+<div class="tab-panel active" id="panel-0">
+  <div class="grid-4">
+    <div class="card"><h3>Status</h3><div class="v ok">COMPLETED <small>post · create</small></div></div>
+    <div class="card"><h3>Latency</h3><div class="v">24 947 ms <small>repair: no</small></div></div>
+    <div class="card"><h3>Warnings</h3><div class="v ok">0 <small>red flags: 0</small></div></div>
+    <div class="card"><h3>Hashtags</h3><div class="v">6 <small>tags reales</small></div></div>
+  </div>
+
+  <!-- brand_dna -->
+  <div class="section">
+    <div class="section-head">
+      <h3>CLIENT DNA — Verdea Studio</h3>
+      <span class="tag pub">public · viaja a CF como client_dna</span>
+    </div>
+    <p class="sub">Design-system reference para Content Factory. Colors, Design Style JSON, Typography, Logo y Contact.</p>
+
+    <div class="dna-grid">
+      <!-- Colors -->
+      <div>
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:8px;">Colors</div>
+        <div class="dna-colors">
+          <div class="swatch">
+            <div class="swatch-dot" style="background:#2f5233;"></div>
+            <div class="swatch-info">
+              <span class="swatch-role">Primario</span>
+              <span class="swatch-hex">#2f5233</span>
+              <span class="swatch-name">Forest Green</span>
+            </div>
+          </div>
+          <div class="swatch">
+            <div class="swatch-dot" style="background:#e8e4d9;border-color:rgba(0,0,0,.15);"></div>
+            <div class="swatch-info">
+              <span class="swatch-role">Secundario</span>
+              <span class="swatch-hex">#e8e4d9</span>
+              <span class="swatch-name">Sand Beige</span>
+            </div>
+          </div>
+          <div class="swatch">
+            <div class="swatch-dot" style="background:#c9a66b;"></div>
+            <div class="swatch-info">
+              <span class="swatch-role">Accent</span>
+              <span class="swatch-hex">#c9a66b</span>
+              <span class="swatch-name">Earth Gold</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Design Style -->
+      <div class="dna-block">
+        <div class="dna-block-label">Design Style — style_reference_analysis</div>
+        <table class="dna-style-table">
+          <tr><td>visual_mood</td><td>Minimalist organic. A serene and high-end atmosphere that emphasizes tactile quality and environmental respect.</td></tr>
+          <tr><td>compositional_strategy</td><td>Centralized focus on garment textures. Clean lines with plenty of breathing room and balanced negative space.</td></tr>
+          <tr><td>imagery_and_framing</td><td>Soft, natural lighting with diffused shadows. Close-up shots to highlight the weave of the recycled cotton.</td></tr>
+          <tr><td>spatial_distribution</td><td>Generous negative space using <code>#e8e4d9</code> to create a sense of calm and luxury.</td></tr>
+          <tr><td>graphic_interventions</td><td>Minimalist text overlays if used, primarily using <code>#2f5233</code> for readability against light backgrounds.</td></tr>
+          <tr><td>typographic_architecture</td><td>Elegant Serif headlines for a timeless feel, grounded in the brand's serif identity.</td></tr>
+          <tr><td>narrative_direction</td><td>The design refuses clutter and fast-fashion noise, opting for a slow visual pace.</td></tr>
+        </table>
+      </div>
+
+      <div class="dna-row-2">
+        <div class="dna-block">
+          <div class="dna-block-label">Typography</div>
+          <div style="padding:12px 14px;" class="dna-inline">Serif for headlines and body accents.</div>
+        </div>
+        <div class="dna-block">
+          <div class="dna-block-label">Logo</div>
+          <div style="padding:12px 14px;" class="dna-inline">Preserve brand integrity — avoid busy backgrounds without a translucent overlay.</div>
+        </div>
+      </div>
+
+      <div class="dna-block">
+        <div class="dna-block-label">Contact</div>
+        <div style="padding:10px 14px;" class="dna-contact">https://www.verdeastudio.com · https://instagram.com/verdeastudio</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- cf_post_brief -->
+  <div class="section">
+    <div class="section-head">
+      <h3>cf_post_brief</h3>
+      <span class="tag cf">client_request_posts en CF</span>
+    </div>
+    <p class="sub">Instrucción lista para Content Factory: editorial image note + caption ensamblada + hashtags reales.</p>
+    <div class="brief-wrap">
+      <div>
+        <div class="brief-editorial">
+          <div class="lbl">Editorial image note</div>
+          <p>El hook es la textura del algodón: una camiseta verde bosque <code>#2f5233</code> sobre un fondo neutro <code>#e8e4d9</code>. Esta composición minimalista activa el beat de <em>tranquilidad</em> al centrar la atención exclusivamente en la calidad del material reciclado, eliminando distracciones visuales.</p>
+        </div>
+        <div class="brief-caption">
+          <div class="caption-lbl">Caption</div>
+          <div class="caption-hook">La primavera ya está aquí, y llega de forma consciente. 🌱</div>
+          <div class="caption-body">Presentamos nuestra nueva colección cápsula: prendas esenciales diseñadas en Barcelona y confeccionadas con algodón reciclado certificado GOTS.
+
+Creemos en una moda que respeta los tiempos de la naturaleza y el trabajo artesano en Portugal. Sin excesos, solo calidad y transparencia para tu armario de temporada.</div>
+          <div class="caption-cta">Descubre la colección completa en nuestra web.</div>
+        </div>
+        <div>
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:8px;">Hashtags</div>
+          <div class="brief-hashtags">
+            <span class="htag">#VerdeaStudio</span><span class="htag">#ModaSostenible</span>
+            <span class="htag">#AlgodonReciclado</span><span class="htag">#SlowFashionEspaña</span>
+            <span class="htag">#CapsuleWardrobe</span><span class="htag">#HechoEnEuropa</span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="phone-mock">
+          <div class="phone-header">
+            <div class="phone-avatar">V</div>
+            <div><div class="phone-username">verdeastudio</div><div class="phone-loc">Barcelona, España</div></div>
+          </div>
+          <div class="phone-img">📸 Textura algodón reciclado<br><small>close-up · luz difusa · fondo arena</small></div>
+          <div class="phone-copy"><b>La primavera ya está aquí, y llega de forma consciente. 🌱</b>
+Presentamos nuestra nueva colección cápsula: prendas esenciales diseñadas en Barcelona y confeccionadas con algodón reciclado certificado GOTS.
+
+Creemos en una moda que respeta los tiempos de la naturaleza y el trabajo artesano en Portugal.
+
+<em>Descubre la colección completa en nuestra web.</em></div>
+          <div class="phone-tags">#VerdeaStudio #ModaSostenible #AlgodonReciclado #SlowFashionEspaña #CapsuleWardrobe #HechoEnEuropa</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Decisions + Image + CTA + Confidence -->
+  <div class="section">
+    <div class="section-head"><h3>Decisiones estratégicas + Image brief</h3></div>
+    <div class="split-2">
+      <div>
+        <div class="decision">
+          <div class="label">Surface format</div>
+          <div class="chosen">post</div>
+          <div class="alts"><span class="alt">story</span></div>
+          <div class="why">Post feed permanece visible toda la semana del lanzamiento; la colección cápsula necesita cuerpo de copy para describir materiales.</div>
+        </div>
+        <div class="decision">
+          <div class="label">Angle</div>
+          <div class="chosen">lanzamiento consciente de algodón reciclado</div>
+          <div class="alts"><span class="alt">behind_the_scenes proceso</span><span class="alt">lookbook de temporada</span></div>
+          <div class="why">El brief menciona explícitamente algodón reciclado GOTS y producción en Portugal — son los diferenciales concretos. La petición pide transmitir "valor sostenible".</div>
+        </div>
+        <div class="decision">
+          <div class="label">Voice</div>
+          <div class="chosen">honesta, estética y cercana</div>
+          <div class="alts"><span class="alt">aspiracional-lujo</span></div>
+          <div class="why">FIELD_COMMUNICATION_STYLE=friendly + tone "cercano, honesto, estético y consciente". El lujo genérico contradice el valor slow fashion.</div>
+        </div>
+        <div class="post-section">
+          <div class="img-brief"><div class="lbl">Image concept</div><div class="body">Primer plano de la textura de una prenda de algodón reciclado verde sobre fondo neutro.</div></div>
+          <div class="img-brief gen"><div class="lbl">Generation prompt</div><div class="body">Close-up textile detail of recycled GOTS cotton fabric, forest green #2f5233. Soft diffused natural light, shallow depth of field. Neutral sand #e8e4d9 background. Artisanal, slow fashion editorial feel. 4:5 aspect ratio, no people.</div></div>
+        </div>
+        <div class="cta-card"><span class="ch">WEBSITE</span><span class="lbl">Ver colección</span><span class="url">https://www.verdeastudio.com</span></div>
+      </div>
+      <div>
+        <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Confidence</div>
+        <div class="conf"><span>surface_format</span><span class="lvl high">high</span></div>
+        <div class="conf"><span>angle</span><span class="lvl high">high</span></div>
+        <div class="conf"><span>palette_match</span><span class="lvl high">high</span></div>
+        <div class="conf"><span>cta_channel</span><span class="lvl high">high</span></div>
+        <div style="margin-top:14px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Caption lengths</div>
+        <div class="conf"><span>hook</span><span class="len-badge">56 ch / 125</span></div>
+        <div class="conf"><span>body</span><span class="len-badge">302 ch / 1900</span></div>
+        <div class="conf"><span>cta_line</span><span class="len-badge">42 ch / 180</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     TAB 1 · STORY · Casa Maruja
+═══════════════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="panel-1">
+  <div class="grid-4">
+    <div class="card"><h3>Status</h3><div class="v ok">COMPLETED <small>story · create</small></div></div>
+    <div class="card"><h3>Latency</h3><div class="v">20 324 ms <small>repair: no</small></div></div>
+    <div class="card"><h3>Warnings</h3><div class="v ok">0 <small style="color:var(--good)">story fix ✓</small></div></div>
+    <div class="card"><h3>Hashtags</h3><div class="v">6 <small>tags reales</small></div></div>
+  </div>
+
+  <!-- brand_dna -->
+  <div class="section">
+    <div class="section-head">
+      <h3>CLIENT DNA — Casa Maruja</h3>
+      <span class="tag pub">public · viaja a CF como client_dna</span>
+    </div>
+    <div class="dna-grid">
+      <div>
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:8px;">Colors</div>
+        <div class="dna-colors">
+          <div class="swatch">
+            <div class="swatch-dot" style="background:#8b5a2b;"></div>
+            <div class="swatch-info"><span class="swatch-role">Primario</span><span class="swatch-hex">#8b5a2b</span><span class="swatch-name">Tierra Valenciana</span></div>
+          </div>
+          <div class="swatch">
+            <div class="swatch-dot" style="background:#d4a017;"></div>
+            <div class="swatch-info"><span class="swatch-role">Secundario</span><span class="swatch-hex">#d4a017</span><span class="swatch-name">Dorado Azafrán</span></div>
+          </div>
+          <div class="swatch">
+            <div class="swatch-dot" style="background:#556b2f;"></div>
+            <div class="swatch-info"><span class="swatch-role">Accent</span><span class="swatch-hex">#556b2f</span><span class="swatch-name">Oliva Ruzafa</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dna-block">
+        <div class="dna-block-label">Design Style — style_reference_analysis</div>
+        <table class="dna-style-table">
+          <tr><td>visual_mood</td><td>Warm and authentic. A cozy, home-like atmosphere that emphasizes the honesty of traditional market cuisine.</td></tr>
+          <tr><td>compositional_strategy</td><td>Central focus on the dish with a shallow depth of field to create intimacy and highlight textures.</td></tr>
+          <tr><td>imagery_and_framing</td><td>Close-up photography with natural, warm window lighting. Textures of wood and clay are essential.</td></tr>
+          <tr><td>spatial_distribution</td><td>Clean and balanced, using negative space around the main dish for text overlays if needed.</td></tr>
+          <tr><td>graphic_interventions</td><td>Minimalist text overlays using <code>#d4a017</code> for highlights. No heavy borders or synthetic filters.</td></tr>
+          <tr><td>typographic_architecture</td><td>Clean sans-serif hierarchy. Headlines in bold lowercase for a friendly, modern touch.</td></tr>
+          <tr><td>narrative_direction</td><td>A design that feels like a window into a grandmother's kitchen in the heart of Ruzafa.</td></tr>
+        </table>
+      </div>
+
+      <div class="dna-row-2">
+        <div class="dna-block"><div class="dna-block-label">Typography</div><div style="padding:12px 14px;" class="dna-inline">Sans-serif for all communications — modern yet accessible.</div></div>
+        <div class="dna-block"><div class="dna-block-label">Logo</div><div style="padding:12px 14px;" class="dna-inline">Dark version on light, natural texture backgrounds. Light version over dark overlays.</div></div>
+      </div>
+      <div class="dna-block"><div class="dna-block-label">Contact</div><div style="padding:10px 14px;" class="dna-contact">https://www.casamaruja.es</div></div>
+    </div>
+  </div>
+
+  <!-- cf_post_brief -->
+  <div class="section">
+    <div class="section-head">
+      <h3>cf_post_brief</h3>
+      <span class="tag cf">client_request_posts en CF</span>
+      <span class="sf story" style="margin-left:auto;">STORY · 250 ch max</span>
+    </div>
+    <p class="sub">Story billboard: una idea, una emoción, una acción. Copy de 3 líneas exactas — constraint respetado.</p>
+    <div class="brief-wrap">
+      <div>
+        <div class="brief-editorial">
+          <div class="lbl">Editorial image note</div>
+          <p>El hook es un primer plano del arròs al forn humeante en su cazuela de barro: transmite la calidez y honestidad de la cocina de mercado de Casa Maruja, activando el sentimiento de pertenencia al barrio a través de un plato icónico. CTA apunta a dm.</p>
+        </div>
+        <div class="brief-caption">
+          <div class="caption-lbl">Caption <span style="margin-left:8px;font-size:10px;color:var(--good);background:rgba(43,208,123,.1);padding:1px 7px;border-radius:999px;border:1px solid rgba(43,208,123,.25);">~115 ch total ✓</span></div>
+          <div class="caption-hook">¡Ya huele a lunes en Ruzafa! 🥘</div>
+          <div class="caption-body">Nuestro arròs al forn ya está listo. Casero, de mercado y por solo 12 €.</div>
+          <div class="caption-cta">Reserva tu mesa por DM</div>
+        </div>
+        <div>
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:8px;">Hashtags</div>
+          <div class="brief-hashtags">
+            <span class="htag">#CasaMaruja</span><span class="htag">#Ruzafa</span>
+            <span class="htag">#ArrosAlForn</span><span class="htag">#ValenciaFood</span>
+            <span class="htag">#MenuDelDia</span><span class="htag">#CocinaCasera</span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="phone-mock">
+          <div class="phone-header">
+            <div class="phone-avatar" style="background:linear-gradient(135deg,#8b5a2b,#d4a017);">M</div>
+            <div><div class="phone-username">casamaruja</div><div class="phone-loc">Ruzafa, Valencia</div></div>
+          </div>
+          <div class="phone-img" style="background:linear-gradient(135deg,#3a1f00,#6b3a10);">🥘 Arròs al forn<br><small>cazuela de barro · vapor · luz natural</small></div>
+          <div class="phone-copy"><b>¡Ya huele a lunes en Ruzafa! 🥘</b>
+Nuestro arròs al forn ya está listo. Casero, de mercado y por solo 12 €.
+<em>Reserva tu mesa por DM</em></div>
+          <div class="phone-tags">#CasaMaruja #Ruzafa #ArrosAlForn #ValenciaFood #MenuDelDia #CocinaCasera</div>
+        </div>
+        <div style="margin-top:10px;background:rgba(43,208,123,.06);border:1px solid rgba(43,208,123,.2);border-radius:10px;padding:10px 14px;font-size:12.5px;">
+          <span style="color:var(--good);font-weight:600;">Story constraint OK</span><br>
+          <span style="color:var(--muted);">Cap: 250 ch total · Resultado: ~115 ch</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Decisions + Confidence -->
+  <div class="section">
+    <div class="section-head"><h3>Decisiones + Confidence</h3></div>
+    <div class="split-2">
+      <div>
+        <div class="decision">
+          <div class="label">Surface format</div><div class="chosen">story</div>
+          <div class="alts"><span class="alt">post</span></div>
+          <div class="why">Descripción contiene "story" (keyword detectado). Urgencia del plato del día encaja con el carácter efímero de la story.</div>
+        </div>
+        <div class="decision">
+          <div class="label">Angle</div><div class="chosen">especialidad del lunes: arròs al forn</div>
+          <div class="alts"><span class="alt">plato del día genérico</span></div>
+          <div class="why">El brief menciona explícitamente "arròs al forn los lunes" como especialidad.</div>
+        </div>
+        <div class="decision">
+          <div class="label">Voice</div><div class="chosen">cálida, cercana y directa</div>
+          <div class="alts"><span class="alt">descriptiva-aspiracional</span></div>
+          <div class="why">FIELD_COMMUNICATION_STYLE=friendly + tono "cálido, cercano, sin florituras". La story no admite elaboración — directo al grano.</div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Confidence</div>
+        <div class="conf"><span>surface_format</span><span class="lvl high">high</span></div>
+        <div class="conf"><span>angle</span><span class="lvl high">high</span></div>
+        <div class="conf"><span>palette_match</span><span class="lvl high">high</span></div>
+        <div class="conf"><span>cta_channel</span><span class="lvl high">high</span></div>
+        <div style="margin-top:14px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Caption lengths (story cap: 250 total)</div>
+        <div class="conf"><span>hook</span><span class="len-badge">32 ch / 80</span></div>
+        <div class="conf"><span>body</span><span class="len-badge">57 ch / 120</span></div>
+        <div class="conf"><span>cta_line</span><span class="len-badge">22 ch / 50</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     TAB 2 · REEL · Clínica Dental Eixample
+═══════════════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="panel-2">
+  <div class="grid-4">
+    <div class="card"><h3>Status</h3><div class="v ok">COMPLETED <small>reel · create</small></div></div>
+    <div class="card"><h3>Latency</h3><div class="v">27 270 ms <small>repair: no</small></div></div>
+    <div class="card"><h3>Warnings</h3><div class="v warn-text">gallery_empty <small>esperado · no img catalog</small></div></div>
+    <div class="card"><h3>Hashtags</h3><div class="v">6 <small>tags reales</small></div></div>
+  </div>
+
+  <!-- brand_dna -->
+  <div class="section">
+    <div class="section-head">
+      <h3>CLIENT DNA — Clínica Dental Eixample</h3>
+      <span class="tag pub">public · viaja a CF como client_dna</span>
+    </div>
+    <div class="dna-grid">
+      <div>
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:8px;">Colors</div>
+        <div class="dna-colors">
+          <div class="swatch">
+            <div class="swatch-dot" style="background:#1976d2;"></div>
+            <div class="swatch-info"><span class="swatch-role">Primario</span><span class="swatch-hex">#1976d2</span><span class="swatch-name">Trust Professional Blue</span></div>
+          </div>
+          <div class="swatch">
+            <div class="swatch-dot" style="background:#e3f2fd;border-color:rgba(0,0,0,.15);"></div>
+            <div class="swatch-info"><span class="swatch-role">Secundario</span><span class="swatch-hex">#e3f2fd</span><span class="swatch-name">Calm Sky Blue</span></div>
+          </div>
+          <div class="swatch">
+            <div class="swatch-dot" style="background:#ffffff;border-color:rgba(0,0,0,.15);"></div>
+            <div class="swatch-info"><span class="swatch-role">Accent</span><span class="swatch-hex">#ffffff</span><span class="swatch-name">Pure Clinical White</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dna-block">
+        <div class="dna-block-label">Design Style — style_reference_analysis</div>
+        <table class="dna-style-table">
+          <tr><td>visual_mood</td><td>Clean and serene. A clinical environment that feels welcoming and airy, avoiding harsh shadows.</td></tr>
+          <tr><td>compositional_strategy</td><td>Centered subjects with plenty of breathing room. Use of depth of field to focus on human interaction.</td></tr>
+          <tr><td>imagery_and_framing</td><td>Close-up shots of smiles and eye contact. Bright, high-key lighting to emphasize cleanliness and transparency.</td></tr>
+          <tr><td>spatial_distribution</td><td>Balanced and minimalist. Elements are aligned to a clean grid, reflecting professional order.</td></tr>
+          <tr><td>graphic_interventions</td><td>Text overlays should use semi-transparent <code>#e3f2fd</code> boxes to maintain legibility without blocking the image.</td></tr>
+          <tr><td>typographic_architecture</td><td>Clean sans-serif fonts. Headlines in medium weight, body text in light weight for a modern, approachable feel.</td></tr>
+          <tr><td>narrative_direction</td><td>The design prioritizes human comfort over technical machinery.</td></tr>
+        </table>
+      </div>
+
+      <div class="dna-row-2">
+        <div class="dna-block"><div class="dna-block-label">Typography</div><div style="padding:12px 14px;" class="dna-inline">Sans-serif for all communications — modern and accessible.</div></div>
+        <div class="dna-block"><div class="dna-block-label">Logo</div><div style="padding:12px 14px;" class="dna-inline">Use dark version over <code>#e3f2fd</code>. Semi-transparent overlay on busy backgrounds.</div></div>
+      </div>
+      <div class="dna-block"><div class="dna-block-label">Contact</div><div style="padding:10px 14px;" class="dna-contact">https://www.clinicadentaleixample.es · +34 933 215 478</div></div>
+    </div>
+  </div>
+
+  <!-- cf_post_brief -->
+  <div class="section">
+    <div class="section-head">
+      <h3>cf_post_brief</h3>
+      <span class="tag cf">client_request_posts en CF</span>
+      <span class="sf reel" style="margin-left:auto;">REEL · 1000 ch max</span>
+    </div>
+    <div class="brief-wrap">
+      <div>
+        <div class="brief-editorial">
+          <div class="lbl">Editorial image note</div>
+          <p>El hook es una revisión dental tranquila: paciente relajado sonriendo en la silla dental bajo una luz suave y cálida. Este visual activa el emotional_beat de <em>tranquilidad</em> al mostrar un entorno seguro y humano, rompiendo el estigma del dolor clínico. Imagen sin texto superpuesto.</p>
+        </div>
+        <div class="brief-caption">
+          <div class="caption-lbl">Caption</div>
+          <div class="caption-hook">¿Miedo al dentista? En el Eixample, las revisiones son otra historia. ✨</div>
+          <div class="caption-body">Te acompañamos paso a paso en un ambiente de calma total. Sin prisas, con tecnología actual y un equipo de 6 profesionales que te escucha.
+
+Desde 2008 cuidamos sonrisas en el barrio con la cercanía de siempre. 🦷</div>
+          <div class="caption-cta">Reserva tu revisión enviándonos un DM.</div>
+        </div>
+        <div>
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:8px;">Hashtags</div>
+          <div class="brief-hashtags">
+            <span class="htag">#ClínicaDentalEixample</span><span class="htag">#DentistaBarcelona</span>
+            <span class="htag">#SaludBucodental</span><span class="htag">#Eixample</span>
+            <span class="htag">#SinMiedoAlDentista</span><span class="htag">#RevisiónDental</span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="phone-mock">
+          <div class="phone-header">
+            <div class="phone-avatar" style="background:linear-gradient(135deg,#1976d2,#42a5f5);">C</div>
+            <div><div class="phone-username">clinicadentaleixample</div><div class="phone-loc">Eixample, Barcelona</div></div>
+          </div>
+          <div class="phone-img" style="background:linear-gradient(135deg,#0d2240,#1a4a7a);">🎬 Reel · clips revisión<br><small>paciente relajado · luz suave · sin bata clínica fría</small></div>
+          <div class="phone-copy"><b>¿Miedo al dentista? En el Eixample, las revisiones son otra historia. ✨</b>
+Te acompañamos paso a paso en un ambiente de calma total. Sin prisas, con tecnología actual y un equipo de 6 profesionales que te escucha.
+
+Desde 2008 cuidamos sonrisas en el barrio con la cercanía de siempre. 🦷
+
+<em>Reserva tu revisión enviándonos un DM.</em></div>
+          <div class="phone-tags">#ClínicaDentalEixample #DentistaBarcelona #SaludBucodental #Eixample #SinMiedoAlDentista #RevisiónDental</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><h3>Decisiones + Confidence</h3></div>
+    <div class="split-2">
+      <div>
+        <div class="decision">
+          <div class="label">Surface format</div><div class="chosen">reel</div>
+          <div class="alts"><span class="alt">post</span><span class="alt">story</span></div>
+          <div class="why">Descripción contiene "reel corto". El proceso de una revisión dental es naturalmente narrativo y visual — encaja con el formato de vídeo.</div>
+        </div>
+        <div class="decision">
+          <div class="label">Angle</div><div class="chosen">revisión dental sin estrés</div>
+          <div class="alts"><span class="alt">prevención semestral</span></div>
+          <div class="why">La petición pide "que la gente pierda el miedo al dentista". El ángulo "sin estrés" deriva directamente de FIELD_VALUE_PROPOSITION: "cuidamos tu sonrisa sin generarte miedo".</div>
+        </div>
+        <div class="decision">
+          <div class="label">Voice</div><div class="chosen">cercana y tranquilizadora</div>
+          <div class="alts"><span class="alt">clínica-profesional fría</span></div>
+          <div class="why">FIELD_COMMUNICATION_STYLE=professional pero tone "profesional, cercano, tranquilizador". La cercanía supera la frialdad clínica para la audiencia target.</div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Confidence</div>
+        <div class="conf"><span>surface_format</span><span class="lvl high">high</span></div>
+        <div class="conf"><span>angle</span><span class="lvl high">high</span></div>
+        <div class="conf"><span>palette_match</span><span class="lvl high">high</span></div>
+        <div class="conf"><span>cta_channel</span><span class="lvl high">high</span></div>
+        <div style="margin-top:14px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Caption lengths (reel cap: 1000 total)</div>
+        <div class="conf"><span>hook</span><span class="len-badge">60 ch / 100</span></div>
+        <div class="conf"><span>body</span><span class="len-badge">198 ch / 850</span></div>
+        <div class="conf"><span>cta_line</span><span class="len-badge">38 ch / 150</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     TAB 3 · CAROUSEL · Pulsemetrics
+═══════════════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="panel-3">
+  <div class="grid-4">
+    <div class="card"><h3>Status</h3><div class="v ok">COMPLETED <small>carousel · create</small></div></div>
+    <div class="card"><h3>Latency</h3><div class="v">23 913 ms <small>repair: no</small></div></div>
+    <div class="card"><h3>Warnings</h3><div class="v warn-text">gallery_empty <small>esperado · no img catalog</small></div></div>
+    <div class="card"><h3>Hashtags</h3><div class="v">7 <small>tags reales</small></div></div>
+  </div>
+
+  <!-- brand_dna -->
+  <div class="section">
+    <div class="section-head">
+      <h3>CLIENT DNA — Pulsemetrics</h3>
+      <span class="tag pub">public · viaja a CF como client_dna</span>
+    </div>
+    <div class="dna-grid">
+      <div>
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:8px;">Colors</div>
+        <div class="dna-colors">
+          <div class="swatch">
+            <div class="swatch-dot" style="background:#0b1f3a;"></div>
+            <div class="swatch-info"><span class="swatch-role">Primario</span><span class="swatch-hex">#0b1f3a</span><span class="swatch-name">Deep Space Blue</span></div>
+          </div>
+          <div class="swatch">
+            <div class="swatch-dot" style="background:#1e88e5;"></div>
+            <div class="swatch-info"><span class="swatch-role">Secundario</span><span class="swatch-hex">#1e88e5</span><span class="swatch-name">Action Blue</span></div>
+          </div>
+          <div class="swatch">
+            <div class="swatch-dot" style="background:#f5f7fa;border-color:rgba(0,0,0,.15);"></div>
+            <div class="swatch-info"><span class="swatch-role">Accent</span><span class="swatch-hex">#f5f7fa</span><span class="swatch-name">Clean Slate</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dna-block">
+        <div class="dna-block-label">Design Style — style_reference_analysis</div>
+        <table class="dna-style-table">
+          <tr><td>visual_mood</td><td>Data-driven and calm. A professional atmosphere that conveys control over complex systems.</td></tr>
+          <tr><td>compositional_strategy</td><td>Grid-based and modular. High contrast between dark backgrounds and vibrant data lines to create focus.</td></tr>
+          <tr><td>imagery_and_framing</td><td>Abstract data visualizations and clean UI snippets. Sharp focus with no motion blur to suggest precision.</td></tr>
+          <tr><td>spatial_distribution</td><td>Generous negative space using <code>#0b1f3a</code> to allow technical information to breathe.</td></tr>
+          <tr><td>graphic_interventions</td><td>Thin vector lines and glowing accents in <code>#1e88e5</code> to highlight predictive trends.</td></tr>
+          <tr><td>typographic_architecture</td><td>Sans-serif hierarchy. Bold headers for clarity with tight tracking for a modern tech feel.</td></tr>
+          <tr><td>narrative_direction</td><td>The design refuses clutter, mirroring the product's promise of filtering noise.</td></tr>
+        </table>
+      </div>
+
+      <div class="dna-row-2">
+        <div class="dna-block"><div class="dna-block-label">Typography</div><div style="padding:12px 14px;" class="dna-inline">Sans-serif for all elements. Bold for headlines, regular for body copy.</div></div>
+        <div class="dna-block"><div class="dna-block-label">Logo</div><div style="padding:12px 14px;" class="dna-inline">Light version on <code>#0b1f3a</code> backgrounds. Safety margin ≥ 20px from data visualizations.</div></div>
+      </div>
+      <div class="dna-block"><div class="dna-block-label">Contact</div><div style="padding:10px 14px;" class="dna-contact">https://www.pulsemetrics.io</div></div>
+    </div>
+  </div>
+
+  <!-- cf_post_brief -->
+  <div class="section">
+    <div class="section-head">
+      <h3>cf_post_brief</h3>
+      <span class="tag cf">client_request_posts en CF</span>
+      <span class="sf carousel" style="margin-left:auto;">CAROUSEL · 4 slides</span>
+    </div>
+    <div class="brief-wrap">
+      <div>
+        <div class="brief-editorial">
+          <div class="lbl">Editorial image note</div>
+          <p>El hook es la eficiencia operativa: un gráfico de líneas limpio sobre fondo <code>#0b1f3a</code> que visualiza la calma técnica. Este visual activa la <em>tranquilidad</em> al contrastar con el caos habitual de un dashboard saturado, reforzando el ángulo de "menos ruido".</p>
+        </div>
+        <div class="brief-caption">
+          <div class="caption-lbl">Caption (carousel cover)</div>
+          <div class="caption-hook">Menos ruido, más señal. 📉</div>
+          <div class="caption-body">Para un SRE, cada alerta innecesaria es tiempo perdido. Pulsemetrics utiliza ML para anticipar incidentes antes de que afecten al usuario.
+
+3 beneficios clave:
+1. Menos ruido: Filtramos los falsos positivos para que solo atiendas lo que importa.
+2. Más señal: Identificamos patrones críticos en tiempo real.
+3. Menos tiempo de resolución: Reduce tu MTTR con contexto accionable inmediato.</div>
+          <div class="caption-cta">Optimiza tu operativa en https://www.pulsemetrics.io</div>
+        </div>
+        <div>
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:8px;">Hashtags</div>
+          <div class="brief-hashtags">
+            <span class="htag">#SRE</span><span class="htag">#DevOps</span>
+            <span class="htag">#Observabilidad</span><span class="htag">#MTTR</span>
+            <span class="htag">#SaaS</span><span class="htag">#Pulsemetrics</span>
+            <span class="htag">#AlertasPredictivas</span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="phone-mock">
+          <div class="phone-header">
+            <div class="phone-avatar" style="background:linear-gradient(135deg,#0b1f3a,#1e88e5);">P</div>
+            <div><div class="phone-username">pulsemetrics</div><div class="phone-loc">SaaS B2B · DevOps</div></div>
+          </div>
+          <div class="phone-img" style="background:linear-gradient(135deg,#050d1a,#0b1f3a);">📊 Carousel · 4 slides<br><small>datos → claridad predictiva</small></div>
+          <div class="phone-copy"><b>Menos ruido, más señal. 📉</b>
+Para un SRE, cada alerta innecesaria es tiempo perdido.
+
+3 beneficios clave:
+1. Menos ruido: falsos positivos filtrados
+2. Más señal: patrones críticos en tiempo real
+3. Menos MTTR: contexto accionable inmediato
+
+<em>Optimiza tu operativa en pulsemetrics.io</em></div>
+          <div class="phone-tags">#SRE #DevOps #Observabilidad #MTTR #SaaS #Pulsemetrics #AlertasPredictivas</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><h3>Decisiones + Confidence</h3></div>
+    <div class="split-2">
+      <div>
+        <div class="decision">
+          <div class="label">Surface format</div><div class="chosen">carousel</div>
+          <div class="alts"><span class="alt">post</span><span class="alt">reel</span></div>
+          <div class="why">Descripción contiene "carrusel" y la idea de "3 beneficios" es inherentemente multi-slide.</div>
+        </div>
+        <div class="decision">
+          <div class="label">Angle</div><div class="chosen">Eficiencia operacional y reducción de fatiga por alertas</div>
+          <div class="alts"><span class="alt">lanzamiento de funcionalidad técnica</span></div>
+          <div class="why">FIELD_VALUE_PROPOSITION: "Menos ruido, más señal; el equipo gana horas cada semana". La petición pide enfatizar ahorro de tiempo y reducción de incidentes.</div>
+        </div>
+        <div class="decision">
+          <div class="label">Voice</div><div class="chosen">Autoritativa y técnica</div>
+          <div class="alts"><span class="alt">divulgativa-accesible</span></div>
+          <div class="why">FIELD_COMMUNICATION_STYLE=professional + audiencia CTOs/SREs. El tono técnico-autorizado genera credibilidad en este target.</div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Confidence</div>
+        <div class="conf"><span>surface_format</span><span class="lvl high">high</span></div>
+        <div class="conf"><span>angle</span><span class="lvl high">high</span></div>
+        <div class="conf"><span>palette_match</span><span class="lvl high">high</span></div>
+        <div class="conf"><span>cta_channel</span><span class="lvl high">high</span></div>
+        <div style="margin-top:14px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Caption lengths (carousel cap: 2200 total)</div>
+        <div class="conf"><span>hook</span><span class="len-badge">24 ch / 125</span></div>
+        <div class="conf"><span>body</span><span class="len-badge">382 ch / 1900</span></div>
+        <div class="conf"><span>cta_line</span><span class="len-badge">49 ch / 180</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>MARKETER multi-surface test · 2026-04-21 · gemini-3-flash-preview · 4/4 COMPLETED · 0 red flags</footer>
+
+</div>
+
+<script>
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = btn.dataset.tab;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('panel-' + idx).classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>

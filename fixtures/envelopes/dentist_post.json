@@ -1,0 +1,75 @@
+{
+  "task_id": "77778888-7777-8888-7777-888888888888",
+  "job_id": "99990000-9999-0000-9999-000000000000",
+  "action_code": "create_post",
+  "action_id": "aabbccdd-1122-3344-5566-778899aabbcc",
+  "correlation_id": "dentist-20260420-303",
+  "callback_url": "https://d1lwu6lioovdrb.cloudfront.net/api/v1/tasks/77778888-7777-8888-7777-888888888888/callback",
+  "payload": {
+    "client_request": {
+      "description": "Queremos un post informativo que recuerde a nuestros pacientes la importancia de la revisión dental semestral. Tono cercano pero profesional, sin miedo.",
+      "attachments": []
+    },
+    "context": {
+      "account_uuid": "55667788-99aa-bbcc-ddee-ff0011223344",
+      "client_name": "Clínica Dental Eixample",
+      "platform": "instagram"
+    },
+    "action_execution_gates": {
+      "brief": {
+        "passed": true,
+        "reason": "ok",
+        "status_code": 200,
+        "response": {
+          "status": "success",
+          "message": "Account with brief retrieved successfully",
+          "data": {
+            "uuid": "55667788-99aa-bbcc-ddee-ff0011223344",
+            "profile": {
+              "business_name": "Clínica Dental Eixample",
+              "website_url": "https://www.clinicadentaleixample.es",
+              "contact_phone": "+34 933 215 478",
+              "tone": "profesional, cercano, tranquilizador"
+            },
+            "brief": {
+              "uuid": "abcd0004-0000-0000-0000-000000000004",
+              "form_values": {
+                "FIELD_COMPANY_NAME": "Clínica Dental Eixample",
+                "FIELD_COMPANY_CATEGORY": "Salud",
+                "FIELD_COUNTRY": "España",
+                "FIELD_LARGE_ANSWER": "Clínica Dental Eixample es una clínica de salud bucodental ubicada en el barrio del Eixample de Barcelona desde 2008. Ofrecemos odontología general, higiene, ortodoncia invisible, estética dental e implantología. Equipo de 6 profesionales, atención personalizada y trato cercano.",
+                "FIELD_PRODUCTS_SERVICES_ANSWER": "Revisiones, higienes profesionales, ortodoncia invisible, implantes, blanqueamiento, odontopediatría.",
+                "FIELD_TARGET_CUSTOMER_ANSWER": "Familias y profesionales del Eixample (Barcelona) entre 25 y 60 años que buscan una clínica de confianza, trato cercano y atención sin prisas.",
+                "FIELD_VALUE_PROPOSITION": "Salud bucodental integral en el Eixample con trato cercano, tecnología actual y sin listas de espera interminables. Cuidamos tu sonrisa sin generarte miedo.",
+                "FIELD_COMMUNICATION_LANGUAGE": "spanish",
+                "FIELD_COMMUNICATION_STYLE": "professional",
+                "FIELD_COLOR_LIST_PICKER": ["#FFFFFF", "#E3F2FD", "#1976D2"],
+                "FIELD_FONT_STYLE": "sans",
+                "FIELD_POST_CONTENT_STYLE": "image_text",
+                "FIELD_KEYWORDS_TAGS_INPUT": ["revisión dental", "salud bucodental", "Eixample", "Barcelona", "prevención"],
+                "FIELD_WEBSITE_URL": "https://www.clinicadentaleixample.es",
+                "FIELD_BUSINESS_PHONE": "+34 933 215 478",
+                "FIELD_HAS_BRAND_MATERIAL": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "agent_sequence": {
+      "current": {
+        "step_code": "marketing_enrichment",
+        "step_order": 1,
+        "task_id": "77778888-7777-8888-7777-888888888888",
+        "agent_id": "5a258d4e-b01d-48dc-95b1-0e67d81b7f4c",
+        "agent_name": "marketer",
+        "endpoint": "https://marketer.internal/tasks",
+        "http_method": "POST",
+        "is_mandatory": true,
+        "timeout_seconds": 60,
+        "retry_count": 0
+      },
+      "previous": {}
+    }
+  }
+}

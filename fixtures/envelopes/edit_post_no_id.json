@@ -1,0 +1,41 @@
+{
+  "task_id": "55555555-5555-5555-5555-555555555555",
+  "job_id": "66666666-6666-6666-6666-666666666666",
+  "action_code": "edit_post",
+  "correlation_id": "edit-no-id-001",
+  "callback_url": "https://example.com/api/v1/tasks/55555555-5555-5555-5555-555555555555/callback",
+  "payload": {
+    "client_request": {
+      "description": "Actualiza el copy del post existente para mencionar el nuevo horario de verano y quitar la referencia al cupón caducado, manteniendo el mismo tono cercano que ya teníamos.",
+      "attachments": []
+    },
+    "context": {
+      "account_uuid": "cccccccc-dddd-eeee-ffff-000000000000",
+      "client_name": "Edit Sans ID",
+      "platform": "instagram"
+    },
+    "action_execution_gates": {
+      "brief": {
+        "passed": true,
+        "reason": "ok",
+        "status_code": 200,
+        "response": {
+          "status": "success",
+          "message": "ok",
+          "data": {
+            "profile": { "business_name": "Edit Sans ID", "tone": "cercano" },
+            "brief": {
+              "form_values": {
+                "FIELD_COMPANY_NAME": "Edit Sans ID",
+                "FIELD_COMMUNICATION_LANGUAGE": "spanish",
+                "FIELD_LARGE_ANSWER": "Cafetería de barrio.",
+                "FIELD_VALUE_PROPOSITION": "Café de especialidad y pastelería diaria."
+              }
+            }
+          }
+        }
+      }
+    },
+    "agent_sequence": { "current": {}, "previous": {} }
+  }
+}

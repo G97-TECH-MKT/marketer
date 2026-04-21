@@ -1,0 +1,73 @@
+{
+  "task_id": "aaaa1111-aaaa-1111-aaaa-111111111111",
+  "job_id": "bbbb2222-bbbb-2222-bbbb-222222222222",
+  "action_code": "create_post",
+  "action_id": "cccc3333-cccc-3333-cccc-333333333333",
+  "correlation_id": "saas-20260420-101",
+  "callback_url": "https://d1lwu6lioovdrb.cloudfront.net/api/v1/tasks/aaaa1111-aaaa-1111-aaaa-111111111111/callback",
+  "payload": {
+    "client_request": {
+      "description": "Anuncia el lanzamiento de nuestra nueva funcionalidad de alertas predictivas para equipos de operaciones, enfatizando el ahorro de tiempo y la reducción de incidentes. Tono claro y orientado a resultados.",
+      "attachments": []
+    },
+    "context": {
+      "account_uuid": "d1e2f3a4-5566-7788-99aa-bbccddeeff00",
+      "client_name": "Pulsemetrics",
+      "platform": "instagram"
+    },
+    "action_execution_gates": {
+      "brief": {
+        "passed": true,
+        "reason": "ok",
+        "status_code": 200,
+        "response": {
+          "status": "success",
+          "message": "Account with brief retrieved successfully",
+          "data": {
+            "uuid": "d1e2f3a4-5566-7788-99aa-bbccddeeff00",
+            "profile": {
+              "business_name": "Pulsemetrics",
+              "website_url": "https://www.pulsemetrics.io",
+              "tone": "profesional, claro, orientado a resultados"
+            },
+            "brief": {
+              "uuid": "abcd0002-0000-0000-0000-000000000002",
+              "form_values": {
+                "FIELD_COMPANY_NAME": "Pulsemetrics",
+                "FIELD_COMPANY_CATEGORY": "SaaS B2B",
+                "FIELD_COUNTRY": "España",
+                "FIELD_LARGE_ANSWER": "Pulsemetrics es una plataforma de analítica operacional para equipos SRE y DevOps. Combina métricas en tiempo real con alertas inteligentes basadas en ML para anticipar incidentes antes de que afecten al usuario. Fundada en 2022, trabajamos con equipos de producto en empresas medianas y enterprise.",
+                "FIELD_PRODUCTS_SERVICES_ANSWER": "Dashboard de analítica operacional, alertas predictivas, integraciones con Datadog, PagerDuty, Slack. Planes Team y Enterprise.",
+                "FIELD_TARGET_CUSTOMER_ANSWER": "Responsables de operaciones, SREs, líderes de producto y CTOs en empresas SaaS medianas (50-500 empleados) que gestionan infraestructura compleja y necesitan reducir el MTTR.",
+                "FIELD_VALUE_PROPOSITION": "Anticipamos incidentes antes de que ocurran. Menos ruido, más señal: el equipo de operaciones gana horas cada semana.",
+                "FIELD_COMMUNICATION_LANGUAGE": "spanish",
+                "FIELD_COMMUNICATION_STYLE": "professional",
+                "FIELD_COLOR_LIST_PICKER": ["#0B1F3A", "#1E88E5", "#F5F7FA"],
+                "FIELD_FONT_STYLE": "sans",
+                "FIELD_POST_CONTENT_STYLE": "image_text",
+                "FIELD_KEYWORDS_TAGS_INPUT": ["observabilidad", "alertas predictivas", "SRE", "DevOps", "MTTR"],
+                "FIELD_WEBSITE_URL": "https://www.pulsemetrics.io",
+                "FIELD_HAS_BRAND_MATERIAL": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "agent_sequence": {
+      "current": {
+        "step_code": "marketing_enrichment",
+        "step_order": 1,
+        "task_id": "aaaa1111-aaaa-1111-aaaa-111111111111",
+        "agent_id": "5a258d4e-b01d-48dc-95b1-0e67d81b7f4c",
+        "agent_name": "marketer",
+        "endpoint": "https://marketer.internal/tasks",
+        "http_method": "POST",
+        "is_mandatory": true,
+        "timeout_seconds": 60,
+        "retry_count": 0
+      },
+      "previous": {}
+    }
+  }
+}

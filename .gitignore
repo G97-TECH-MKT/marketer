@@ -1,0 +1,20 @@
+.env
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.DS_Store
+.vscode/
+.idea/
+*.swp
+dist/
+build/
+.coverage
+htmlcov/
+# Batch test reports are regenerated locally; keep only goldens.
+reports/

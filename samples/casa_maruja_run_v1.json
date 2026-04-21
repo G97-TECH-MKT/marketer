@@ -1,0 +1,350 @@
+{
+  "transcript": {
+    "flow": "router_dispatch -> marketer -> router_callback",
+    "agent": "marketer",
+    "task_id": "eeee5555-eeee-5555-eeee-555555555555",
+    "job_id": "ffff6666-ffff-6666-ffff-666666666666",
+    "correlation_id": "ig-20260420-007",
+    "generated_at": "2026-04-20T16:30:06.187668+00:00"
+  },
+  "router_dispatch": {
+    "method": "POST",
+    "path": "/tasks",
+    "headers": {
+      "Content-Type": "application/json",
+      "X-Task-Id": "eeee5555-eeee-5555-eeee-555555555555",
+      "X-Correlation-Id": "ig-20260420-007",
+      "X-Callback-Url": "https://d1lwu6lioovdrb.cloudfront.net/api/v1/tasks/eeee5555-eeee-5555-eeee-555555555555/callback"
+    },
+    "body": {
+      "task_id": "eeee5555-eeee-5555-eeee-555555555555",
+      "job_id": "ffff6666-ffff-6666-ffff-666666666666",
+      "action_code": "create_post",
+      "action_id": "7777aaaa-7777-aaaa-7777-aaaa77777777",
+      "correlation_id": "ig-20260420-007",
+      "callback_url": "https://d1lwu6lioovdrb.cloudfront.net/api/v1/tasks/eeee5555-eeee-5555-eeee-555555555555/callback",
+      "payload": {
+        "client_request": {
+          "description": "Crea un post destacando el plato estrella de esta semana, con descripción del producto de temporada y el por qué lo hemos elegido. Tono cercano, apetecible y sin florituras.",
+          "attachments": []
+        },
+        "context": {
+          "account_uuid": "9b1c0f12-0d8b-4a46-aea5-2a2cc4b47f21",
+          "client_name": "Casa Maruja",
+          "platform": "instagram"
+        },
+        "action_execution_gates": {
+          "brief": {
+            "passed": true,
+            "reason": "ok",
+            "status_code": 200,
+            "response": {
+              "status": "success",
+              "message": "Account with brief retrieved successfully",
+              "data": {
+                "uuid": "9b1c0f12-0d8b-4a46-aea5-2a2cc4b47f21",
+                "profile": {
+                  "business_name": "Casa Maruja",
+                  "website_url": "https://www.casamaruja.es",
+                  "tone": "cálido, cercano, sin florituras"
+                },
+                "brief": {
+                  "uuid": "abcd0001-0000-0000-0000-000000000001",
+                  "form_values": {
+                    "FIELD_COMPANY_NAME": "Casa Maruja",
+                    "FIELD_COMPANY_CATEGORY": "Restauración",
+                    "FIELD_COUNTRY": "España",
+                    "FIELD_LARGE_ANSWER": "Casa Maruja nació del recetario de una abuela y la terquedad de una nieta. Cocina de mercado de temporada en Ruzafa, Valencia. Menú del día a 12 €. Especialidades: arròs al forn los lunes, croquetas de puchero.",
+                    "FIELD_PRODUCTS_SERVICES_ANSWER": "Restaurante de cocina de mercado. Menú diario, especialidades caseras, producto de temporada.",
+                    "FIELD_TARGET_CUSTOMER_ANSWER": "Vecinos de Ruzafa y Valencia que buscan comida casera, honesta y asequible; sensibles a producto local y trato cercano.",
+                    "FIELD_VALUE_PROPOSITION": "Cocina casera de mercado, producto de temporada, sin florituras, trato familiar.",
+                    "FIELD_COMMUNICATION_LANGUAGE": "spanish",
+                    "FIELD_COMMUNICATION_STYLE": "friendly",
+                    "FIELD_COLOR_LIST_PICKER": [
+                      "#8B5A2B",
+                      "#D4A017",
+                      "#556B2F"
+                    ],
+                    "FIELD_FONT_STYLE": "sans",
+                    "FIELD_POST_CONTENT_STYLE": "image_text",
+                    "FIELD_KEYWORDS_TAGS_INPUT": [
+                      "cocina de mercado",
+                      "producto de temporada",
+                      "Ruzafa",
+                      "Valencia"
+                    ],
+                    "FIELD_HAS_BRAND_MATERIAL": true,
+                    "FIELD_BRAND_MATERIAL": [
+                      {
+                        "url": "https://cdn.example/casamaruja/hero.jpg",
+                        "name": "hero.jpg",
+                        "extension": "jpg",
+                        "size": 1024000
+                      },
+                      {
+                        "url": "https://cdn.example/casamaruja/arros.jpg",
+                        "name": "arros.jpg",
+                        "extension": "jpg",
+                        "size": 1200000
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "image_catalog": {
+            "passed": true,
+            "reason": "ok",
+            "status_code": 200,
+            "response": {
+              "status": "success",
+              "data": [
+                {
+                  "url": "https://i.pinimg.com/736x/00/2f/ef/002fefd0c200e93fd65f823cac70ed05.jpg",
+                  "name": "plato_semana.jpg",
+                  "extension": "jpg",
+                  "size": 800000,
+                  "tags": [
+                    "plato_semana",
+                    "producto_temporada"
+                  ],
+                  "description": "Plato de temporada servido en mesa de madera con luz natural",
+                  "category": "product_photo",
+                  "used_previously": false
+                },
+                {
+                  "url": "https://cdn.example/casamaruja/equipo.jpg",
+                  "name": "equipo.jpg",
+                  "extension": "jpg",
+                  "size": 900000,
+                  "tags": [
+                    "equipo",
+                    "barrio"
+                  ],
+                  "description": "El equipo en la puerta del local saludando",
+                  "category": "team",
+                  "used_previously": true
+                }
+              ]
+            }
+          }
+        },
+        "agent_sequence": {
+          "current": {
+            "step_code": "marketing_enrichment",
+            "step_order": 1,
+            "task_id": "eeee5555-eeee-5555-eeee-555555555555",
+            "agent_id": "5a258d4e-b01d-48dc-95b1-0e67d81b7f4c",
+            "agent_name": "marketer",
+            "endpoint": "https://marketer.internal/tasks",
+            "http_method": "POST",
+            "is_mandatory": true,
+            "timeout_seconds": 60,
+            "retry_count": 0
+          },
+          "previous": {}
+        }
+      }
+    }
+  },
+  "marketer_callback": {
+    "method": "PATCH",
+    "path": "/api/v1/tasks/eeee5555-eeee-5555-eeee-555555555555/callback",
+    "headers": {
+      "X-API-Key": "<marketer_agent_token>"
+    },
+    "body": {
+      "status": "COMPLETED",
+      "output_data": {
+        "enrichment": {
+          "schema_version": "1.0",
+          "surface_format": "post",
+          "title": "El sabor de la temporada en Casa Maruja",
+          "objective": "Atraer clientes al local destacando la frescura y calidad del producto de mercado semanal.",
+          "strategic_reasoning": "El formato post permite una imagen estática potente que centra la atención en el plato. Al explicar el 'por qué' de la elección del producto, reforzamos la transparencia y la conexión con el mercado local, valores clave para el público de Ruzafa que busca comida honesta.",
+          "visual_style_notes": "Iluminación natural lateral para resaltar texturas. Paleta de colores basada en tonos tierra (#8B5A2B) y verdes oliva (#556B2F). Encuadre cercano y orgánico sobre madera, evitando montajes artificiales para mantener la esencia 'sin florituras'.",
+          "narrative_connection": null,
+          "image_description": "Primer plano de un plato de cerámica tradicional con la especialidad de la semana, servido sobre una mesa de madera rústica. La luz natural entra de lado, creando sombras suaves. Se aprecia la frescura de los ingredientes. Composición sencilla, sin elementos decorativos innecesarios.",
+          "caption": "Esta semana, el mercado nos ha traído lo mejor y no hemos podido resistirnos. 🌿\n\nNuestro plato estrella destaca por la frescura del producto de temporada. Lo hemos elegido porque está en su punto óptimo de sabor y calidad, directo del puesto a nuestra cocina en Ruzafa. Cocina honesta, sin florituras, como siempre nos ha gustado en casa.\n\nVen a disfrutarlo dentro de nuestro menú del día por 12€.\n\n✨ Reserva tu mesa por mensaje directo o en el enlace de nuestro perfil.",
+          "cta_url": "https://www.casamaruja.es",
+          "visual_selection": {
+            "recommended_asset_urls": [
+              "https://i.pinimg.com/736x/00/2f/ef/002fefd0c200e93fd65f823cac70ed05.jpg"
+            ],
+            "recommended_reference_urls": [],
+            "avoid_asset_urls": [
+              "https://cdn.example/casamaruja/equipo.jpg"
+            ]
+          }
+        },
+        "warnings": [],
+        "trace": {
+          "task_id": "eeee5555-eeee-5555-eeee-555555555555",
+          "action_code": "create_post",
+          "surface": "post",
+          "mode": "create",
+          "latency_ms": 11025,
+          "gemini_model": "gemini-3-flash-preview",
+          "repair_attempted": false,
+          "degraded": false,
+          "gallery_stats": {
+            "raw_count": 4,
+            "accepted_count": 4,
+            "rejected_count": 0,
+            "truncated": false
+          }
+        }
+      },
+      "error_message": null
+    }
+  },
+  "router_record_after_step": {
+    "job_id": "ffff6666-ffff-6666-ffff-666666666666",
+    "gate_responses": {
+      "brief": {
+        "passed": true,
+        "reason": "ok",
+        "status_code": 200,
+        "response": {
+          "status": "success",
+          "message": "Account with brief retrieved successfully",
+          "data": {
+            "uuid": "9b1c0f12-0d8b-4a46-aea5-2a2cc4b47f21",
+            "profile": {
+              "business_name": "Casa Maruja",
+              "website_url": "https://www.casamaruja.es",
+              "tone": "cálido, cercano, sin florituras"
+            },
+            "brief": {
+              "uuid": "abcd0001-0000-0000-0000-000000000001",
+              "form_values": {
+                "FIELD_COMPANY_NAME": "Casa Maruja",
+                "FIELD_COMPANY_CATEGORY": "Restauración",
+                "FIELD_COUNTRY": "España",
+                "FIELD_LARGE_ANSWER": "Casa Maruja nació del recetario de una abuela y la terquedad de una nieta. Cocina de mercado de temporada en Ruzafa, Valencia. Menú del día a 12 €. Especialidades: arròs al forn los lunes, croquetas de puchero.",
+                "FIELD_PRODUCTS_SERVICES_ANSWER": "Restaurante de cocina de mercado. Menú diario, especialidades caseras, producto de temporada.",
+                "FIELD_TARGET_CUSTOMER_ANSWER": "Vecinos de Ruzafa y Valencia que buscan comida casera, honesta y asequible; sensibles a producto local y trato cercano.",
+                "FIELD_VALUE_PROPOSITION": "Cocina casera de mercado, producto de temporada, sin florituras, trato familiar.",
+                "FIELD_COMMUNICATION_LANGUAGE": "spanish",
+                "FIELD_COMMUNICATION_STYLE": "friendly",
+                "FIELD_COLOR_LIST_PICKER": [
+                  "#8B5A2B",
+                  "#D4A017",
+                  "#556B2F"
+                ],
+                "FIELD_FONT_STYLE": "sans",
+                "FIELD_POST_CONTENT_STYLE": "image_text",
+                "FIELD_KEYWORDS_TAGS_INPUT": [
+                  "cocina de mercado",
+                  "producto de temporada",
+                  "Ruzafa",
+                  "Valencia"
+                ],
+                "FIELD_HAS_BRAND_MATERIAL": true,
+                "FIELD_BRAND_MATERIAL": [
+                  {
+                    "url": "https://cdn.example/casamaruja/hero.jpg",
+                    "name": "hero.jpg",
+                    "extension": "jpg",
+                    "size": 1024000
+                  },
+                  {
+                    "url": "https://cdn.example/casamaruja/arros.jpg",
+                    "name": "arros.jpg",
+                    "extension": "jpg",
+                    "size": 1200000
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "image_catalog": {
+        "passed": true,
+        "reason": "ok",
+        "status_code": 200,
+        "response": {
+          "status": "success",
+          "data": [
+            {
+              "url": "https://i.pinimg.com/736x/00/2f/ef/002fefd0c200e93fd65f823cac70ed05.jpg",
+              "name": "plato_semana.jpg",
+              "extension": "jpg",
+              "size": 800000,
+              "tags": [
+                "plato_semana",
+                "producto_temporada"
+              ],
+              "description": "Plato de temporada servido en mesa de madera con luz natural",
+              "category": "product_photo",
+              "used_previously": false
+            },
+            {
+              "url": "https://cdn.example/casamaruja/equipo.jpg",
+              "name": "equipo.jpg",
+              "extension": "jpg",
+              "size": 900000,
+              "tags": [
+                "equipo",
+                "barrio"
+              ],
+              "description": "El equipo en la puerta del local saludando",
+              "category": "team",
+              "used_previously": true
+            }
+          ]
+        }
+      }
+    },
+    "sequence_responses": {
+      "marketer": {
+        "status": "COMPLETED",
+        "sequence_order": 1,
+        "output_schema": "post_enrichment.v1",
+        "output_data": {
+          "enrichment": {
+            "schema_version": "1.0",
+            "surface_format": "post",
+            "title": "El sabor de la temporada en Casa Maruja",
+            "objective": "Atraer clientes al local destacando la frescura y calidad del producto de mercado semanal.",
+            "strategic_reasoning": "El formato post permite una imagen estática potente que centra la atención en el plato. Al explicar el 'por qué' de la elección del producto, reforzamos la transparencia y la conexión con el mercado local, valores clave para el público de Ruzafa que busca comida honesta.",
+            "visual_style_notes": "Iluminación natural lateral para resaltar texturas. Paleta de colores basada en tonos tierra (#8B5A2B) y verdes oliva (#556B2F). Encuadre cercano y orgánico sobre madera, evitando montajes artificiales para mantener la esencia 'sin florituras'.",
+            "narrative_connection": null,
+            "image_description": "Primer plano de un plato de cerámica tradicional con la especialidad de la semana, servido sobre una mesa de madera rústica. La luz natural entra de lado, creando sombras suaves. Se aprecia la frescura de los ingredientes. Composición sencilla, sin elementos decorativos innecesarios.",
+            "caption": "Esta semana, el mercado nos ha traído lo mejor y no hemos podido resistirnos. 🌿\n\nNuestro plato estrella destaca por la frescura del producto de temporada. Lo hemos elegido porque está en su punto óptimo de sabor y calidad, directo del puesto a nuestra cocina en Ruzafa. Cocina honesta, sin florituras, como siempre nos ha gustado en casa.\n\nVen a disfrutarlo dentro de nuestro menú del día por 12€.\n\n✨ Reserva tu mesa por mensaje directo o en el enlace de nuestro perfil.",
+            "cta_url": "https://www.casamaruja.es",
+            "visual_selection": {
+              "recommended_asset_urls": [
+                "https://i.pinimg.com/736x/00/2f/ef/002fefd0c200e93fd65f823cac70ed05.jpg"
+              ],
+              "recommended_reference_urls": [],
+              "avoid_asset_urls": [
+                "https://cdn.example/casamaruja/equipo.jpg"
+              ]
+            }
+          },
+          "warnings": [],
+          "trace": {
+            "task_id": "eeee5555-eeee-5555-eeee-555555555555",
+            "action_code": "create_post",
+            "surface": "post",
+            "mode": "create",
+            "latency_ms": 11025,
+            "gemini_model": "gemini-3-flash-preview",
+            "repair_attempted": false,
+            "degraded": false,
+            "gallery_stats": {
+              "raw_count": 4,
+              "accepted_count": 4,
+              "rejected_count": 0,
+              "truncated": false
+            }
+          }
+        },
+        "duration_ms": 11025
+      }
+    }
+  }
+}

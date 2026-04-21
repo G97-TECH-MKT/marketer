@@ -1,0 +1,83 @@
+{
+  "task_id": "77777777-7777-7777-7777-777777777777",
+  "job_id": "88888888-8888-8888-8888-888888888888",
+  "action_code": "create_web",
+  "correlation_id": "rich-web-extras-001",
+  "callback_url": "https://example.com/api/v1/tasks/77777777-7777-7777-7777-777777777777/callback",
+  "payload": {
+    "client_request": {
+      "description": "Quiero una landing que venda confianza técnica pero cercanía: urgencias 24h, cámara de fugas, presupuesto claro. El teléfono debe destacar arriba y debemos citar reseñas reales sin inventar texto nuevo.",
+      "attachments": []
+    },
+    "context": {
+      "account_uuid": "dddddddd-eeee-ffff-0000-111111111111",
+      "client_name": "Fontanería Extra Rich"
+    },
+    "action_execution_gates": {
+      "brief": {
+        "passed": true,
+        "reason": "ok",
+        "status_code": 200,
+        "response": {
+          "status": "success",
+          "message": "ok",
+          "data": {
+            "name": "Fontanería Extra Rich",
+            "industry": "plumbing",
+            "country": "Spain",
+            "description": "Servicio de fontanería con urgencias 24h y detección de fugas con cámara.",
+            "brief": "Landing enfocada a confianza y diferenciación por tecnología y rapidez.",
+            "reviews": [
+              { "source": "google", "rating": 5.0, "text": "Rápidos y claros con el presupuesto.", "author": "Laura G." },
+              { "source": "google", "rating": 4.5, "text": "Buen trabajo en fuga oculta; recomendable.", "author": "Pablo R." }
+            ],
+            "reference_urls": [
+              "https://example.com/inspo/plumbing-clean",
+              "https://example.com/inspo/trust-local"
+            ],
+            "special_requests": [
+              "Teléfono muy visible en cabecera",
+              "Bloque de testimonios con estrellas",
+              "Mencionar garantía por escrito en el pie"
+            ],
+            "style_preferences": ["Limpio", "Mucho espacio en blanco", "Fotos reales del equipo"],
+            "communication_language": "spanish",
+            "brand_primary_color": "#0B3D5C",
+            "brand_accent_color": "#F5A623",
+            "custom_metric_visits_last_month": 12450,
+            "crm_notes": "Cliente pide evitar stock photos genéricas"
+          }
+        }
+      },
+      "image_catalog": {
+        "passed": true,
+        "reason": "ok",
+        "status_code": 200,
+        "response": {
+          "status": "success",
+          "data": [
+            {
+              "url": "https://cdn.example/extrarich/van.jpg",
+              "name": "van.jpg",
+              "extension": "jpg",
+              "size": 900000,
+              "tags": ["flota"],
+              "role": "content",
+              "used_previously": false
+            },
+            {
+              "url": "https://cdn.example/extrarich/ref-board.jpg",
+              "name": "ref-board.jpg",
+              "extension": "jpg",
+              "size": 400000,
+              "tags": ["referencia"],
+              "role": "reference",
+              "used_previously": false
+            }
+          ]
+        }
+      }
+    },
+    "agent_sequence": { "current": {}, "previous": {} }
+  }
+}
