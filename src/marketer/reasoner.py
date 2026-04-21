@@ -5,7 +5,6 @@ Sync pipeline for the MVP vertical slice. Returns CallbackBody shape.
 
 from __future__ import annotations
 
-import json
 import logging
 import time
 from typing import Any

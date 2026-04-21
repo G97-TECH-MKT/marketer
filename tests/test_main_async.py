@@ -215,6 +215,7 @@ def test_sync_endpoint_returns_callback_body(client, patched_pipeline):
 
 def test_503_when_gemini_key_missing(monkeypatch):
     monkeypatch.setattr(main_module.settings, "gemini_api_key", "")
+    monkeypatch.setattr(main_module.settings, "inbound_token", "")
     c = TestClient(main_module.app)
     resp = c.post("/tasks", json=_valid_envelope())
     assert resp.status_code == 503
