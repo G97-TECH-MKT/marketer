@@ -18,3 +18,9 @@ build/
 htmlcov/
 # Batch test reports are regenerated locally; keep only goldens.
 reports/
+
+# Personal image assets for POC scripts (too heavy for git; ~20MB each).
+# Add your own JPG/PNG files to images/ for local vision experiments.
+# The images used in scripts/vision_poc.py are not required for production.
+images/
+

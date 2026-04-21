@@ -254,13 +254,14 @@ def test_brand_dna_present_and_sized(live_output):
 
 
 def test_brand_dna_contains_required_sections(live_output):
-    """Structure: Bienvenidos, Historia, propuesta, Especialidades, Estilo visual."""
+    """Structure: CLIENT DNA header + Colors + Design Style + Typography + Contact
+    (design-system reference format — current schema, April 2026)."""
     dna = live_output["output_data"]["enrichment"]["brand_dna"].lower()
-    assert "bienvenidos" in dna, "brand_dna missing 'Bienvenidos' opener"
-    assert "historia" in dna, "brand_dna missing 'Nuestra Historia' section"
-    assert "propuesta" in dna, "brand_dna missing 'Nuestra propuesta' section"
-    assert "especialidades" in dna, "brand_dna missing 'Especialidades' section"
-    assert "estilo visual" in dna, "brand_dna missing 'Estilo visual' section"
+    assert "client dna" in dna, "brand_dna missing 'CLIENT DNA' header"
+    assert "colors" in dna, "brand_dna missing 'Colors' section"
+    assert "design style" in dna, "brand_dna missing 'Design Style' section"
+    assert "typography" in dna, "brand_dna missing 'Typography' section"
+    assert "contact" in dna, "brand_dna missing 'Contact' section"
 
 
 def test_brand_dna_business_name_present(live_output):

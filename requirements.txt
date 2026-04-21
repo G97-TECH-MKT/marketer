@@ -5,3 +5,7 @@ pydantic-settings>=2.2
 google-genai>=1.0
 httpx>=0.27
 pytest>=8.0
+
+# Dev-only — used by scripts/vision_poc.py + scripts/build_vision_poc_html.py.
+# Not imported from src/marketer/; safe to exclude in slim production images.
+Pillow>=11.0
