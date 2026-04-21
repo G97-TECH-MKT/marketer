@@ -6,7 +6,7 @@ on:
     paths-ignore:
       - "docs/**"
       - "*.md"
-      - "terraform/**"
+      - "infraestructure/terraform/**"
   workflow_dispatch:
     inputs:
       environment:
