@@ -195,13 +195,15 @@ resource "aws_iam_role_policy" "gh_ecs" {
         ]
       },
       {
-        # RegisterTaskDefinition is not cluster-scoped
+        # RegisterTaskDefinition is not cluster-scoped; deploy actions tag new revisions.
         Effect = "Allow"
         Action = [
           "ecs:RegisterTaskDefinition",
           "ecs:DeregisterTaskDefinition",
           "ecs:DescribeTaskDefinition",
           "ecs:ListTaskDefinitions",
+          "ecs:TagResource",
+          "ecs:UntagResource",
           "ecs:CreateService",
           "ecs:DeleteService",
         ]
