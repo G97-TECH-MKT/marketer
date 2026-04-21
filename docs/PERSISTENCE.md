@@ -1,5 +1,12 @@
 # PERSISTENCE — marketer DB layer
 
+> **⚠️ SUPERSEDED (2026-04-21).** This document describes an earlier 3-table model
+> (`marketer_actions`, `marketer_runs`, `marketer_client_memory`) that was **not** the
+> one shipped. The authoritative schema — 5 tables: `users`, `action_types`,
+> `raw_briefs`, `strategies`, `jobs` — lives in
+> [`alembic/versions/001_initial_schema.py`](../alembic/versions/001_initial_schema.py).
+> Content below is kept only for design-rationale history.
+
 > **Status:** diseño propuesto. Las tablas, el flujo y el contrato están definidos; el código real (SQLAlchemy + Alembic + repositories) se implementa en un PR dedicado.
 > **Motivación:** marketer debe **recordar** a cada cliente. Hoy cada llamada es tabula rasa. Con DB-backed memory:
 > - Los `action_codes` soportados son configurables (DB, no código).

@@ -6,6 +6,12 @@ google-genai>=1.0
 httpx>=0.27
 pytest>=8.0
 
+# DB / migrations
+sqlalchemy>=2.0
+alembic>=1.13
+psycopg[binary]>=3.1       # sync driver for alembic migrations
+asyncpg>=0.29              # async driver for app runtime
+
 # Dev-only — used by scripts/vision_poc.py + scripts/build_vision_poc_html.py.
 # Not imported from src/marketer/; safe to exclude in slim production images.
 Pillow>=11.0

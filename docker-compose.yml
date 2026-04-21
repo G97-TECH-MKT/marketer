@@ -1,0 +1,40 @@
+# docker-compose.yml — local dev stack for marketer
+#
+# Currently brings up only Postgres. The app is not in compose yet (no DB wiring
+# in src/marketer/ to test against); add it here once the app reads DATABASE_URL.
+#
+# Port 5433 on the host is intentional — it avoids colliding with a locally
+# installed Postgres service on 5432. The container internally still uses 5432.
+#
+# Usage:
+#   docker compose up -d postgres      # start in background
+#   docker compose logs -f postgres    # tail logs
+#   docker compose ps                  # status
+#   docker compose down                # stop (data preserved in volume)
+#   docker compose down -v             # stop AND delete all data
+#
+# To run alembic against this container instead of a locally installed Postgres:
+#   DATABASE_URL=postgresql+asyncpg://marketer:marketer_dev@localhost:5433/marketer \
+#     python -m alembic upgrade head
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: marketer-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: marketer
+      POSTGRES_PASSWORD: marketer_dev
+      POSTGRES_DB: marketer
+    ports:
+      - "5433:5432"
+    volumes:
+      - marketer_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U marketer -d marketer"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  marketer_pgdata:

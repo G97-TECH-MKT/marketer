@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 from typing import Any
 
 import httpx
@@ -20,6 +21,7 @@ from fastapi import BackgroundTasks, FastAPI, Header, HTTPException, Request
 
 from marketer.config import load_settings
 from marketer.llm.gemini import GeminiClient
+from marketer.persistence import PersistCtx, persist_on_complete, persist_on_ingest
 from marketer.reasoner import reason
 from marketer.schemas.enrichment import CallbackBody
 
@@ -98,9 +100,15 @@ async def _patch_callback(
     )
 
 
-async def _run_and_callback(envelope: dict[str, Any]) -> None:
+async def _run_and_callback(
+    envelope: dict[str, Any], pctx: PersistCtx | None = None
+) -> None:
     """Run reason() and PATCH callback. Any internal exception is captured
-    and reported to the router as status=FAILED so the task never hangs."""
+    and reported to the router as status=FAILED so the task never hangs.
+
+    When `pctx` is provided (persistence configured on ingest), also writes
+    the job + strategy + raw_brief-terminal rows after reason() returns.
+    """
     worker = logging.getLogger("marketer.worker")
     task_id = envelope.get("task_id", "unknown")
     callback_url = envelope.get("callback_url") or ""
@@ -118,6 +126,7 @@ async def _run_and_callback(envelope: dict[str, Any]) -> None:
             extras_truncation=settings.extras_list_truncation,
         )
 
+    started = time.time()
     try:
         # reason() is synchronous and takes 10-15s. Offload to a thread so
         # uvicorn's event loop can flush the prior 202 response and accept
@@ -129,6 +138,10 @@ async def _run_and_callback(envelope: dict[str, Any]) -> None:
             status="FAILED",
             error_message=f"internal_error: {type(exc).__name__}: {exc}",
         )
+    latency_ms = int((time.time() - started) * 1000)
+
+    if pctx is not None:
+        await persist_on_complete(pctx, envelope, callback, latency_ms)
 
     if not callback_url:
         worker.error('"task_id=%s missing_callback_url — cannot report"', task_id)
@@ -182,7 +195,11 @@ async def run_task(
     if not settings.gemini_api_key:
         raise HTTPException(status_code=503, detail="GEMINI_API_KEY not configured")
 
-    background_tasks.add_task(_run_and_callback, envelope)
+    # Persistence pre-flight. Never blocks the 202 — on any failure
+    # pctx is None and the background path runs without DB writes.
+    pctx = await persist_on_ingest(envelope)
+
+    background_tasks.add_task(_run_and_callback, envelope, pctx)
 
     return {"status": "ACCEPTED", "task_id": task_id}
 

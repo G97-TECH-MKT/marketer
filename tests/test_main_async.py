@@ -23,6 +23,7 @@ from marketer.schemas.enrichment import (
     CallbackOutputData,
     CaptionParts,
     CallToAction,
+    CFPayload,
     Confidence,
     GalleryStats,
     HashtagStrategy,
@@ -78,9 +79,17 @@ def _fake_callback() -> CallbackBody:
         degraded=False,
         gallery_stats=GalleryStats(),
     )
+    cf_payload = CFPayload(
+        total_items=1,
+        client_dna=enrichment.brand_dna,
+        client_request="Fake CF request.",
+        resources=[],
+    )
     return CallbackBody(
         status="COMPLETED",
-        output_data=CallbackOutputData(enrichment=enrichment, warnings=[], trace=trace),
+        output_data=CallbackOutputData(
+            data=cf_payload, enrichment=enrichment, warnings=[], trace=trace
+        ),
         error_message=None,
     )
 
