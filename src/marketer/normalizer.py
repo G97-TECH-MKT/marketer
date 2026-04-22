@@ -17,6 +17,7 @@ from marketer.schemas.internal_context import (
     AvailableChannel,
     BrandTokens,
     BriefFacts,
+    ChannelKind,
     FlatBrief,
     GalleryItem,
     ImageRole,
@@ -99,7 +100,9 @@ def _is_allowed_image(
     if ext in ALLOWED_EXTENSIONS:
         return True, ext
     if mime_type in ALLOWED_MIME_TYPES:
-        derived = {"image/jpeg": "jpeg", "image/png": "png", "image/webp": "webp"}[mime_type]
+        derived = {"image/jpeg": "jpeg", "image/png": "png", "image/webp": "webp"}[
+            mime_type
+        ]
         return True, derived
     suffix = _extension_from_url(url)
     if suffix in ALLOWED_EXTENSIONS:
@@ -127,7 +130,9 @@ def _sanitize_gallery_item(
             return None
     role_raw = raw.get("role")
     role: ImageRole = (
-        role_raw if role_raw in ("brand_asset", "content", "reference", "unknown") else default_role
+        role_raw
+        if role_raw in ("brand_asset", "content", "reference", "unknown")
+        else default_role
     )
     tags = _clean_list(raw.get("tags"))
     return GalleryItem(
@@ -148,7 +153,9 @@ def _sanitize_gallery_item(
     )
 
 
-def _collect_raw_images(payload: dict[str, Any]) -> list[tuple[dict[str, Any], ImageRole]]:
+def _collect_raw_images(
+    payload: dict[str, Any],
+) -> list[tuple[dict[str, Any], ImageRole]]:
     """Collect raw image dicts from every known source, tagged with default role."""
     collected: list[tuple[dict[str, Any], ImageRole]] = []
 
@@ -192,12 +199,18 @@ def _collect_raw_images(payload: dict[str, Any]) -> list[tuple[dict[str, Any], I
 def _extract_image_list_from(data: Any) -> list[dict[str, Any]]:
     """Return a list of image-ish dicts if `data` appears to contain one."""
     if isinstance(data, list):
-        return [x for x in data if isinstance(x, dict) and isinstance(x.get("url"), str)]
+        return [
+            x for x in data if isinstance(x, dict) and isinstance(x.get("url"), str)
+        ]
     if isinstance(data, dict):
         for key in ("items", "images", "assets", "media"):
             sub = data.get(key)
             if isinstance(sub, list):
-                return [x for x in sub if isinstance(x, dict) and isinstance(x.get("url"), str)]
+                return [
+                    x
+                    for x in sub
+                    if isinstance(x, dict) and isinstance(x.get("url"), str)
+                ]
     return []
 
 
@@ -222,7 +235,9 @@ def _sanitize_gallery(
     return accepted, len(raw_items), rejected, truncated
 
 
-def _flatten_brief(brief_data: dict[str, Any] | None) -> tuple[FlatBrief | None, list[Warning]]:
+def _flatten_brief(
+    brief_data: dict[str, Any] | None,
+) -> tuple[FlatBrief | None, list[Warning]]:
     if not isinstance(brief_data, dict):
         return None, []
 
@@ -271,7 +286,8 @@ def _flatten_brief(brief_data: dict[str, Any] | None) -> tuple[FlatBrief | None,
     if isinstance(tone_raw, dict):
         _tone_list = tone_raw.get("tone") or []
         profile_tone: str | None = (
-            ", ".join(t.replace("tone_", "") for t in _tone_list if isinstance(t, str)) or None
+            ", ".join(t.replace("tone_", "") for t in _tone_list if isinstance(t, str))
+            or None
         )
     else:
         profile_tone = _clean_string(tone_raw)
@@ -290,10 +306,13 @@ def _flatten_brief(brief_data: dict[str, Any] | None) -> tuple[FlatBrief | None,
         comm_style,
         top.get("brand_voice"),
     )
-    communication_language = _first_non_empty(
-        form_values.get("FIELD_COMMUNICATION_LANGUAGE"),
-        top.get("communication_language"),
-    ) or "spanish"
+    communication_language = (
+        _first_non_empty(
+            form_values.get("FIELD_COMMUNICATION_LANGUAGE"),
+            top.get("communication_language"),
+        )
+        or "spanish"
+    )
 
     colors: list[str] = []
     for source in (
@@ -390,10 +409,18 @@ def _flatten_brief(brief_data: dict[str, Any] | None) -> tuple[FlatBrief | None,
 
     if value_proposition is None:
         warnings.append(
-            Warning(code="value_proposition_empty", message="Brief has no value proposition", field="value_proposition")
+            Warning(
+                code="value_proposition_empty",
+                message="Brief has no value proposition",
+                field="value_proposition",
+            )
         )
     if tone is None:
-        warnings.append(Warning(code="tone_unclear", message="No tone signal in brief", field="tone"))
+        warnings.append(
+            Warning(
+                code="tone_unclear", message="No tone signal in brief", field="tone"
+            )
+        )
 
     flat = FlatBrief(
         business_name=business_name,
@@ -447,7 +474,9 @@ def _extract_brand_tokens(form_values: dict[str, Any], tone: str | None) -> Bran
                 palette.append(cleaned)
     comm_raw = form_values.get("FIELD_COMMUNICATION_STYLE")
     if isinstance(comm_raw, list):
-        comm_str: str | None = ", ".join(s for s in comm_raw if isinstance(s, str)) or None
+        comm_str: str | None = (
+            ", ".join(s for s in comm_raw if isinstance(s, str)) or None
+        )
     else:
         comm_str = _clean_string(comm_raw)
     return BrandTokens(
@@ -465,47 +494,61 @@ def _extract_available_channels(
     flat: FlatBrief, form_values: dict[str, Any], top: dict[str, Any]
 ) -> list[AvailableChannel]:
     channels: list[AvailableChannel] = []
-    seen: set[tuple[str, str | None]] = set()
+    seen: set[tuple[ChannelKind, str | None]] = set()
 
-    def add(channel: str, value: str | None, label: str | None = None) -> None:
+    def add(channel: ChannelKind, value: str | None, label: str | None = None) -> None:
         v = _clean_string(value) if value else None
         key = (channel, v)
         if key in seen:
             return
         seen.add(key)
-        channels.append(AvailableChannel(channel=channel, url_or_handle=v, label_hint=label))  # type: ignore[arg-type]
+        channels.append(
+            AvailableChannel(channel=channel, url_or_handle=v, label_hint=label)
+        )
 
     if flat.website_url:
         add("website", flat.website_url, "Visita la web")
 
     profile = top.get("profile") or {}
 
-    add("instagram_profile", form_values.get("FIELD_INSTAGRAM_URL") or profile.get("instagram"), "Síguenos")
+    add(
+        "instagram_profile",
+        form_values.get("FIELD_INSTAGRAM_URL") or profile.get("instagram"),
+        "Síguenos",
+    )
     add("facebook", form_values.get("FIELD_FACEBOOK_URL") or profile.get("facebook"))
     add("tiktok", form_values.get("FIELD_TIKTOK_URL"))
     add("linkedin", form_values.get("FIELD_LINKEDIN_URL"))
-    add("phone", form_values.get("FIELD_BUSINESS_PHONE") or profile.get("contact_phone"), "Llámanos")
+    add(
+        "phone",
+        form_values.get("FIELD_BUSINESS_PHONE") or profile.get("contact_phone"),
+        "Llámanos",
+    )
     add("email", form_values.get("FIELD_BUSINESS_EMAIL") or profile.get("email"))
 
     # Always-available channels for Instagram-style placement
     add("dm", None, "Escríbenos por DM")
     add("link_sticker", None, "Toca el sticker")
 
-    return [c for c in channels if c.channel in ("dm", "link_sticker") or c.url_or_handle]
+    return [
+        c for c in channels if c.channel in ("dm", "link_sticker") or c.url_or_handle
+    ]
 
 
 def _extract_brief_facts(
     flat: FlatBrief, channels: list[AvailableChannel], form_values: dict[str, Any]
 ) -> BriefFacts:
     text_blob = " \n ".join(
-        s for s in [
+        s
+        for s in [
             flat.business_description,
             flat.value_proposition,
             flat.target_customer,
             flat.brief_background,
             form_values.get("FIELD_PRODUCTS_SERVICES_ANSWER"),
             form_values.get("FIELD_RELEVANT_DATES_ANSWER"),
-        ] if isinstance(s, str)
+        ]
+        if isinstance(s, str)
     )
 
     urls: list[str] = []
@@ -619,7 +662,11 @@ def normalize(envelope_data: dict[str, Any]) -> tuple[InternalContext, list[Warn
         response = brief_gate.get("response") or {}
         brief_data = response.get("data") if isinstance(response, dict) else None
     if brief_data is None:
-        warnings.append(Warning(code="brief_missing", message="Brief gate did not pass or data absent"))
+        warnings.append(
+            Warning(
+                code="brief_missing", message="Brief gate did not pass or data absent"
+            )
+        )
     flat_brief, brief_warnings = _flatten_brief(brief_data)
     warnings.extend(brief_warnings)
 
@@ -629,7 +676,12 @@ def normalize(envelope_data: dict[str, Any]) -> tuple[InternalContext, list[Warn
     if raw_count == 0 and not gallery:
         warnings.append(Warning(code="gallery_empty", message="No images supplied"))
     elif raw_count > 0 and not gallery:
-        warnings.append(Warning(code="gallery_all_filtered", message=f"All {raw_count} raw images rejected by sanitization"))
+        warnings.append(
+            Warning(
+                code="gallery_all_filtered",
+                message=f"All {raw_count} raw images rejected by sanitization",
+            )
+        )
     elif rejected > 0:
         warnings.append(
             Warning(
@@ -638,7 +690,12 @@ def normalize(envelope_data: dict[str, Any]) -> tuple[InternalContext, list[Warn
             )
         )
     if truncated:
-        warnings.append(Warning(code="gallery_truncated", message=f"Gallery truncated to {MAX_GALLERY_ITEMS} items"))
+        warnings.append(
+            Warning(
+                code="gallery_truncated",
+                message=f"Gallery truncated to {MAX_GALLERY_ITEMS} items",
+            )
+        )
 
     # Context-id check for edits
     post_id = _clean_string(context.get("post_id"))
@@ -646,9 +703,21 @@ def normalize(envelope_data: dict[str, Any]) -> tuple[InternalContext, list[Warn
     section_id = _clean_string(context.get("section_id"))
     if mode == "edit":
         if surface == "post" and not post_id:
-            warnings.append(Warning(code="context_missing_id", message="edit_post without post_id", field="post_id"))
+            warnings.append(
+                Warning(
+                    code="context_missing_id",
+                    message="edit_post without post_id",
+                    field="post_id",
+                )
+            )
         if surface == "web" and not website_id:
-            warnings.append(Warning(code="context_missing_id", message="edit_web without website_id", field="website_id"))
+            warnings.append(
+                Warning(
+                    code="context_missing_id",
+                    message="edit_web without website_id",
+                    field="website_id",
+                )
+            )
 
     # Brief/request reconciliation
     if flat_brief and _reconcile_request(user_request, flat_brief.brief_background):
@@ -662,7 +731,11 @@ def normalize(envelope_data: dict[str, Any]) -> tuple[InternalContext, list[Warn
     # Request-vague heuristic
     word_count = len(user_request.split())
     if word_count < 15:
-        warnings.append(Warning(code="request_vague", message=f"Live request has {word_count} words"))
+        warnings.append(
+            Warning(
+                code="request_vague", message=f"Live request has {word_count} words"
+            )
+        )
 
     # Prior-step outputs (usually empty)
     previous = agent_sequence.get("previous") or {}
@@ -681,16 +754,26 @@ def normalize(envelope_data: dict[str, Any]) -> tuple[InternalContext, list[Warn
 
     if flat_brief is not None:
         brand_tokens = _extract_brand_tokens(form_values_for_tokens, flat_brief.tone)
-        available_channels = _extract_available_channels(flat_brief, form_values_for_tokens, top_for_tokens)
-        brief_facts = _extract_brief_facts(flat_brief, available_channels, form_values_for_tokens)
+        available_channels = _extract_available_channels(
+            flat_brief, form_values_for_tokens, top_for_tokens
+        )
+        brief_facts = _extract_brief_facts(
+            flat_brief, available_channels, form_values_for_tokens
+        )
     else:
         brand_tokens = BrandTokens()
         available_channels = []
         brief_facts = BriefFacts()
 
-    requested_surface_format = _detect_requested_surface(user_request) if surface == "post" else None
+    requested_surface_format = (
+        _detect_requested_surface(user_request) if surface == "post" else None
+    )
 
-    prior_post = _detect_prior_post(payload, prior_step_outputs) if mode == "edit" and surface == "post" else None
+    prior_post = (
+        _detect_prior_post(payload, prior_step_outputs)
+        if mode == "edit" and surface == "post"
+        else None
+    )
 
     ctx = InternalContext(
         task_id=envelope.task_id,

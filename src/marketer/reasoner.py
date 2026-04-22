@@ -114,13 +114,16 @@ def reason(
     # --- Build prompt and call Gemini ---
     user_prompt = _build_user_prompt(ctx, extras_truncation)
     enrichment, raw_text, err, usage = gemini.generate_structured(
-        system_prompt=SYSTEM_PROMPT, user_prompt=user_prompt,
+        system_prompt=SYSTEM_PROMPT,
+        user_prompt=user_prompt,
         max_output_tokens=max_output_tokens,
     )
 
     repair_attempted = False
     if enrichment is None:
-        logger.warning("Initial LLM output invalid; attempting one repair", exc_info=err)
+        logger.warning(
+            "Initial LLM output invalid; attempting one repair", exc_info=err
+        )
         repair_attempted = True
         repair_prompt = REPAIR_PROMPT_TEMPLATE.format(
             error=str(err) if err else "schema validation failed",
@@ -129,14 +132,20 @@ def reason(
         enrichment, _, err2, repair_usage = gemini.repair(
             system_prompt=SYSTEM_PROMPT, repair_prompt=repair_prompt
         )
-        usage = {k: usage.get(k, 0) + repair_usage.get(k, 0) for k in ("input_tokens", "output_tokens", "thoughts_tokens")}
+        usage = {
+            k: usage.get(k, 0) + repair_usage.get(k, 0)
+            for k in ("input_tokens", "output_tokens", "thoughts_tokens")
+        }
         if enrichment is None:
             return CallbackBody(
                 status="FAILED",
                 error_message=f"schema_validation_failed: {err2 or err}",
             )
         warnings.append(
-            Warning(code="schema_repair_used", message="Schema repair succeeded after initial failure")
+            Warning(
+                code="schema_repair_used",
+                message="Schema repair succeeded after initial failure",
+            )
         )
 
     # --- Validate + correct ---
@@ -151,14 +160,19 @@ def reason(
         enrichment_new, _, err2, repair_usage2 = gemini.repair(
             system_prompt=SYSTEM_PROMPT, repair_prompt=repair_prompt
         )
-        usage = {k: usage.get(k, 0) + repair_usage2.get(k, 0) for k in ("input_tokens", "output_tokens", "thoughts_tokens")}
+        usage = {
+            k: usage.get(k, 0) + repair_usage2.get(k, 0)
+            for k in ("input_tokens", "output_tokens", "thoughts_tokens")
+        }
         if enrichment_new is None:
             return CallbackBody(
                 status="FAILED",
                 error_message=f"schema_validation_failed: {err2 or blocking}",
             )
         enrichment = enrichment_new
-        enrichment, more_warnings, still_blocking = validate_and_correct(enrichment, ctx)
+        enrichment, more_warnings, still_blocking = validate_and_correct(
+            enrichment, ctx
+        )
         validator_warnings = more_warnings
         if still_blocking:
             return CallbackBody(
@@ -166,7 +180,10 @@ def reason(
                 error_message=f"schema_validation_failed: {still_blocking}",
             )
         warnings.append(
-            Warning(code="schema_repair_used", message="Schema repair succeeded after action-alignment failure")
+            Warning(
+                code="schema_repair_used",
+                message="Schema repair succeeded after action-alignment failure",
+            )
         )
     elif blocking:
         return CallbackBody(
@@ -177,7 +194,8 @@ def reason(
 
     # --- Assemble CallbackBody ---
     degraded = any(
-        w.code in ("brief_missing", "gallery_empty", "gallery_all_filtered") for w in warnings
+        w.code in ("brief_missing", "gallery_empty", "gallery_all_filtered")
+        for w in warnings
     )
     trace = TraceInfo(
         task_id=ctx.task_id,
@@ -199,7 +217,9 @@ def reason(
         thoughts_tokens=usage.get("thoughts_tokens", 0),
     )
     resources = enrichment.visual_selection.recommended_asset_urls or []
-    total_items = len(resources) if enrichment.surface_format == "carousel" and resources else 1
+    total_items = (
+        len(resources) if enrichment.surface_format == "carousel" and resources else 1
+    )
     cf_payload = CFPayload(
         total_items=total_items,
         client_dna=enrichment.brand_dna,

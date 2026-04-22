@@ -161,8 +161,11 @@ def main() -> int:
     except Exception:  # noqa: BLE001
         # Inspector is a convenience; don't fail the smoke if it errors.
         import traceback
+
         traceback.print_exc()
-        print("(inspector refresh failed — see traceback above; smoke itself succeeded)")
+        print(
+            "(inspector refresh failed — see traceback above; smoke itself succeeded)"
+        )
     return 0
 
 

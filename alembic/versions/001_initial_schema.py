@@ -66,8 +66,12 @@ def upgrade() -> None:
         sa.Column("mode", sa.Text(), nullable=False),
         sa.Column("label", sa.Text(), nullable=True),
         sa.Column("description", sa.Text(), nullable=True),
-        sa.Column("input_schema", postgresql.JSONB(astext_type=sa.Text()), nullable=True),
-        sa.Column("output_schema", postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+        sa.Column(
+            "input_schema", postgresql.JSONB(astext_type=sa.Text()), nullable=True
+        ),
+        sa.Column(
+            "output_schema", postgresql.JSONB(astext_type=sa.Text()), nullable=True
+        ),
         sa.Column("prompt_overlay", sa.Text(), nullable=False),
         sa.Column(
             "requires_prior_post",
@@ -145,7 +149,9 @@ def upgrade() -> None:
             server_default=sa.text("now()"),
         ),
         sa.Column("processed_at", sa.TIMESTAMP(timezone=True), nullable=True),
-        sa.ForeignKeyConstraint(["user_id"], ["users.id"], name="raw_briefs_user_id_fkey"),
+        sa.ForeignKeyConstraint(
+            ["user_id"], ["users.id"], name="raw_briefs_user_id_fkey"
+        ),
         sa.ForeignKeyConstraint(
             ["action_code"], ["action_types.code"], name="raw_briefs_action_code_fkey"
         ),
@@ -160,9 +166,7 @@ def upgrade() -> None:
         "raw_briefs",
         ["user_id", sa.text("received_at DESC")],
     )
-    op.create_index(
-        "idx_raw_briefs_status", "raw_briefs", ["status", "received_at"]
-    )
+    op.create_index("idx_raw_briefs_status", "raw_briefs", ["status", "received_at"])
 
     op.create_table(
         "strategies",
@@ -191,9 +195,7 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(
             ["user_id"], ["users.id"], name="strategies_user_id_fkey"
         ),
-        sa.UniqueConstraint(
-            "user_id", "version", name="strategies_user_version_key"
-        ),
+        sa.UniqueConstraint("user_id", "version", name="strategies_user_version_key"),
     )
     # One active strategy per user (partial unique index — Postgres-only).
     op.execute(

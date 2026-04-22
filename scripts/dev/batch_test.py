@@ -28,7 +28,10 @@ from marketer.reasoner import reason  # noqa: E402
 
 FIXTURES = [
     ("saas_b2b", ROOT / "tests" / "fixtures" / "envelopes" / "saas_b2b_post.json"),
-    ("retail_ecom", ROOT / "tests" / "fixtures" / "envelopes" / "retail_ecom_post.json"),
+    (
+        "retail_ecom",
+        ROOT / "tests" / "fixtures" / "envelopes" / "retail_ecom_post.json",
+    ),
     ("dentist", ROOT / "tests" / "fixtures" / "envelopes" / "dentist_post.json"),
 ]
 
@@ -134,8 +137,13 @@ def _voice_channel_alignment(voice: str | None, channel: str | None) -> str:
     if not voice or not channel:
         return "?"
     v = (voice or "").lower()
-    friendly_like = any(kw in v for kw in ("friendly", "cerc", "cálid", "calid", "warm", "casual", "amistos"))
-    professional_like = any(kw in v for kw in ("profesion", "formal", "authoritative", "expert", "clar"))
+    friendly_like = any(
+        kw in v
+        for kw in ("friendly", "cerc", "cálid", "calid", "warm", "casual", "amistos")
+    )
+    professional_like = any(
+        kw in v for kw in ("profesion", "formal", "authoritative", "expert", "clar")
+    )
     friendly_channels = {"dm", "link_sticker"}
     professional_channels = {"website", "phone", "email"}
     if friendly_like and channel in friendly_channels:
@@ -171,9 +179,7 @@ def _render_report(
             "| Run | status | pillar | cta.channel | cta.label | voice.chosen | angle.chosen | "
             "surface | hook/body/img | latency_ms | degraded | repair | warnings | red_flag |"
         )
-        lines.append(
-            "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"
-        )
+        lines.append("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
         for i, r in enumerate(runs, 1):
             if r.get("latency_ms"):
                 all_latencies.append(r["latency_ms"])
@@ -217,7 +223,9 @@ def _render_report(
         lines.append("**Voice→channel alignment per run:**")
         for i, r in enumerate(runs, 1):
             al = _voice_channel_alignment(r.get("voice_chosen"), r.get("cta_channel"))
-            lines.append(f"- Run {i}: voice=`{r.get('voice_chosen')}` → channel=`{r.get('cta_channel')}` → {al}")
+            lines.append(
+                f"- Run {i}: voice=`{r.get('voice_chosen')}` → channel=`{r.get('cta_channel')}` → {al}"
+            )
         lines.append("")
 
     # -------- Aggregate stats --------
@@ -235,7 +243,9 @@ def _render_report(
         all_warnings.extend(r.get("warning_codes") or [])
 
     lines.append(f"- Runs: {n} (completed={completed}, failed={failed})")
-    lines.append(f"- Red flags (palette_mismatch / claim_not_in_brief / cta_caption_channel_mismatch): {red_flags}")
+    lines.append(
+        f"- Red flags (palette_mismatch / claim_not_in_brief / cta_caption_channel_mismatch): {red_flags}"
+    )
     lines.append(f"- Degraded: {degraded}")
     lines.append(f"- Repair attempted: {repaired}")
     if all_latencies:
@@ -246,8 +256,11 @@ def _render_report(
         lines.append(f"- Latency ms: p50={p50}, min={mn}, max={mx}, avg={avg}")
     if all_warnings:
         from collections import Counter
+
         counts = Counter(all_warnings).most_common()
-        lines.append("- Warning code frequency: " + ", ".join(f"`{c}`×{n}" for c, n in counts))
+        lines.append(
+            "- Warning code frequency: " + ", ".join(f"`{c}`×{n}" for c, n in counts)
+        )
     else:
         lines.append("- Warning code frequency: (none)")
     lines.append("")
@@ -305,7 +318,9 @@ def main() -> None:
         all_results[vertical] = runs
 
     total = time.time() - overall_started
-    report = _render_report(all_results, model_name=client.model_name, total_seconds=total)
+    report = _render_report(
+        all_results, model_name=client.model_name, total_seconds=total
+    )
     REPORT_PATH.write_text(report, encoding="utf-8")
     print(f"\nReport written: {REPORT_PATH}")
 

@@ -66,9 +66,13 @@ class StrategicDecisions(BaseModel):
 class CaptionParts(BaseModel):
     """Caption split for downstream layout flexibility (feed crop, story, reel cover)."""
 
-    hook: str = Field(description="First line; shows above 'more' on Instagram. Keep tight.")
+    hook: str = Field(
+        description="First line; shows above 'more' on Instagram. Keep tight."
+    )
     body: str = Field(description="Main copy. May contain line breaks and emojis.")
-    cta_line: str = Field(description="Closing call-to-action line. Empty string if pure awareness.")
+    cta_line: str = Field(
+        description="Closing call-to-action line. Empty string if pure awareness."
+    )
 
 
 class ImageBrief(BaseModel):
@@ -90,7 +94,9 @@ class CallToAction(BaseModel):
         default=None,
         description="Target URL or handle. Must be in InternalContext.available_channels for url-based channels.",
     )
-    label: str = Field(description="Button/CTA copy in communication_language (e.g. 'Reserva tu mesa').")
+    label: str = Field(
+        description="Button/CTA copy in communication_language (e.g. 'Reserva tu mesa')."
+    )
 
 
 class HashtagStrategy(BaseModel):
@@ -296,7 +302,9 @@ class CFPayload(BaseModel):
 
     total_items: int = 1
     client_dna: str = Field(description="Brand DNA (maps from enrichment.brand_dna).")
-    client_request: str = Field(description="Post/carousel brief for CF (maps from enrichment.cf_post_brief).")
+    client_request: str = Field(
+        description="Post/carousel brief for CF (maps from enrichment.cf_post_brief)."
+    )
     resources: list[str] = Field(
         default_factory=list,
         description="Selected asset URLs (maps from enrichment.visual_selection.recommended_asset_urls).",

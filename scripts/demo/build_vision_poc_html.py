@@ -48,7 +48,7 @@ def _mock_url_to_local_path(url: str) -> Path | None:
         return None
     # mock URL has underscores: Nubiex_Valores_1.jpg
     # local file uses spaces: Nubiex Valores 1.jpg
-    fname = url[len(prefix):].replace("_", " ")
+    fname = url[len(prefix) :].replace("_", " ")
     path = IMAGES_DIR / fname
     return path if path.exists() else None
 
@@ -81,7 +81,9 @@ def _thumb_data_uri(raw: bytes) -> str | None:
             img = img.resize((int(w * scale), int(h * scale)), Image.LANCZOS)
         buf = io.BytesIO()
         img.save(buf, format="JPEG", quality=THUMB_JPEG_QUALITY, optimize=True)
-        return f"data:image/jpeg;base64,{base64.b64encode(buf.getvalue()).decode('ascii')}"
+        return (
+            f"data:image/jpeg;base64,{base64.b64encode(buf.getvalue()).decode('ascii')}"
+        )
     except Exception as exc:  # noqa: BLE001
         print(f"  [thumb FAIL] {exc}")
         return None
@@ -104,12 +106,7 @@ def get_image_data_uri(url: str) -> str | None:
 def esc(text: object) -> str:
     if text is None:
         return ""
-    return (
-        str(text)
-        .replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-    )
+    return str(text).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
 def conf_class(level: str | None) -> str:
@@ -120,15 +117,18 @@ def conf_class(level: str | None) -> str:
 def decision_block(label: str, choice: dict | None) -> str:
     if not choice:
         return ""
-    alts = "".join(f'<span class="alt">{esc(a)}</span>' for a in (choice.get("alternatives_considered") or []))
+    alts = "".join(
+        f'<span class="alt">{esc(a)}</span>'
+        for a in (choice.get("alternatives_considered") or [])
+    )
     alts_block = f'<div class="alts">{alts}</div>' if alts else ""
     return (
         '<div class="decision">'
         f'  <div class="label">{esc(label)}</div>'
         f'  <div class="chosen">{esc(choice.get("chosen", ""))}</div>'
-        f'  {alts_block}'
+        f"  {alts_block}"
         f'  <div class="why">{esc(choice.get("rationale", ""))}</div>'
-        '</div>'
+        "</div>"
     )
 
 
@@ -143,8 +143,8 @@ def cta_card(cta: dict | None) -> str:
         '<div class="cta-card">'
         f'  <span class="ch">{esc(ch)}</span>'
         f'  <span class="lbl">{esc(lbl)}</span>'
-        f'  {url_html}'
-        '</div>'
+        f"  {url_html}"
+        "</div>"
     )
 
 
@@ -175,7 +175,7 @@ def brand_intelligence_grid(bi: dict | None) -> str:
         '<div class="bi-row"><div class="bi-label">Risk flags</div>'
         f'<div class="bi-value">{risks_pills}</div></div>'
     )
-    html.append('</div>')
+    html.append("</div>")
     return "".join(html)
 
 
@@ -190,7 +190,13 @@ def warnings_chips(warnings: list[dict]) -> str:
     return "".join(pills)
 
 
-def gallery_tiles(gallery_items: list[dict], recommended: set[str], avoid: set[str], references: set[str], resolver) -> str:
+def gallery_tiles(
+    gallery_items: list[dict],
+    recommended: set[str],
+    avoid: set[str],
+    references: set[str],
+    resolver,
+) -> str:
     """Render gallery as a grid of image tiles with badges."""
     if not gallery_items:
         return '<div class="bi-empty">Gallery empty.</div>'
@@ -209,14 +215,15 @@ def gallery_tiles(gallery_items: list[dict], recommended: set[str], avoid: set[s
         data_uri = resolver(url) or ""
         img_html = (
             f'<img src="{data_uri}" alt="{esc(name)}" loading="lazy"/>'
-            if data_uri else '<div class="img-missing">image not resolvable</div>'
+            if data_uri
+            else '<div class="img-missing">image not resolvable</div>'
         )
         tiles.append(
             f'<figure class="tile {cls}">'
             f'  <div class="badge badge-{cls or "neutral"}">{badge}</div>'
-            f'  {img_html}'
+            f"  {img_html}"
             f'  <figcaption><b>{esc(name)}</b><br><span class="u">{esc(url)}</span></figcaption>'
-            f'</figure>'
+            f"</figure>"
         )
     return f'<div class="tiles-grid">{"".join(tiles)}</div>'
 
@@ -236,10 +243,10 @@ def render_panel(run: dict, idx: int, resolver) -> str:
         return (
             f'<div class="tab-panel" id="panel-{idx}">'
             f'  <div class="fail-box">'
-            f'    <h2>{esc(run["client"])} run {run["run_idx"]} — {esc(status)}</h2>'
+            f"    <h2>{esc(run['client'])} run {run['run_idx']} — {esc(status)}</h2>"
             f'    <p class="error-text">{esc(cb.get("error_message", "no error_message"))}</p>'
-            f'  </div>'
-            '</div>'
+            f"  </div>"
+            "</div>"
         )
 
     output = cb["output_data"]
@@ -425,9 +432,9 @@ def comparison_table(runs: list[dict]) -> str:
         status = cb.get("status", "?")
         if status != "COMPLETED":
             rows.append(
-                f'<tr><td><b>{esc(r["client"])}</b> #{r["run_idx"]}</td>'
+                f"<tr><td><b>{esc(r['client'])}</b> #{r['run_idx']}</td>"
                 f'<td class="status-bad">{esc(status)}</td>'
-                f'<td>{r.get("latency_ms", 0)} ms</td>'
+                f"<td>{r.get('latency_ms', 0)} ms</td>"
                 f'<td colspan="6">—</td></tr>'
             )
             continue
@@ -436,19 +443,25 @@ def comparison_table(runs: list[dict]) -> str:
         vs = e["visual_selection"]
         bi = e.get("brand_intelligence") or {}
         warns = [w["code"] for w in output.get("warnings", [])]
-        rec_names = [u.rsplit("/", 1)[-1].replace("_", " ")[:24] for u in vs.get("recommended_asset_urls", [])]
-        avoid_names = [u.rsplit("/", 1)[-1].replace("_", " ")[:24] for u in vs.get("avoid_asset_urls", [])]
+        rec_names = [
+            u.rsplit("/", 1)[-1].replace("_", " ")[:24]
+            for u in vs.get("recommended_asset_urls", [])
+        ]
+        avoid_names = [
+            u.rsplit("/", 1)[-1].replace("_", " ")[:24]
+            for u in vs.get("avoid_asset_urls", [])
+        ]
         rows.append(
-            f'<tr><td><b>{esc(r["client"])}</b> #{r["run_idx"]}</td>'
+            f"<tr><td><b>{esc(r['client'])}</b> #{r['run_idx']}</td>"
             f'<td class="status-ok">{esc(status)}</td>'
-            f'<td>{r.get("latency_ms", 0)} ms</td>'
-            f'<td>{esc(e["content_pillar"])}</td>'
-            f'<td>{esc(e["cta"]["channel"])}</td>'
-            f'<td>{esc(bi.get("funnel_stage_target", "—"))}</td>'
-            f'<td>{esc(bi.get("emotional_beat", "—"))}</td>'
-            f'<td>{"<br>".join(esc(n) for n in rec_names) or "—"}</td>'
-            f'<td>{"<br>".join(esc(n) for n in avoid_names) or "—"}</td>'
-            f'<td>{len(warns)}</td></tr>'
+            f"<td>{r.get('latency_ms', 0)} ms</td>"
+            f"<td>{esc(e['content_pillar'])}</td>"
+            f"<td>{esc(e['cta']['channel'])}</td>"
+            f"<td>{esc(bi.get('funnel_stage_target', '—'))}</td>"
+            f"<td>{esc(bi.get('emotional_beat', '—'))}</td>"
+            f"<td>{'<br>'.join(esc(n) for n in rec_names) or '—'}</td>"
+            f"<td>{'<br>'.join(esc(n) for n in avoid_names) or '—'}</td>"
+            f"<td>{len(warns)}</td></tr>"
         )
     return f"""
 <table class="cmp">
@@ -714,7 +727,7 @@ def main() -> int:
 
     tabs_nav = "".join(
         f'<button class="tab-btn{" active" if i == 0 else ""}" data-tab="{i}">'
-        f'<b>{esc(r["client"])}</b><small>run {r["run_idx"]}</small></button>'
+        f"<b>{esc(r['client'])}</b><small>run {r['run_idx']}</small></button>"
         for i, r in enumerate(runs)
     )
     panels = "\n".join(render_panel(r, i, resolver) for i, r in enumerate(runs))

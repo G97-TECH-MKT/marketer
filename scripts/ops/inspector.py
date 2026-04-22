@@ -79,9 +79,7 @@ def fetch_runs(limit: int) -> list[dict[str, Any]]:
     runs: list[dict[str, Any]] = []
     with Session(engine) as session:
         rows = (
-            session.execute(
-                select(Job).order_by(Job.created_at.desc()).limit(limit)
-            )
+            session.execute(select(Job).order_by(Job.created_at.desc()).limit(limit))
             .scalars()
             .all()
         )
@@ -218,9 +216,7 @@ def render_cf_payload(output: dict[str, Any], enrichment: dict[str, Any]) -> str
     client_request = cf.get("client_request") or enrichment.get("cf_post_brief") or ""
 
     resources_html = (
-        "".join(f'<span class="url">{esc(u)}</span>' for u in recs)
-        if recs
-        else "—"
+        "".join(f'<span class="url">{esc(u)}</span>' for u in recs) if recs else "—"
     )
 
     return (
@@ -253,7 +249,9 @@ def render_brand_intelligence(bi: dict[str, Any]) -> str:
         value = bi.get(key)
         if isinstance(value, list):
             value = ", ".join(value) if value else "—"
-        parts.append(f'<div class="k">{esc(label)}</div><div class="v">{esc(value)}</div>')
+        parts.append(
+            f'<div class="k">{esc(label)}</div><div class="v">{esc(value)}</div>'
+        )
     parts.append("</div>")
     return "".join(parts)
 
@@ -276,17 +274,25 @@ def render_caption_and_hashtags(enrichment: dict[str, Any]) -> str:
         "</div>"
     )
     if objective:
-        parts.append(f'<div class="block label">Objective</div><div class="block">{esc(objective)}</div>')
+        parts.append(
+            f'<div class="block label">Objective</div><div class="block">{esc(objective)}</div>'
+        )
 
     hook = caption.get("hook") or ""
     body = caption.get("body") or ""
     cta_line = caption.get("cta_line") or ""
     if hook:
-        parts.append(f'<div class="block label">Hook</div><div class="block"><b>{esc(hook)}</b></div>')
+        parts.append(
+            f'<div class="block label">Hook</div><div class="block"><b>{esc(hook)}</b></div>'
+        )
     if body:
-        parts.append(f'<div class="block label">Body</div><div class="block">{esc(body)}</div>')
+        parts.append(
+            f'<div class="block label">Body</div><div class="block">{esc(body)}</div>'
+        )
     if cta_line:
-        parts.append(f'<div class="block label">CTA line</div><div class="block">{esc(cta_line)}</div>')
+        parts.append(
+            f'<div class="block label">CTA line</div><div class="block">{esc(cta_line)}</div>'
+        )
 
     if cta.get("channel") or cta.get("label"):
         ch = cta.get("channel") or "—"
@@ -304,7 +310,11 @@ def render_caption_and_hashtags(enrichment: dict[str, Any]) -> str:
 
     if hashtags:
         parts.append('<div class="block label">Hashtags</div>')
-        parts.append("<div>" + "".join(f'<span class="tag">{esc(h)}</span>' for h in hashtags) + "</div>")
+        parts.append(
+            "<div>"
+            + "".join(f'<span class="tag">{esc(h)}</span>' for h in hashtags)
+            + "</div>"
+        )
 
     return "".join(parts)
 
@@ -338,13 +348,27 @@ def render_visual_selection(vs: dict[str, Any], surface_format: str) -> str:
     parts = [f'<section class="section"><h3>Visual selection{badge}</h3>']
     if rec:
         parts.append('<div class="block label">Recommended asset URLs</div>')
-        parts.append('<div class="url-list">' + "".join(f'<span class="url">{esc(u)}</span>' for u in rec) + "</div>")
+        parts.append(
+            '<div class="url-list">'
+            + "".join(f'<span class="url">{esc(u)}</span>' for u in rec)
+            + "</div>"
+        )
     if refs:
-        parts.append('<div class="block label" style="margin-top:8px">Reference URLs</div>')
-        parts.append('<div class="url-list">' + "".join(f'<span class="url">{esc(u)}</span>' for u in refs) + "</div>")
+        parts.append(
+            '<div class="block label" style="margin-top:8px">Reference URLs</div>'
+        )
+        parts.append(
+            '<div class="url-list">'
+            + "".join(f'<span class="url">{esc(u)}</span>' for u in refs)
+            + "</div>"
+        )
     if avoid:
         parts.append('<div class="block label" style="margin-top:8px">Avoid</div>')
-        parts.append('<div class="url-list">' + "".join(f'<span class="url avoid">{esc(u)}</span>' for u in avoid) + "</div>")
+        parts.append(
+            '<div class="url-list">'
+            + "".join(f'<span class="url avoid">{esc(u)}</span>' for u in avoid)
+            + "</div>"
+        )
     parts.append("</section>")
     return "".join(parts)
 
@@ -352,7 +376,7 @@ def render_visual_selection(vs: dict[str, Any], surface_format: str) -> str:
 def render_strategic_decisions(sd: dict[str, Any]) -> str:
     if not sd:
         return ""
-    parts = ['<details open><summary>Strategic decisions</summary>']
+    parts = ["<details open><summary>Strategic decisions</summary>"]
     for key in ("surface_format", "angle", "voice"):
         choice = sd.get(key) or {}
         chosen = choice.get("chosen") or "—"
@@ -378,7 +402,9 @@ def render_internal_flags(enrichment: dict[str, Any]) -> str:
 
     if not (do_not or confidence or narrative or visual_style):
         return ""
-    parts = ['<details><summary>Confidence · do_not · style notes · narrative</summary>']
+    parts = [
+        "<details><summary>Confidence · do_not · style notes · narrative</summary>"
+    ]
     if confidence:
         parts.append('<div class="block label">Confidence</div><div class="conf-row">')
         for k, v in confidence.items():
@@ -390,9 +416,13 @@ def render_internal_flags(enrichment: dict[str, Any]) -> str:
         parts.extend(f'<span class="dont">{esc(item)}</span>' for item in do_not)
         parts.append("</div>")
     if visual_style:
-        parts.append(f'<div class="block label">Visual style notes</div><div class="block">{esc(visual_style)}</div>')
+        parts.append(
+            f'<div class="block label">Visual style notes</div><div class="block">{esc(visual_style)}</div>'
+        )
     if narrative:
-        parts.append(f'<div class="block label">Narrative connection</div><div class="block">{esc(narrative)}</div>')
+        parts.append(
+            f'<div class="block label">Narrative connection</div><div class="block">{esc(narrative)}</div>'
+        )
     parts.append("</details>")
     return "".join(parts)
 
@@ -425,7 +455,11 @@ def render_run(idx: int, row: dict[str, Any]) -> str:
         '<div class="pill-row">'
         f'<span class="pill {status_pill}">{esc(status)}</span>'
         f'<span class="pill action">{esc(job.action_code)}</span>'
-        + (f'<span class="pill surface">{esc(surface_format)}</span>' if surface_format else "")
+        + (
+            f'<span class="pill surface">{esc(surface_format)}</span>'
+            if surface_format
+            else ""
+        )
         + f'<span class="pill muted">{esc(strategy_label)}</span>'
         f'<span class="pill muted">{esc(latency)}</span>'
         "</div>"
@@ -446,8 +480,8 @@ def render_run(idx: int, row: dict[str, Any]) -> str:
 
     cols = (
         '<div class="cols">'
-        f'<div><h3>Brand intelligence (strategy)</h3>{render_brand_intelligence(bi)}</div>'
-        f'<div><h3>Caption · CTA · Hashtags</h3>{render_caption_and_hashtags(enrichment)}</div>'
+        f"<div><h3>Brand intelligence (strategy)</h3>{render_brand_intelligence(bi)}</div>"
+        f"<div><h3>Caption · CTA · Hashtags</h3>{render_caption_and_hashtags(enrichment)}</div>"
         "</div>"
     )
 
@@ -455,7 +489,9 @@ def render_run(idx: int, row: dict[str, Any]) -> str:
     visual_html = render_visual_selection(
         enrichment.get("visual_selection") or {}, surface_format
     )
-    strategic_html = render_strategic_decisions(enrichment.get("strategic_decisions") or {})
+    strategic_html = render_strategic_decisions(
+        enrichment.get("strategic_decisions") or {}
+    )
     flags_html = render_internal_flags(enrichment)
 
     raw = ""

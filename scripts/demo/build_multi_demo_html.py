@@ -38,7 +38,9 @@ FIXTURES: list[tuple[str, str, str]] = [
 
 def _run_fixture(fixture: str, label: str, subtitle: str) -> dict:
     envelope = json.loads(
-        (ROOT / "tests" / "fixtures" / "envelopes" / f"{fixture}.json").read_text(encoding="utf-8")
+        (ROOT / "tests" / "fixtures" / "envelopes" / f"{fixture}.json").read_text(
+            encoding="utf-8"
+        )
     )
     settings = load_settings()
     client = GeminiClient(
@@ -48,11 +50,17 @@ def _run_fixture(fixture: str, label: str, subtitle: str) -> dict:
     )
     t0 = time.time()
     try:
-        callback = reason(envelope, gemini=client, extras_truncation=settings.extras_list_truncation)
+        callback = reason(
+            envelope, gemini=client, extras_truncation=settings.extras_list_truncation
+        )
         callback_body = callback.model_dump(mode="json")
         error = None
     except Exception as exc:  # noqa: BLE001
-        callback_body = {"status": "FAILED", "output_data": None, "error_message": str(exc)}
+        callback_body = {
+            "status": "FAILED",
+            "output_data": None,
+            "error_message": str(exc),
+        }
         error = str(exc)
     wall_ms = int((time.time() - t0) * 1000)
     print(f"  [{fixture}] status={callback_body.get('status')} wall={wall_ms}ms")
@@ -70,12 +78,7 @@ def _run_fixture(fixture: str, label: str, subtitle: str) -> dict:
 def _esc(text: object) -> str:
     if text is None:
         return ""
-    return (
-        str(text)
-        .replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-    )
+    return str(text).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
 def _conf_class(level: str | None) -> str:
@@ -95,9 +98,9 @@ def _decision_block(label: str, choice: dict | None) -> str:
         '<div class="decision">'
         f'  <div class="label">{_esc(label)}</div>'
         f'  <div class="chosen">{_esc(chosen)}</div>'
-        f'  {alts_block}'
+        f"  {alts_block}"
         f'  <div class="why">{_esc(rationale)}</div>'
-        '</div>'
+        "</div>"
     )
 
 
@@ -112,8 +115,8 @@ def _cta_card(cta: dict | None) -> str:
         '<div class="cta-card">'
         f'  <span class="ch">{_esc(channel)}</span>'
         f'  <span class="lbl">{_esc(label)}</span>'
-        f'  {url_html}'
-        '</div>'
+        f"  {url_html}"
+        "</div>"
     )
 
 
@@ -130,7 +133,10 @@ def _brand_intelligence_grid(bi: dict | None) -> str:
         ("Rhetorical device", bi.get("rhetorical_device"), "rhet"),
     ]
     risk = bi.get("risk_flags") or []
-    risk_pills = "".join(f'<span class="chip warn">{_esc(r)}</span>' for r in risk) or '<span class="chip ghost">none</span>'
+    risk_pills = (
+        "".join(f'<span class="chip warn">{_esc(r)}</span>' for r in risk)
+        or '<span class="chip ghost">none</span>'
+    )
     html = ['<div class="bi-grid">']
     for title, value, _kind in rows:
         html.append(
@@ -141,22 +147,40 @@ def _brand_intelligence_grid(bi: dict | None) -> str:
         '<div class="bi-row"><div class="bi-label">Risk flags</div>'
         f'<div class="bi-value">{risk_pills}</div></div>'
     )
-    html.append('</div>')
+    html.append("</div>")
     return "".join(html)
 
 
 def _warnings_chips(warnings: list[dict]) -> str:
     if not warnings:
         return '<span class="chip good">no warnings</span>'
-    bad = {"claim_not_in_brief", "palette_mismatch", "cta_channel_invalid", "cta_url_invalid",
-           "visual_hallucinated", "field_missing", "prior_post_missing",
-           "cta_caption_channel_mismatch"}
-    warn = {"brief_missing", "gallery_empty", "gallery_all_filtered",
-            "price_not_in_brief", "caption_length_exceeded", "do_not_truncated",
-            "surface_format_overridden", "tone_unclear", "value_proposition_empty",
-            "gallery_partially_filtered", "gallery_truncated",
-            "context_missing_id", "brief_request_mismatch", "request_vague",
-            "schema_repair_used"}
+    bad = {
+        "claim_not_in_brief",
+        "palette_mismatch",
+        "cta_channel_invalid",
+        "cta_url_invalid",
+        "visual_hallucinated",
+        "field_missing",
+        "prior_post_missing",
+        "cta_caption_channel_mismatch",
+    }
+    warn = {
+        "brief_missing",
+        "gallery_empty",
+        "gallery_all_filtered",
+        "price_not_in_brief",
+        "caption_length_exceeded",
+        "do_not_truncated",
+        "surface_format_overridden",
+        "tone_unclear",
+        "value_proposition_empty",
+        "gallery_partially_filtered",
+        "gallery_truncated",
+        "context_missing_id",
+        "brief_request_mismatch",
+        "request_vague",
+        "schema_repair_used",
+    }
     pills = []
     for w in warnings:
         code = (w or {}).get("code", "")
@@ -190,10 +214,10 @@ def _render_panel(result: dict, idx: int) -> str:
         return (
             f'<div class="tab-panel" id="panel-{idx}">'
             f'  <div class="fail-box">'
-            f'    <h2>Run failed · {_esc(result["label"])}</h2>'
+            f"    <h2>Run failed · {_esc(result['label'])}</h2>"
             f'    <p class="error-text">{_esc(error_msg or "no error_message")}</p>'
-            f'  </div>'
-            '</div>'
+            f"  </div>"
+            "</div>"
         )
 
     use_urls = vs.get("recommended_asset_urls") or []
@@ -222,14 +246,22 @@ def _render_panel(result: dict, idx: int) -> str:
     if use_urls or avoid_urls or ref_urls:
         rows = []
         for u in use_urls:
-            rows.append(f'<div class="thumb use"><span class="role" style="background:rgba(43,208,123,0.18);color:var(--good)">use</span><div class="t">{_esc(u)}</div></div>')
+            rows.append(
+                f'<div class="thumb use"><span class="role" style="background:rgba(43,208,123,0.18);color:var(--good)">use</span><div class="t">{_esc(u)}</div></div>'
+            )
         for u in ref_urls:
-            rows.append(f'<div class="thumb reference"><span class="role" style="background:rgba(0,212,255,0.18);color:var(--accent-2)">reference</span><div class="t">{_esc(u)}</div></div>')
+            rows.append(
+                f'<div class="thumb reference"><span class="role" style="background:rgba(0,212,255,0.18);color:var(--accent-2)">reference</span><div class="t">{_esc(u)}</div></div>'
+            )
         for u in avoid_urls:
-            rows.append(f'<div class="thumb avoid"><span class="role" style="background:rgba(255,93,108,0.18);color:var(--bad)">avoid</span><div class="t">{_esc(u)}</div></div>')
+            rows.append(
+                f'<div class="thumb avoid"><span class="role" style="background:rgba(255,93,108,0.18);color:var(--bad)">avoid</span><div class="t">{_esc(u)}</div></div>'
+            )
         visual_selection_html = f'<div class="img-row">{"".join(rows)}</div>'
     else:
-        visual_selection_html = '<div class="bi-empty">No gallery recommendations.</div>'
+        visual_selection_html = (
+            '<div class="bi-empty">No gallery recommendations.</div>'
+        )
 
     gallery_stats = trace.get("gallery_stats") or {}
     latency = trace.get("latency_ms", 0)
@@ -353,35 +385,37 @@ def _comparison_table(results: list[dict]) -> str:
         body = r["callback_body"]
         enrich = (body.get("output_data") or {}).get("enrichment") or {}
         bi = enrich.get("brand_intelligence") or {}
-        warnings = ((body.get("output_data") or {}).get("warnings") or [])
+        warnings = (body.get("output_data") or {}).get("warnings") or []
         warn_count = len(warnings)
-        rows.append({
-            "label": r["label"],
-            "subtitle": r["subtitle"],
-            "status": body.get("status", "?"),
-            "latency": r["wall_ms"],
-            "pillar": enrich.get("content_pillar", "—"),
-            "channel": (enrich.get("cta") or {}).get("channel", "—"),
-            "funnel": bi.get("funnel_stage_target", "—"),
-            "taxo": bi.get("business_taxonomy", "—"),
-            "register": bi.get("voice_register", "—"),
-            "beat": bi.get("emotional_beat", "—"),
-            "warn": warn_count,
-        })
+        rows.append(
+            {
+                "label": r["label"],
+                "subtitle": r["subtitle"],
+                "status": body.get("status", "?"),
+                "latency": r["wall_ms"],
+                "pillar": enrich.get("content_pillar", "—"),
+                "channel": (enrich.get("cta") or {}).get("channel", "—"),
+                "funnel": bi.get("funnel_stage_target", "—"),
+                "taxo": bi.get("business_taxonomy", "—"),
+                "register": bi.get("voice_register", "—"),
+                "beat": bi.get("emotional_beat", "—"),
+                "warn": warn_count,
+            }
+        )
     trs = []
     for r in rows:
         status_cls = "status-ok" if r["status"] == "COMPLETED" else "status-bad"
         trs.append(
-            f'<tr><td><b>{_esc(r["label"])}</b><br><small>{_esc(r["subtitle"])}</small></td>'
+            f"<tr><td><b>{_esc(r['label'])}</b><br><small>{_esc(r['subtitle'])}</small></td>"
             f'<td class="{status_cls}">{_esc(r["status"])}</td>'
-            f'<td>{r["latency"]} ms</td>'
-            f'<td>{_esc(r["pillar"])}</td>'
-            f'<td>{_esc(r["channel"])}</td>'
-            f'<td>{_esc(r["funnel"])}</td>'
-            f'<td><code>{_esc(r["taxo"])}</code></td>'
-            f'<td>{_esc(r["register"])}</td>'
-            f'<td>{_esc(r["beat"])}</td>'
-            f'<td>{r["warn"]}</td></tr>'
+            f"<td>{r['latency']} ms</td>"
+            f"<td>{_esc(r['pillar'])}</td>"
+            f"<td>{_esc(r['channel'])}</td>"
+            f"<td>{_esc(r['funnel'])}</td>"
+            f"<td><code>{_esc(r['taxo'])}</code></td>"
+            f"<td>{_esc(r['register'])}</td>"
+            f"<td>{_esc(r['beat'])}</td>"
+            f"<td>{r['warn']}</td></tr>"
         )
     return f"""
 <table class="cmp">
@@ -398,7 +432,7 @@ def _comparison_table(results: list[dict]) -> str:
 def _build_html(results: list[dict]) -> str:
     tabs_nav = "".join(
         f'<button class="tab-btn{" active" if i == 0 else ""}" data-tab="{i}">'
-        f'<b>{_esc(r["label"])}</b><small>{_esc(r["subtitle"])}</small></button>'
+        f"<b>{_esc(r['label'])}</b><small>{_esc(r['subtitle'])}</small></button>"
         for i, r in enumerate(results)
     )
     panels = "\n".join(_render_panel(r, i) for i, r in enumerate(results))

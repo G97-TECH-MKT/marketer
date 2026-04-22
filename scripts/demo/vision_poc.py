@@ -167,7 +167,9 @@ CLIENTS = [NUBIEX_CONFIG, CASA_MARUJA_CONFIG]
 # ─── Image helpers ───────────────────────────────────────────────────────────
 
 
-def _resize_encode_jpeg(img_bytes: bytes, source_label: str) -> tuple[bytes, tuple[int, int]]:
+def _resize_encode_jpeg(
+    img_bytes: bytes, source_label: str
+) -> tuple[bytes, tuple[int, int]]:
     """Return JPEG bytes resized to MAX_EDGE_PX on longest side + (w, h)."""
     img = Image.open(io.BytesIO(img_bytes))
     if img.mode != "RGB":
@@ -180,7 +182,9 @@ def _resize_encode_jpeg(img_bytes: bytes, source_label: str) -> tuple[bytes, tup
     buf = io.BytesIO()
     img.save(buf, format="JPEG", quality=JPEG_QUALITY, optimize=True)
     data = buf.getvalue()
-    print(f"  [{source_label}] {len(img_bytes)/1024:.0f}KB -> {len(data)/1024:.0f}KB ({img.size[0]}x{img.size[1]})")
+    print(
+        f"  [{source_label}] {len(img_bytes) / 1024:.0f}KB -> {len(data) / 1024:.0f}KB ({img.size[0]}x{img.size[1]})"
+    )
     return data, img.size
 
 
@@ -205,7 +209,9 @@ def load_remote_image(url: str) -> tuple[bytes, tuple[int, int]] | None:
 # ─── Envelope builder ────────────────────────────────────────────────────────
 
 
-def build_envelope(cfg: dict, run_idx: int, image_urls: list[str], image_sizes: list[tuple[int, int]]) -> dict:
+def build_envelope(
+    cfg: dict, run_idx: int, image_urls: list[str], image_sizes: list[tuple[int, int]]
+) -> dict:
     task_id = f"{cfg['task_id_base']}{run_idx}-{int(time.time())}"
     items = [
         {
@@ -326,13 +332,19 @@ def build_prompt(envelope: dict, extras_truncation: int = 10) -> tuple[dict, str
         "prior_step_outputs": ctx.prior_step_outputs or None,
     }
     rendered = serialize_for_prompt(payload, truncate_lists=extras_truncation)
-    user_prompt = (
-        f"{CREATE_POST_OVERLAY}\n\nContext:\n{rendered}\n\nReturn the PostEnrichment JSON now."
-    )
+    user_prompt = f"{CREATE_POST_OVERLAY}\n\nContext:\n{rendered}\n\nReturn the PostEnrichment JSON now."
     return payload, user_prompt
 
 
-def run_one(client: genai.Client, model: str, cfg: dict, run_idx: int, image_parts: list, image_urls: list[str], image_sizes: list[tuple[int, int]]) -> dict:
+def run_one(
+    client: genai.Client,
+    model: str,
+    cfg: dict,
+    run_idx: int,
+    image_parts: list,
+    image_urls: list[str],
+    image_sizes: list[tuple[int, int]],
+) -> dict:
     """Run one POC request. Returns dict with router-contract-compatible callback.
 
     The `callback_body` field contains EXACTLY what marketer would PATCH to
@@ -357,7 +369,9 @@ def run_one(client: genai.Client, model: str, cfg: dict, run_idx: int, image_par
     t0 = time.time()
     gemini_error: str | None = None
     try:
-        resp = client.models.generate_content(model=model, contents=contents, config=config)
+        resp = client.models.generate_content(
+            model=model, contents=contents, config=config
+        )
     except Exception as exc:  # noqa: BLE001
         gemini_error = f"{type(exc).__name__}: {exc}"
         resp = None
@@ -437,7 +451,9 @@ def run_one(client: genai.Client, model: str, cfg: dict, run_idx: int, image_par
 # ─── Main driver ─────────────────────────────────────────────────────────────
 
 
-def load_images_for_client(cfg: dict) -> tuple[list[bytes], list[tuple[int, int]], list[str]]:
+def load_images_for_client(
+    cfg: dict,
+) -> tuple[list[bytes], list[tuple[int, int]], list[str]]:
     """Load + resize all images for this client. Returns (bytes[], sizes[], urls[])."""
     print(f"\n[{cfg['client_name']}] loading images...")
     if cfg["image_source"] == "local":
@@ -489,7 +505,9 @@ def summarize_results(all_runs: list[dict]) -> str:
     for client, runs in by_client.items():
         lines.append(f"\n## {client}\n")
         for r in runs:
-            lines.append(f"### Run {r['run_idx']} — {r['status']} — {r['latency_ms']}ms\n")
+            lines.append(
+                f"### Run {r['run_idx']} — {r['status']} — {r['latency_ms']}ms\n"
+            )
             cb = r.get("callback_body") or {}
             if cb.get("status") != "COMPLETED":
                 lines.append(f"- status: `{cb.get('status', r['status'])}`")
@@ -505,10 +523,16 @@ def summarize_results(all_runs: list[dict]) -> str:
             conf = e["confidence"]
             bi = e["brand_intelligence"]
             lines.append(f"- **callback_body.status**: {cb['status']}")
-            lines.append(f"- **trace.latency_ms**: {trace['latency_ms']} · **degraded**: {trace['degraded']} · **repair_attempted**: {trace['repair_attempted']}")
+            lines.append(
+                f"- **trace.latency_ms**: {trace['latency_ms']} · **degraded**: {trace['degraded']} · **repair_attempted**: {trace['repair_attempted']}"
+            )
             lines.append(f"- **trace.gallery_stats**: {trace['gallery_stats']}")
-            lines.append(f"- **warnings** ({len(warnings)}): {[w['code'] for w in warnings]}")
-            lines.append(f"- **surface_format**: {e['surface_format']} · **pillar**: {e['content_pillar']}")
+            lines.append(
+                f"- **warnings** ({len(warnings)}): {[w['code'] for w in warnings]}"
+            )
+            lines.append(
+                f"- **surface_format**: {e['surface_format']} · **pillar**: {e['content_pillar']}"
+            )
             lines.append(f"- **title**: {e['title']}")
             lines.append(f"- **angle**: {e['strategic_decisions']['angle']['chosen']}")
             lines.append(f"- **voice**: {e['strategic_decisions']['voice']['chosen']}")
@@ -517,10 +541,18 @@ def summarize_results(all_runs: list[dict]) -> str:
             lines.append(f"  - recommended: {vs['recommended_asset_urls']}")
             lines.append(f"  - avoid: {vs['avoid_asset_urls']}")
             lines.append(f"- **confidence**: {conf}")
-            lines.append(f"- **brand_intelligence.emotional_beat**: {bi['emotional_beat']}")
-            lines.append(f"- **brand_intelligence.rhetorical_device**: {bi['rhetorical_device']}")
-            lines.append(f"- **caption.hook** ({len(caption['hook'])} ch): {caption['hook']!r}")
-            lines.append(f"- **cf_post_brief** ({len(e['cf_post_brief'])} ch, first 220): {e['cf_post_brief'][:220]!r}")
+            lines.append(
+                f"- **brand_intelligence.emotional_beat**: {bi['emotional_beat']}"
+            )
+            lines.append(
+                f"- **brand_intelligence.rhetorical_device**: {bi['rhetorical_device']}"
+            )
+            lines.append(
+                f"- **caption.hook** ({len(caption['hook'])} ch): {caption['hook']!r}"
+            )
+            lines.append(
+                f"- **cf_post_brief** ({len(e['cf_post_brief'])} ch, first 220): {e['cf_post_brief'][:220]!r}"
+            )
             lines.append("")
 
         # Consistency analysis
@@ -530,10 +562,16 @@ def summarize_results(all_runs: list[dict]) -> str:
             pillars = {_enrichment_of(r)["content_pillar"] for r in ok}
             channels = {_enrichment_of(r)["cta"]["channel"] for r in ok}
             surfaces = {_enrichment_of(r)["surface_format"] for r in ok}
-            recs = [set(_enrichment_of(r)["visual_selection"]["recommended_asset_urls"]) for r in ok]
+            recs = [
+                set(_enrichment_of(r)["visual_selection"]["recommended_asset_urls"])
+                for r in ok
+            ]
             common_rec = set.intersection(*recs) if recs else set()
             union_rec = set.union(*recs) if recs else set()
-            avoids = [set(_enrichment_of(r)["visual_selection"]["avoid_asset_urls"]) for r in ok]
+            avoids = [
+                set(_enrichment_of(r)["visual_selection"]["avoid_asset_urls"])
+                for r in ok
+            ]
             common_avoid = set.intersection(*avoids) if avoids else set()
             lines.append(f"- surface_format agreement: {surfaces}")
             lines.append(f"- content_pillar agreement: {pillars}")
@@ -567,11 +605,21 @@ def main() -> int:
             for data in image_bytes
         ]
         total_mb = sum(len(d) for d in image_bytes) / (1024 * 1024)
-        print(f"[{cfg['client_name']}] {len(image_parts)} images, {total_mb:.1f} MB total, {RUNS_PER_CLIENT} runs")
+        print(
+            f"[{cfg['client_name']}] {len(image_parts)} images, {total_mb:.1f} MB total, {RUNS_PER_CLIENT} runs"
+        )
 
         for run_idx in range(1, RUNS_PER_CLIENT + 1):
             print(f"  run {run_idx}/{RUNS_PER_CLIENT}...", end=" ", flush=True)
-            result = run_one(client, settings.gemini_model, cfg, run_idx, image_parts, image_urls, image_sizes)
+            result = run_one(
+                client,
+                settings.gemini_model,
+                cfg,
+                run_idx,
+                image_parts,
+                image_urls,
+                image_sizes,
+            )
             all_runs.append(result)
             cb = result.get("callback_body", {})
             if cb.get("status") == "COMPLETED":
@@ -579,13 +627,19 @@ def main() -> int:
                 rec = e["visual_selection"]["recommended_asset_urls"]
                 avoid = e["visual_selection"]["avoid_asset_urls"]
                 warns = [w["code"] for w in cb["output_data"]["warnings"]]
-                print(f"COMPLETED {result['latency_ms']}ms rec={len(rec)} avoid={len(avoid)} warnings={warns}")
+                print(
+                    f"COMPLETED {result['latency_ms']}ms rec={len(rec)} avoid={len(avoid)} warnings={warns}"
+                )
             else:
-                print(f"{cb.get('status', result['status'])}: {cb.get('error_message', '')[:120]}")
+                print(
+                    f"{cb.get('status', result['status'])}: {cb.get('error_message', '')[:120]}"
+                )
 
     # Persist everything
     runs_path = REPORTS_DIR / "vision_poc_runs.json"
-    runs_path.write_text(json.dumps(all_runs, indent=2, ensure_ascii=False), encoding="utf-8")
+    runs_path.write_text(
+        json.dumps(all_runs, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
 
     report_path = REPORTS_DIR / "vision_poc_summary.md"
     report_path.write_text(summarize_results(all_runs), encoding="utf-8")

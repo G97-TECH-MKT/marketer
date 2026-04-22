@@ -3,7 +3,7 @@ data "aws_caller_identity" "current" {}
 
 resource "aws_security_group" "ecs" {
   name        = "marketer-${var.environment}-ecs"
-  description = "ECS Fargate tasks for Marketer"
+  description = "ECS Fargate tasks for Marketer - inbound from ALB only"
   vpc_id      = var.vpc_id
 
   ingress {

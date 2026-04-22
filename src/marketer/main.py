@@ -112,31 +112,41 @@ async def _patch_callback(
     last_error: str | None = None
     for attempt in range(1, attempts + 1):
         try:
-            async with httpx.AsyncClient(timeout=settings.callback_http_timeout_seconds) as client:
+            async with httpx.AsyncClient(
+                timeout=settings.callback_http_timeout_seconds
+            ) as client:
                 resp = await client.patch(callback_url, json=body, headers=headers)
             if 200 <= resp.status_code < 300:
                 worker.info(
                     '"task_id=%s callback_ok status=%s attempt=%d"',
-                    task_id, resp.status_code, attempt,
+                    task_id,
+                    resp.status_code,
+                    attempt,
                 )
                 return
             last_error = f"HTTP {resp.status_code}: {resp.text[:200]}"
             worker.warning(
                 '"task_id=%s callback_non2xx status=%s attempt=%d"',
-                task_id, resp.status_code, attempt,
+                task_id,
+                resp.status_code,
+                attempt,
             )
         except (httpx.HTTPError, asyncio.TimeoutError) as exc:
             last_error = f"{type(exc).__name__}: {exc}"
             worker.warning(
                 '"task_id=%s callback_transport_error attempt=%d error=%s"',
-                task_id, attempt, last_error,
+                task_id,
+                attempt,
+                last_error,
             )
         if attempt < attempts:
-            await asyncio.sleep(min(2 ** attempt, 8))
+            await asyncio.sleep(min(2**attempt, 8))
 
     worker.error(
         '"task_id=%s callback_failed_after_%d_attempts error=%s"',
-        task_id, attempts, last_error,
+        task_id,
+        attempts,
+        last_error,
     )
 
 
@@ -279,5 +289,7 @@ async def run_task_sync(
         raise HTTPException(status_code=400, detail="envelope must be an object")
 
     client = _get_gemini_client()
-    callback = reason(envelope, gemini=client, extras_truncation=settings.extras_list_truncation)
+    callback = reason(
+        envelope, gemini=client, extras_truncation=settings.extras_list_truncation
+    )
     return callback.model_dump(mode="json")

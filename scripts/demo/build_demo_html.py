@@ -490,12 +490,7 @@ HTML_TEMPLATE = r"""<!doctype html>
 def _html(text: object) -> str:
     if text is None:
         return ""
-    return (
-        str(text)
-        .replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-    )
+    return str(text).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
 def _img_card(item: dict, use_urls: set, avoid_urls: set, reference_urls: set) -> str:
@@ -518,9 +513,9 @@ def _img_card(item: dict, use_urls: set, avoid_urls: set, reference_urls: set) -
         chip += ' <span class="role" style="background:rgba(0,212,255,0.18);color:var(--in)">reference</span>'
     return (
         f'<div class="thumb {cls}">'
-        f'  {chip}'
+        f"  {chip}"
         f'  <div class="t"><b>{_html(name)}</b><br/>{_html(url)}</div>'
-        f'</div>'
+        f"</div>"
     )
 
 
@@ -569,9 +564,9 @@ def _decision_block(label: str, choice: dict | None) -> str:
         f'<div class="decision">'
         f'  <div class="label">{_html(label)}</div>'
         f'  <div class="chosen">{_html(chosen)}</div>'
-        f'  {alts_block}'
+        f"  {alts_block}"
         f'  <div class="why">{_html(rationale)}</div>'
-        f'</div>'
+        f"</div>"
     )
 
 
@@ -584,8 +579,8 @@ def _cta_card(cta: dict) -> str:
         f'<div class="cta-card">'
         f'  <span class="ch">{_html(channel)}</span>'
         f'  <span class="lbl">{_html(label)}</span>'
-        f'  {url_html}'
-        f'</div>'
+        f"  {url_html}"
+        f"</div>"
     )
 
 
@@ -629,7 +624,12 @@ def render(merged: dict, source_filename: str) -> str:
             "prior_post_missing",
         ):
             cls = "chip bad"
-        elif code in ("price_not_in_brief", "caption_length_exceeded", "do_not_truncated", "surface_format_overridden"):
+        elif code in (
+            "price_not_in_brief",
+            "caption_length_exceeded",
+            "do_not_truncated",
+            "surface_format_overridden",
+        ):
             cls = "chip warn"
         elif code == "schema_repair_used":
             cls = "chip good"
@@ -669,8 +669,8 @@ def render(merged: dict, source_filename: str) -> str:
         narrative_block = (
             '<div class="post-section">'
             '<h4><span class="emoji">&#128279;</span> Narrative connection</h4>'
-            f'<p>{_html(narrative)}</p>'
-            '</div>'
+            f"<p>{_html(narrative)}</p>"
+            "</div>"
         )
 
     surface_format = (enrich.get("surface_format") or "post").upper()
@@ -690,14 +690,19 @@ def render(merged: dict, source_filename: str) -> str:
         "__MODE__": _html(trace.get("mode", "")),
         "__LATENCY__": str(trace.get("latency_ms", "—")),
         "__REPAIR__": "yes" if trace.get("repair_attempted") else "no",
-        "__GALLERY_ACCEPTED__": str((trace.get("gallery_stats") or {}).get("accepted_count", 0)),
+        "__GALLERY_ACCEPTED__": str(
+            (trace.get("gallery_stats") or {}).get("accepted_count", 0)
+        ),
         "__GALLERY_RAW__": str((trace.get("gallery_stats") or {}).get("raw_count", 0)),
-        "__TRUNCATED__": "yes" if (trace.get("gallery_stats") or {}).get("truncated") else "no",
+        "__TRUNCATED__": "yes"
+        if (trace.get("gallery_stats") or {}).get("truncated")
+        else "no",
         "__SURFACE_FORMAT__": _html(surface_format),
         "__CONTENT_PILLAR__": _html(pillar),
         "__TITLE__": _html(enrich.get("title", "")),
         "__OBJECTIVE__": _html(enrich.get("objective", "")),
-        "__DECISIONS__": decisions_html or '<p class="lead">No structured decisions.</p>',
+        "__DECISIONS__": decisions_html
+        or '<p class="lead">No structured decisions.</p>',
         "__VISUAL_STYLE_NOTES__": _html(enrich.get("visual_style_notes", "")),
         "__NARRATIVE_BLOCK__": narrative_block,
         "__DO_NOT__": do_not_html,
@@ -739,8 +744,12 @@ def render(merged: dict, source_filename: str) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--in", dest="input", default="docs/examples/runs/casa_maruja_run.json")
-    parser.add_argument("--out", dest="output", default="docs/examples/runs/marketer_demo.html")
+    parser.add_argument(
+        "--in", dest="input", default="docs/examples/runs/casa_maruja_run.json"
+    )
+    parser.add_argument(
+        "--out", dest="output", default="docs/examples/runs/marketer_demo.html"
+    )
     args = parser.parse_args()
     src = (ROOT / args.input).resolve()
     dst = (ROOT / args.output).resolve()

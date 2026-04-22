@@ -75,7 +75,9 @@ def _base(**kwargs: object) -> PostEnrichment:
         brand_dna="Bienvenidos a Test SL. Nuestra propuesta: cocina de mercado.",
         strategic_decisions=StrategicDecisions(
             surface_format=StrategicChoice(
-                chosen="post", alternatives_considered=["story"], rationale="Brief asks for product education"
+                chosen="post",
+                alternatives_considered=["story"],
+                rationale="Brief asks for product education",
             ),
             angle=StrategicChoice(
                 chosen="transparencia de mercado",
@@ -102,7 +104,9 @@ def _base(**kwargs: object) -> PostEnrichment:
         ),
         cta=CallToAction(channel="dm", url_or_handle=None, label="Reserva por DM"),
         hashtag_strategy=HashtagStrategy(
-            intent="local_discovery", suggested_volume=8, themes=["ruzafa", "cocina_de_mercado"]
+            intent="local_discovery",
+            suggested_volume=8,
+            themes=["ruzafa", "cocina_de_mercado"],
         ),
         do_not=["no usar tipografía sobre la imagen"],
         visual_selection=VisualSelection(),
@@ -125,31 +129,49 @@ def _base(**kwargs: object) -> PostEnrichment:
 
 def test_hallucinated_asset_urls_dropped():
     ctx = _ctx(gallery_urls=[("https://cdn.example/a.jpg", "content")])
-    e = _base(visual_selection=VisualSelection(
-        recommended_asset_urls=["https://cdn.example/a.jpg", "https://evil.example/nope.jpg"],
-    ))
+    e = _base(
+        visual_selection=VisualSelection(
+            recommended_asset_urls=[
+                "https://cdn.example/a.jpg",
+                "https://evil.example/nope.jpg",
+            ],
+        )
+    )
     out, warnings, _ = validate_and_correct(e, ctx)
     assert out.visual_selection.recommended_asset_urls == ["https://cdn.example/a.jpg"]
     assert any(w.code == "visual_hallucinated" for w in warnings)
 
 
 def test_reference_role_moved_from_assets_to_references():
-    ctx = _ctx(gallery_urls=[
-        ("https://cdn.example/a.jpg", "content"),
-        ("https://cdn.example/ref.jpg", "reference"),
-    ])
-    e = _base(visual_selection=VisualSelection(
-        recommended_asset_urls=["https://cdn.example/a.jpg", "https://cdn.example/ref.jpg"],
-    ))
+    ctx = _ctx(
+        gallery_urls=[
+            ("https://cdn.example/a.jpg", "content"),
+            ("https://cdn.example/ref.jpg", "reference"),
+        ]
+    )
+    e = _base(
+        visual_selection=VisualSelection(
+            recommended_asset_urls=[
+                "https://cdn.example/a.jpg",
+                "https://cdn.example/ref.jpg",
+            ],
+        )
+    )
     out, warnings, _ = validate_and_correct(e, ctx)
-    assert "https://cdn.example/ref.jpg" not in out.visual_selection.recommended_asset_urls
-    assert "https://cdn.example/ref.jpg" in out.visual_selection.recommended_reference_urls
+    assert (
+        "https://cdn.example/ref.jpg" not in out.visual_selection.recommended_asset_urls
+    )
+    assert (
+        "https://cdn.example/ref.jpg" in out.visual_selection.recommended_reference_urls
+    )
     assert any(w.code == "reference_used_as_asset" for w in warnings)
 
 
 def test_palette_mismatch_scrubs_unknown_hex():
     ctx = _ctx(palette=["#aabbcc"])
-    e = _base(visual_style_notes="Usar paleta cálida #aabbcc y un acento #ff00ff vibrante.")
+    e = _base(
+        visual_style_notes="Usar paleta cálida #aabbcc y un acento #ff00ff vibrante."
+    )
     out, warnings, _ = validate_and_correct(e, ctx)
     assert "#ff00ff" not in out.visual_style_notes
     assert "#aabbcc" in out.visual_style_notes
@@ -172,7 +194,11 @@ def test_url_in_caption_must_be_in_brief_facts():
 
 def test_cta_website_must_match_available_channels():
     ctx = _ctx(channels=[("website", "https://casamaruja.es"), ("dm", None)])
-    e = _base(cta=CallToAction(channel="website", url_or_handle="https://other.com", label="Visita la web"))
+    e = _base(
+        cta=CallToAction(
+            channel="website", url_or_handle="https://other.com", label="Visita la web"
+        )
+    )
     out, warnings, _ = validate_and_correct(e, ctx)
     assert out.cta.channel == "none"
     assert any(w.code == "cta_channel_invalid" for w in warnings)
@@ -180,7 +206,9 @@ def test_cta_website_must_match_available_channels():
 
 def test_cta_dm_clears_url_or_handle():
     ctx = _ctx()
-    e = _base(cta=CallToAction(channel="dm", url_or_handle="should-not-be-here", label="DM"))
+    e = _base(
+        cta=CallToAction(channel="dm", url_or_handle="should-not-be-here", label="DM")
+    )
     out, _warnings, _ = validate_and_correct(e, ctx)
     assert out.cta.channel == "dm"
     assert out.cta.url_or_handle is None
@@ -198,7 +226,10 @@ def test_caption_length_exceeded_emits_warning():
     ctx = _ctx()
     e = _base(caption=CaptionParts(hook="x" * 200, body="ok", cta_line=""))
     _out, warnings, _ = validate_and_correct(e, ctx)
-    assert any(w.code == "caption_length_exceeded" and w.field == "caption.hook" for w in warnings)
+    assert any(
+        w.code == "caption_length_exceeded" and w.field == "caption.hook"
+        for w in warnings
+    )
 
 
 def test_price_not_in_brief_warns_but_does_not_scrub():

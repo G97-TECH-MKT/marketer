@@ -18,31 +18,53 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 FULL_JSON = ROOT / "reports" / "nubiex_power_test_2026-04-21_full.json"
-OUT_HTML  = ROOT / "docs" / "examples" / "runs" / "nubiex_demo_2026-04-21.html"
+OUT_HTML = ROOT / "docs" / "examples" / "runs" / "nubiex_demo_2026-04-21.html"
 
 # Maps fixture CDN URL → (display name, local relative path from docs/examples/runs/ folder)
 GALLERY = {
-    "https://cdn.nubiex.es/brand/nubiex_valores_1.jpg": ("nubiex_valores_1.jpg", "../images/Nubiex Valores 1.jpg"),
-    "https://cdn.nubiex.es/brand/nubiex_valores_2.jpg": ("nubiex_valores_2.jpg", "../images/Nubiex Valores 2.jpg"),
-    "https://cdn.nubiex.es/brand/nubiex_valores_3.jpg": ("nubiex_valores_3.jpg", "../images/Nubiex Valores 3.jpg"),
-    "https://cdn.nubiex.es/brand/nubiex_valores_4.jpg": ("nubiex_valores_4.jpg", "../images/Nubiex Valores 4.jpg"),
+    "https://cdn.nubiex.es/brand/nubiex_valores_1.jpg": (
+        "nubiex_valores_1.jpg",
+        "../images/Nubiex Valores 1.jpg",
+    ),
+    "https://cdn.nubiex.es/brand/nubiex_valores_2.jpg": (
+        "nubiex_valores_2.jpg",
+        "../images/Nubiex Valores 2.jpg",
+    ),
+    "https://cdn.nubiex.es/brand/nubiex_valores_3.jpg": (
+        "nubiex_valores_3.jpg",
+        "../images/Nubiex Valores 3.jpg",
+    ),
+    "https://cdn.nubiex.es/brand/nubiex_valores_4.jpg": (
+        "nubiex_valores_4.jpg",
+        "../images/Nubiex Valores 4.jpg",
+    ),
 }
 
 SURFACE_ICON = {"post": "📸", "story": "⚡", "reel": "🎬", "carousel": "🎠"}
 PILLAR_COLOR = {
-    "product": "#00d4ff", "education": "#f5a524", "community": "#2bd07b",
-    "promotion": "#ff5d6c", "behind_the_scenes": "#a78bfa", "customer": "#fb923c",
+    "product": "#00d4ff",
+    "education": "#f5a524",
+    "community": "#2bd07b",
+    "promotion": "#ff5d6c",
+    "behind_the_scenes": "#a78bfa",
+    "customer": "#fb923c",
 }
 FUNNEL_LABEL = {
-    "awareness": "🔍 Awareness", "consideration": "💡 Consideration",
-    "conversion": "🎯 Conversion", "retention": "❤ Retention", "advocacy": "📣 Advocacy",
+    "awareness": "🔍 Awareness",
+    "consideration": "💡 Consideration",
+    "conversion": "🎯 Conversion",
+    "retention": "❤ Retention",
+    "advocacy": "📣 Advocacy",
 }
+
 
 def esc(s: str | None) -> str:
     return html.escape(str(s or ""), quote=True)
 
+
 def nl2br(s: str) -> str:
     return html.escape(str(s or "")).replace("\n", "<br>")
+
 
 def split_cf_brief(cf: str) -> tuple[str, str, str]:
     """Split cf_post_brief into (concept_block, caption_block, hashtag_block)."""
@@ -59,9 +81,11 @@ def split_cf_brief(cf: str) -> tuple[str, str, str]:
             caption = rest.strip()
     return concept, caption, hashtags
 
+
 def conf_chip(level: str | None) -> str:
     lvl = (level or "medium").lower()
     return f'<span class="lvl {esc(lvl)}">{esc(lvl)}</span>'
+
 
 def render_concept_block(concept: str) -> str:
     lines = concept.split("\n")
@@ -71,14 +95,19 @@ def render_concept_block(concept: str) -> str:
         if s.startswith("CONCEPT —"):
             out.append(f'<div class="concept-title">{esc(s)}</div>')
         elif s.startswith("Imagen:"):
-            val = s[len("Imagen:"):].strip()
-            out.append(f'<div class="concept-meta"><span class="concept-key">Imagen</span> <span class="concept-val">{esc(val)}</span></div>')
+            val = s[len("Imagen:") :].strip()
+            out.append(
+                f'<div class="concept-meta"><span class="concept-key">Imagen</span> <span class="concept-val">{esc(val)}</span></div>'
+            )
         elif s.startswith("Tipo:"):
-            val = s[len("Tipo:"):].strip()
-            out.append(f'<div class="concept-meta"><span class="concept-key">Tipo</span> <span class="concept-val concept-tipo">{esc(val)}</span></div>')
+            val = s[len("Tipo:") :].strip()
+            out.append(
+                f'<div class="concept-meta"><span class="concept-key">Tipo</span> <span class="concept-val concept-tipo">{esc(val)}</span></div>'
+            )
         elif s:
             out.append(f'<div class="concept-body-line">{esc(s)}</div>')
     return "\n".join(out)
+
 
 def render_image_tiles(selected_urls: list[str], all_urls: list[str]) -> str:
     selected_set = set(selected_urls)
@@ -101,12 +130,14 @@ def render_image_tiles(selected_urls: list[str], all_urls: list[str]) -> str:
         </figure>""")
     return "\n".join(tiles)
 
+
 def render_bi_row(label: str, value: str | list | None) -> str:
     if isinstance(value, list):
         display = ", ".join(str(v) for v in value) if value else "—"
     else:
         display = str(value or "—")
     return f"""<div class="bi-row"><div class="bi-label">{esc(label)}</div><div class="bi-value">{esc(display)}</div></div>"""
+
 
 def render_decision(label: str, d: dict) -> str:
     chosen = d.get("chosen") or "—"
@@ -117,9 +148,10 @@ def render_decision(label: str, d: dict) -> str:
     <div class="decision">
       <div class="label">{esc(label)}</div>
       <div class="chosen">{esc(chosen)}</div>
-      {'<div class="alts">' + alts_html + '</div>' if alts else ''}
-      {'<div class="why">' + esc(why) + '</div>' if why else ''}
+      {'<div class="alts">' + alts_html + "</div>" if alts else ""}
+      {'<div class="why">' + esc(why) + "</div>" if why else ""}
     </div>"""
+
 
 def render_tab_content(idx: int, run: dict) -> str:
     scenario = run["scenario"]
@@ -135,28 +167,28 @@ def render_tab_content(idx: int, run: dict) -> str:
         <div id="tab-{idx}" class="tab-panel">
           <div class="failed-card">
             <div class="failed-icon">✗</div>
-            <div class="failed-msg">Run FAILED — {esc(cb.get('error_message') or 'unknown error')}</div>
+            <div class="failed-msg">Run FAILED — {esc(cb.get("error_message") or "unknown error")}</div>
           </div>
         </div>"""
 
-    sf  = en.get("surface_format") or "post"
+    sf = en.get("surface_format") or "post"
     pil = en.get("content_pillar") or ""
     title = en.get("title") or ""
-    obj   = en.get("objective") or ""
+    obj = en.get("objective") or ""
     cf_brief = en.get("cf_post_brief") or ""
     brand_dna = en.get("brand_dna") or ""
-    caption   = en.get("caption") or {}
-    image     = en.get("image") or {}
-    cta       = en.get("cta") or {}
-    sd        = en.get("strategic_decisions") or {}
-    bi        = en.get("brand_intelligence") or {}
-    hs        = en.get("hashtag_strategy") or {}
-    conf      = en.get("confidence") or {}
-    vs        = en.get("visual_selection") or {}
-    do_not    = en.get("do_not") or []
+    caption = en.get("caption") or {}
+    image = en.get("image") or {}
+    cta = en.get("cta") or {}
+    sd = en.get("strategic_decisions") or {}
+    bi = en.get("brand_intelligence") or {}
+    hs = en.get("hashtag_strategy") or {}
+    conf = en.get("confidence") or {}
+    vs = en.get("visual_selection") or {}
+    do_not = en.get("do_not") or []
 
     selected_urls = vs.get("recommended_asset_urls") or []
-    avoid_urls    = vs.get("avoid_asset_urls") or []
+    avoid_urls = vs.get("avoid_asset_urls") or []
 
     concept_block, caption_block, hashtag_block = split_cf_brief(cf_brief)
 
@@ -166,7 +198,9 @@ def render_tab_content(idx: int, run: dict) -> str:
     lat_s = f"{trace.get('latency_ms', 0) / 1000:.1f}s"
 
     # Tags line
-    tags_html = " ".join(f'<code class="tag">{esc(t)}</code>' for t in (hs.get("tags") or []))
+    tags_html = " ".join(
+        f'<code class="tag">{esc(t)}</code>' for t in (hs.get("tags") or [])
+    )
 
     # Do-not chips
     donot_html = " ".join(f'<span class="chip bad">{esc(d)}</span>' for d in do_not)
@@ -174,11 +208,20 @@ def render_tab_content(idx: int, run: dict) -> str:
     # Warnings
     warns_html = ""
     if warnings_list:
-        warns_html = '<div class="warn-bar">' + " ".join(
-            f'<span class="chip warn">{esc(w.get("code","?"))}</span>' for w in warnings_list
-        ) + '</div>'
+        warns_html = (
+            '<div class="warn-bar">'
+            + " ".join(
+                f'<span class="chip warn">{esc(w.get("code", "?"))}</span>'
+                for w in warnings_list
+            )
+            + "</div>"
+        )
 
-    repair_badge = '<span class="chip warn" style="margin-left:6px">⚙ repair</span>' if trace.get("repair_attempted") else ""
+    repair_badge = (
+        '<span class="chip warn" style="margin-left:6px">⚙ repair</span>'
+        if trace.get("repair_attempted")
+        else ""
+    )
 
     return f"""
     <div id="tab-{idx}" class="tab-panel">
@@ -188,11 +231,11 @@ def render_tab_content(idx: int, run: dict) -> str:
         <div class="run-header-left">
           <span class="surface-pill">{sf_icon} {esc(sf)}</span>
           <span class="pillar-pill" style="color:{pil_color}; border-color:{pil_color}40; background:{pil_color}18">{esc(pil)}</span>
-          {('<span class="funnel-pill">' + esc(funnel) + '</span>') if funnel else ''}
+          {('<span class="funnel-pill">' + esc(funnel) + "</span>") if funnel else ""}
           <span class="lat-pill">{esc(lat_s)}</span>
           {repair_badge}
         </div>
-        <div class="run-meta">{esc(scenario['label'])}</div>
+        <div class="run-meta">{esc(scenario["label"])}</div>
       </div>
       <h2 class="run-title">{esc(title)}</h2>
       <p class="run-obj">{esc(obj)}</p>
@@ -212,19 +255,19 @@ def render_tab_content(idx: int, run: dict) -> str:
 
           <div class="cf-card">
             <div class="cf-section-label">Caption</div>
-            <div class="cap hook"><div class="lbl">HOOK <span class="char-count">{len(caption.get('hook') or '')} chars</span></div><div class="txt">{nl2br(caption.get('hook') or '')}</div></div>
-            <div class="cap body"><div class="lbl">BODY</div><div class="txt">{nl2br(caption.get('body') or '')}</div></div>
-            {'<div class="cap cta"><div class="lbl">CTA</div><div class="txt">' + nl2br(caption.get('cta_line') or '') + '</div></div>' if caption.get('cta_line') else ''}
+            <div class="cap hook"><div class="lbl">HOOK <span class="char-count">{len(caption.get("hook") or "")} chars</span></div><div class="txt">{nl2br(caption.get("hook") or "")}</div></div>
+            <div class="cap body"><div class="lbl">BODY</div><div class="txt">{nl2br(caption.get("body") or "")}</div></div>
+            {'<div class="cap cta"><div class="lbl">CTA</div><div class="txt">' + nl2br(caption.get("cta_line") or "") + "</div></div>" if caption.get("cta_line") else ""}
           </div>
 
-          {'<div class="cf-card"><div class="cf-section-label">Hashtags</div><div class="tags-line">' + tags_html + '</div></div>' if tags_html else ''}
+          {'<div class="cf-card"><div class="cf-section-label">Hashtags</div><div class="tags-line">' + tags_html + "</div></div>" if tags_html else ""}
 
           <!-- CTA channel -->
           <div class="cta-card">
-            <span class="ch">{esc(cta.get('channel') or 'none')}</span>
+            <span class="ch">{esc(cta.get("channel") or "none")}</span>
             <div>
-              <div class="lbl">{esc(cta.get('label') or '')}</div>
-              {'<div class="url">' + esc(cta.get('url_or_handle') or '') + '</div>' if cta.get('url_or_handle') else ''}
+              <div class="lbl">{esc(cta.get("label") or "")}</div>
+              {'<div class="url">' + esc(cta.get("url_or_handle") or "") + "</div>" if cta.get("url_or_handle") else ""}
             </div>
           </div>
         </div>
@@ -268,19 +311,19 @@ def render_tab_content(idx: int, run: dict) -> str:
 
         <div class="card-block">
           <div class="section-label">Image brief</div>
-          <div class="img-brief"><div class="lbl">Concept</div><div class="body">{esc(image.get('concept') or '')}</div></div>
-          <div class="img-brief gen"><div class="lbl">Generation prompt</div><div class="body">{esc(image.get('generation_prompt') or '')}</div></div>
-          <div class="img-brief alt"><div class="lbl">Alt text</div><div class="body">{esc(image.get('alt_text') or '')}</div></div>
+          <div class="img-brief"><div class="lbl">Concept</div><div class="body">{esc(image.get("concept") or "")}</div></div>
+          <div class="img-brief gen"><div class="lbl">Generation prompt</div><div class="body">{esc(image.get("generation_prompt") or "")}</div></div>
+          <div class="img-brief alt"><div class="lbl">Alt text</div><div class="body">{esc(image.get("alt_text") or "")}</div></div>
 
           <div class="section-label" style="margin-top:14px">Confianza</div>
           <div class="conf-row">
-            <div class="conf"><span>surface_format</span>{conf_chip(conf.get('surface_format'))}</div>
-            <div class="conf"><span>angle</span>{conf_chip(conf.get('angle'))}</div>
-            <div class="conf"><span>palette_match</span>{conf_chip(conf.get('palette_match'))}</div>
-            <div class="conf"><span>cta_channel</span>{conf_chip(conf.get('cta_channel'))}</div>
+            <div class="conf"><span>surface_format</span>{conf_chip(conf.get("surface_format"))}</div>
+            <div class="conf"><span>angle</span>{conf_chip(conf.get("angle"))}</div>
+            <div class="conf"><span>palette_match</span>{conf_chip(conf.get("palette_match"))}</div>
+            <div class="conf"><span>cta_channel</span>{conf_chip(conf.get("cta_channel"))}</div>
           </div>
 
-          {'<div class="section-label" style="margin-top:14px">Do not</div><div class="pill-row">' + donot_html + '</div>' if do_not else ''}
+          {'<div class="section-label" style="margin-top:14px">Do not</div><div class="pill-row">' + donot_html + "</div>" if do_not else ""}
         </div>
 
       </div>
@@ -290,18 +333,27 @@ def render_tab_content(idx: int, run: dict) -> str:
 def build_html(runs: list[dict]) -> str:
     # Summary stats
     n = len(runs)
-    completed = sum(1 for r in runs if (r.get("callback") or {}).get("status") == "COMPLETED")
-    imgs = sum(1 for r in runs if ((r.get("callback") or {}).get("output_data") or {}).get("enrichment") and
-               ((r.get("callback") or {}).get("output_data") or {}).get("enrichment", {}).get("visual_selection", {}).get("recommended_asset_urls"))
+    completed = sum(
+        1 for r in runs if (r.get("callback") or {}).get("status") == "COMPLETED"
+    )
+    imgs = sum(
+        1
+        for r in runs
+        if ((r.get("callback") or {}).get("output_data") or {}).get("enrichment")
+        and ((r.get("callback") or {}).get("output_data") or {})
+        .get("enrichment", {})
+        .get("visual_selection", {})
+        .get("recommended_asset_urls")
+    )
 
     tab_buttons = []
-    tab_panels  = []
+    tab_panels = []
 
     for i, run in enumerate(runs):
         scenario = run["scenario"]
         cb = run.get("callback") or {}
         en = (cb.get("output_data") or {}).get("enrichment") or {}
-        sf  = en.get("surface_format") or scenario.get("expected_surface") or "post"
+        sf = en.get("surface_format") or scenario.get("expected_surface") or "post"
         pil = en.get("content_pillar") or "—"
         status = cb.get("status") or "FAILED"
         sf_icon = SURFACE_ICON.get(sf, "📄")
@@ -309,17 +361,19 @@ def build_html(runs: list[dict]) -> str:
 
         tab_buttons.append(f"""
           <button class="tab-btn{active_cls}" onclick="switchTab({i})">
-            <b>{sf_icon} #{scenario['id']} {esc(sf)}</b>
-            <small>{esc(pil)} {'✓' if status=='COMPLETED' else '✗'}</small>
+            <b>{sf_icon} #{scenario["id"]} {esc(sf)}</b>
+            <small>{esc(pil)} {"✓" if status == "COMPLETED" else "✗"}</small>
           </button>""")
 
         panel_html = render_tab_content(i, run)
         # inject active class into first panel
         if i == 0:
-            panel_html = panel_html.replace('class="tab-panel"', 'class="tab-panel active"', 1)
+            panel_html = panel_html.replace(
+                'class="tab-panel"', 'class="tab-panel active"', 1
+            )
         tab_panels.append(panel_html)
 
-    tabs_nav   = "\n".join(tab_buttons)
+    tabs_nav = "\n".join(tab_buttons)
     tabs_content = "\n".join(tab_panels)
 
     return f"""<!doctype html>
@@ -626,25 +680,26 @@ def _summary_rows(runs: list[dict]) -> str:
         trace = (cb.get("output_data") or {}).get("trace") or {}
         status = cb.get("status") or "FAILED"
 
-        sf  = en.get("surface_format") or "—"
+        sf = en.get("surface_format") or "—"
         pil = en.get("content_pillar") or "—"
-        eb  = bi.get("emotional_beat") or "—"
+        eb = bi.get("emotional_beat") or "—"
         cta = (en.get("cta") or {}).get("channel") or "—"
         lat = f"{trace.get('latency_ms', 0) // 1000}s"
 
         # Extract Imagen/Tipo from cf_post_brief
         cf = en.get("cf_post_brief") or ""
         import re
+
         im_m = re.search(r"Imagen:\s*(.+)", cf)
         tp_m = re.search(r"Tipo:\s*(.+)", cf)
         imagen = im_m.group(1).strip() if im_m else "—"
-        tipo   = tp_m.group(1).strip() if tp_m else "—"
+        tipo = tp_m.group(1).strip() if tp_m else "—"
 
         ok_cls = "ok" if status == "COMPLETED" else "no"
         sf_icon = SURFACE_ICON.get(sf, "")
         rows.append(f"""<tr>
-          <td class="{ok_cls}">#{scenario['id']}</td>
-          <td>{esc(scenario['label'][:40])}</td>
+          <td class="{ok_cls}">#{scenario["id"]}</td>
+          <td>{esc(scenario["label"][:40])}</td>
           <td>{sf_icon} {esc(sf)}</td>
           <td>{esc(pil)}</td>
           <td>{esc(eb)}</td>
@@ -658,7 +713,10 @@ def _summary_rows(runs: list[dict]) -> str:
 
 def main() -> None:
     if not FULL_JSON.exists():
-        print(f"ERROR: {FULL_JSON} not found. Run nubiex_power_test.py first.", file=sys.stderr)
+        print(
+            f"ERROR: {FULL_JSON} not found. Run nubiex_power_test.py first.",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     runs = json.loads(FULL_JSON.read_text(encoding="utf-8"))

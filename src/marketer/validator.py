@@ -36,9 +36,9 @@ _PRICE_RE = re.compile(r"\d+[\d.,]*\s?(?:€|EUR|eur|euros|usd|USD|\$)")
 
 # Per-surface caption caps (chars). Values are soft Instagram-safe targets.
 _CAPTION_CAPS: dict[str, dict[str, int]] = {
-    "post":     {"hook": 125, "body": 1900, "cta_line": 180, "total": 2200},
-    "story":    {"hook": 80,  "body": 220,  "cta_line": 80,  "total": 250},
-    "reel":     {"hook": 100, "body": 850,  "cta_line": 150, "total": 1000},
+    "post": {"hook": 125, "body": 1900, "cta_line": 180, "total": 2200},
+    "story": {"hook": 80, "body": 220, "cta_line": 80, "total": 250},
+    "reel": {"hook": 100, "body": 850, "cta_line": 150, "total": 1000},
     "carousel": {"hook": 125, "body": 1900, "cta_line": 180, "total": 2200},
 }
 
@@ -129,19 +129,38 @@ def _check_text_facts(
 
 
 _CHANNEL_KEYWORDS: dict[str, tuple[str, ...]] = {
-    "dm":             ("dm", "mensaje directo", "mensaje privado", "mándanos un mensaje", "escríbenos un mensaje"),
-    "website":        (
-        "web", "sitio web", "página web", "en la web", "visita nuestra web",
-        "en nuestra web", "tienda online", "tienda en línea", "shop online",
+    "dm": (
+        "dm",
+        "mensaje directo",
+        "mensaje privado",
+        "mándanos un mensaje",
+        "escríbenos un mensaje",
     ),
-    "link_sticker":   ("sticker", "enlace de la bio", "link in bio", "toca el sticker", "bio link"),
+    "website": (
+        "web",
+        "sitio web",
+        "página web",
+        "en la web",
+        "visita nuestra web",
+        "en nuestra web",
+        "tienda online",
+        "tienda en línea",
+        "shop online",
+    ),
+    "link_sticker": (
+        "sticker",
+        "enlace de la bio",
+        "link in bio",
+        "toca el sticker",
+        "bio link",
+    ),
     "instagram_profile": ("perfil", "síguenos"),
-    "facebook":       ("facebook",),
-    "tiktok":         ("tiktok", "tik tok"),
-    "linkedin":       ("linkedin",),
-    "phone":          ("llámanos", "llama al", "teléfono", "llamada"),
-    "whatsapp":       ("whatsapp", "wasap"),
-    "email":          ("email", "correo", "escríbenos a"),
+    "facebook": ("facebook",),
+    "tiktok": ("tiktok", "tik tok"),
+    "linkedin": ("linkedin",),
+    "phone": ("llámanos", "llama al", "teléfono", "llamada"),
+    "whatsapp": ("whatsapp", "wasap"),
+    "email": ("email", "correo", "escríbenos a"),
 }
 
 
@@ -192,7 +211,9 @@ def _check_cta_caption_coherence(
         )
 
 
-def _validate_cta(cta: CallToAction, ctx: InternalContext, warnings: list[Warning]) -> CallToAction:
+def _validate_cta(
+    cta: CallToAction, ctx: InternalContext, warnings: list[Warning]
+) -> CallToAction:
     """Check the CTA channel is one we offered, and the url_or_handle matches."""
     channel_index: dict[str, set[str]] = {}
     for ch in ctx.available_channels:
@@ -221,7 +242,9 @@ def _validate_cta(cta: CallToAction, ctx: InternalContext, warnings: list[Warnin
         return cta
 
     if cta.channel in ("phone", "whatsapp") and cta.url_or_handle:
-        if _normalize_phone(cta.url_or_handle) not in {_normalize_phone(x) for x in channel_index[cta.channel] if x}:
+        if _normalize_phone(cta.url_or_handle) not in {
+            _normalize_phone(x) for x in channel_index[cta.channel] if x
+        }:
             warnings.append(
                 Warning(
                     code="cta_channel_invalid",
@@ -259,7 +282,9 @@ def _validate_cta(cta: CallToAction, ctx: InternalContext, warnings: list[Warnin
         return cta
 
     parsed = urlparse(cta.url_or_handle)
-    if cta.channel == "website" and (parsed.scheme not in ("http", "https") or not parsed.netloc):
+    if cta.channel == "website" and (
+        parsed.scheme not in ("http", "https") or not parsed.netloc
+    ):
         warnings.append(
             Warning(
                 code="cta_url_invalid",
@@ -281,7 +306,10 @@ def validate_and_correct(
     blocking: list[str] = []
 
     # --- Deterministic surface override -----------------------------------------
-    if ctx.requested_surface_format and enrichment.surface_format != ctx.requested_surface_format:
+    if (
+        ctx.requested_surface_format
+        and enrichment.surface_format != ctx.requested_surface_format
+    ):
         warnings.append(
             Warning(
                 code="surface_format_overridden",
@@ -297,7 +325,9 @@ def validate_and_correct(
     # --- Visual selection: URL containment + role correction --------------------
     gallery_by_url = {item.url: item for item in ctx.gallery}
     gallery_urls = set(gallery_by_url.keys())
-    reference_urls = {url for url, item in gallery_by_url.items() if item.role == "reference"}
+    reference_urls = {
+        url for url, item in gallery_by_url.items() if item.role == "reference"
+    }
 
     vs = enrichment.visual_selection
 
@@ -310,9 +340,13 @@ def validate_and_correct(
                 field="visual_selection.recommended_asset_urls",
             )
         )
-        vs.recommended_asset_urls = [u for u in vs.recommended_asset_urls if u in gallery_urls]
+        vs.recommended_asset_urls = [
+            u for u in vs.recommended_asset_urls if u in gallery_urls
+        ]
 
-    hallucinated_refs = [u for u in vs.recommended_reference_urls if u not in gallery_urls]
+    hallucinated_refs = [
+        u for u in vs.recommended_reference_urls if u not in gallery_urls
+    ]
     if hallucinated_refs:
         warnings.append(
             Warning(
@@ -321,7 +355,9 @@ def validate_and_correct(
                 field="visual_selection.recommended_reference_urls",
             )
         )
-        vs.recommended_reference_urls = [u for u in vs.recommended_reference_urls if u in gallery_urls]
+        vs.recommended_reference_urls = [
+            u for u in vs.recommended_reference_urls if u in gallery_urls
+        ]
 
     vs.avoid_asset_urls = [u for u in vs.avoid_asset_urls if u in gallery_urls]
 
@@ -333,7 +369,9 @@ def validate_and_correct(
                 message=f"{len(misplaced)} role=reference image(s) moved from assets to references",
             )
         )
-        vs.recommended_asset_urls = [u for u in vs.recommended_asset_urls if u not in reference_urls]
+        vs.recommended_asset_urls = [
+            u for u in vs.recommended_asset_urls if u not in reference_urls
+        ]
         for u in misplaced:
             if u not in vs.recommended_reference_urls:
                 vs.recommended_reference_urls.append(u)
@@ -346,7 +384,9 @@ def validate_and_correct(
                 message=f"{len(shared)} URL(s) appeared in both asset and reference lists; kept only in references",
             )
         )
-        vs.recommended_asset_urls = [u for u in vs.recommended_asset_urls if u not in shared]
+        vs.recommended_asset_urls = [
+            u for u in vs.recommended_asset_urls if u not in shared
+        ]
 
     # --- Hallucination guards on text fields ------------------------------------
     facts = ctx.brief_facts
@@ -369,9 +409,13 @@ def validate_and_correct(
         )
 
     enrichment.brand_dna = scrub("brand_dna", enrichment.brand_dna)
-    enrichment.visual_style_notes = scrub("visual_style_notes", enrichment.visual_style_notes)
+    enrichment.visual_style_notes = scrub(
+        "visual_style_notes", enrichment.visual_style_notes
+    )
     enrichment.image.concept = scrub("image.concept", enrichment.image.concept)
-    enrichment.image.generation_prompt = scrub("image.generation_prompt", enrichment.image.generation_prompt)
+    enrichment.image.generation_prompt = scrub(
+        "image.generation_prompt", enrichment.image.generation_prompt
+    )
     enrichment.image.alt_text = scrub("image.alt_text", enrichment.image.alt_text)
     enrichment.caption.hook = scrub("caption.hook", enrichment.caption.hook)
     enrichment.caption.body = scrub("caption.body", enrichment.caption.body)
@@ -423,15 +467,33 @@ def validate_and_correct(
 
     # --- Presence checks (warnings only) ---------------------------------------
     if not enrichment.title.strip():
-        warnings.append(Warning(code="field_missing", message="title empty", field="title"))
+        warnings.append(
+            Warning(code="field_missing", message="title empty", field="title")
+        )
     if not enrichment.objective.strip():
-        warnings.append(Warning(code="field_missing", message="objective empty", field="objective"))
+        warnings.append(
+            Warning(code="field_missing", message="objective empty", field="objective")
+        )
     if not enrichment.image.concept.strip():
-        warnings.append(Warning(code="field_missing", message="image.concept empty", field="image.concept"))
+        warnings.append(
+            Warning(
+                code="field_missing",
+                message="image.concept empty",
+                field="image.concept",
+            )
+        )
     if not enrichment.caption.hook.strip():
-        warnings.append(Warning(code="field_missing", message="caption.hook empty", field="caption.hook"))
+        warnings.append(
+            Warning(
+                code="field_missing", message="caption.hook empty", field="caption.hook"
+            )
+        )
     if not enrichment.caption.body.strip():
-        warnings.append(Warning(code="field_missing", message="caption.body empty", field="caption.body"))
+        warnings.append(
+            Warning(
+                code="field_missing", message="caption.body empty", field="caption.body"
+            )
+        )
 
     # do_not list cap
     if len(enrichment.do_not) > 5:

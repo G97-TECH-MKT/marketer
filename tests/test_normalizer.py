@@ -8,8 +8,8 @@ from pathlib import Path
 from marketer.normalizer import normalize
 
 ROOT = Path(__file__).resolve().parents[1]
-FIXTURE_ENVELOPES = ROOT / "fixtures" / "envelopes"
-FIXTURE_LEGACY = ROOT / "legacy" / "fixtures" / "envelopes"
+FIXTURE_ENVELOPES = ROOT / "tests" / "fixtures" / "envelopes"
+FIXTURE_LEGACY = ROOT / "docs" / "archive" / "legacy" / "fixtures" / "envelopes"
 
 
 def _load(name: str) -> dict:
@@ -29,7 +29,12 @@ def test_casa_maruja_spanish_fields_and_gallery_roles():
     assert "Ruzafa" in (ctx.brief.keywords or [])
     roles_by_url = {g.url: g.role for g in ctx.gallery}
     assert roles_by_url.get("https://cdn.example/casamaruja/hero.jpg") == "brand_asset"
-    assert roles_by_url.get("https://i.pinimg.com/736x/00/2f/ef/002fefd0c200e93fd65f823cac70ed05.jpg") == "content"
+    assert (
+        roles_by_url.get(
+            "https://i.pinimg.com/736x/00/2f/ef/002fefd0c200e93fd65f823cac70ed05.jpg"
+        )
+        == "content"
+    )
     codes = {w.code for w in warnings}
     assert "gallery_empty" not in codes
 

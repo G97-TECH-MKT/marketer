@@ -78,11 +78,15 @@ RUNS: list[tuple[str, Path, str]] = [
 ]
 
 
-def _patch_envelope(base: dict[str, Any], description: str, label: str) -> dict[str, Any]:
+def _patch_envelope(
+    base: dict[str, Any], description: str, label: str
+) -> dict[str, Any]:
     """Deep-copy the base envelope and inject a new description + fresh task_id."""
     env = copy.deepcopy(base)
     env["task_id"] = str(uuid.uuid4())
-    env["correlation_id"] = f"multi-surface-{label[:12].replace(' ', '-').replace('|', '').strip()}"
+    env["correlation_id"] = (
+        f"multi-surface-{label[:12].replace(' ', '-').replace('|', '').strip()}"
+    )
     payload = env.setdefault("payload", {})
     client_request = payload.setdefault("client_request", {})
     client_request["description"] = description
@@ -250,8 +254,7 @@ def _render_report(
             f"**latency**: {r.get('latency_ms')}ms"
         )
         lines.append(
-            f"**angle**: {r.get('angle_chosen')} · "
-            f"**voice**: {r.get('voice_chosen')}"
+            f"**angle**: {r.get('angle_chosen')} · **voice**: {r.get('voice_chosen')}"
         )
         lines.append(
             f"**confidence**: surface={conf.get('surface_format')} / "
@@ -316,18 +319,30 @@ def _render_report(
     repaired = sum(1 for r in all_results if r.get("repair_attempted"))
     cf_briefs_filled = sum(1 for r in all_results if r.get("cf_post_brief"))
     brand_dna_filled = sum(1 for r in all_results if r.get("brand_dna"))
-    tags_counts = [len(r.get("hashtag_tags") or []) for r in all_results if r.get("status") == "COMPLETED"]
+    tags_counts = [
+        len(r.get("hashtag_tags") or [])
+        for r in all_results
+        if r.get("status") == "COMPLETED"
+    ]
 
     latencies = [r.get("latency_ms", 0) for r in all_results if r.get("latency_ms")]
-    lat_str = f"min={min(latencies)}ms / max={max(latencies)}ms / avg={int(sum(latencies)/len(latencies))}ms" if latencies else "n/a"
+    lat_str = (
+        f"min={min(latencies)}ms / max={max(latencies)}ms / avg={int(sum(latencies) / len(latencies))}ms"
+        if latencies
+        else "n/a"
+    )
 
     lines.append(f"- Runs completed: {completed}/{len(all_results)} (failed={failed})")
-    lines.append(f"- Red flags (palette_mismatch / claim_not_in_brief / cta_caption_channel_mismatch): {red_flags}")
+    lines.append(
+        f"- Red flags (palette_mismatch / claim_not_in_brief / cta_caption_channel_mismatch): {red_flags}"
+    )
     lines.append(f"- Degraded: {degraded} / Repair attempted: {repaired}")
     lines.append(f"- brand_dna filled: {brand_dna_filled}/{len(all_results)}")
     lines.append(f"- cf_post_brief filled: {cf_briefs_filled}/{len(all_results)}")
     if tags_counts:
-        lines.append(f"- hashtag_strategy.tags: avg {sum(tags_counts)/len(tags_counts):.1f} tags/run (min={min(tags_counts)}, max={max(tags_counts)})")
+        lines.append(
+            f"- hashtag_strategy.tags: avg {sum(tags_counts) / len(tags_counts):.1f} tags/run (min={min(tags_counts)}, max={max(tags_counts)})"
+        )
     lines.append(f"- Latency: {lat_str}")
     lines.append("")
 

@@ -28,6 +28,7 @@ TESTS_DIR = Path(__file__).resolve().parent
 FIXTURE = TESTS_DIR / "fixtures" / "envelopes" / "casa_maruja_post.json"
 GOLDEN = TESTS_DIR / "golden" / "posts" / "casa_maruja_v1.json"
 
+
 def _has_key() -> bool:
     if os.environ.get("GEMINI_API_KEY"):
         return True
@@ -52,7 +53,9 @@ def live_output() -> dict:
         model=settings.gemini_model,
         timeout_seconds=settings.llm_timeout_seconds,
     )
-    callback = reason(envelope, gemini=client, extras_truncation=settings.extras_list_truncation)
+    callback = reason(
+        envelope, gemini=client, extras_truncation=settings.extras_list_truncation
+    )
     return callback.model_dump(mode="json")
 
 
@@ -100,9 +103,10 @@ def test_cta_channel_dm(live_output):
 def test_visual_selection_assets(live_output, golden):
     """The plato_semana image should be recommended; equipo image avoided."""
     vs = live_output["output_data"]["enrichment"]["visual_selection"]
-    assert "https://i.pinimg.com/736x/00/2f/ef/002fefd0c200e93fd65f823cac70ed05.jpg" in vs[
-        "recommended_asset_urls"
-    ]
+    assert (
+        "https://i.pinimg.com/736x/00/2f/ef/002fefd0c200e93fd65f823cac70ed05.jpg"
+        in vs["recommended_asset_urls"]
+    )
     assert "https://cdn.example/casamaruja/equipo.jpg" in vs["avoid_asset_urls"]
 
 
@@ -123,7 +127,9 @@ def test_confidence_floors(live_output):
     """Given how strong the casa_maruja brief is, no choice should be 'low'."""
     conf = live_output["output_data"]["enrichment"]["confidence"]
     for key, level in conf.items():
-        assert level in ("high", "medium"), f"confidence.{key}={level}, expected high/medium"
+        assert level in ("high", "medium"), (
+            f"confidence.{key}={level}, expected high/medium"
+        )
 
 
 def test_gallery_stats(live_output, golden):
@@ -144,7 +150,8 @@ def test_caption_nonempty_and_in_spanish(live_output):
     assert cap["cta_line"].strip()
     lower = (cap["hook"] + cap["body"] + cap["cta_line"]).lower()
     assert any(
-        token in lower for token in ("mesa", "mercado", "plato", "ruzafa", "casa maruja")
+        token in lower
+        for token in ("mesa", "mercado", "plato", "ruzafa", "casa maruja")
     ), "caption lost the casa_maruja anchors"
 
 
@@ -160,9 +167,10 @@ def test_image_prompt_has_concrete_direction(live_output):
     prompt = img["generation_prompt"].lower()
     assert img["concept"].strip()
     assert img["alt_text"].strip()
-    assert any(kw in prompt for kw in ("close-up", "close up", "plato", "dish", "bowl", "table")), (
-        "image.generation_prompt lost concrete subject cues"
-    )
+    assert any(
+        kw in prompt
+        for kw in ("close-up", "close up", "plato", "dish", "bowl", "table")
+    ), "image.generation_prompt lost concrete subject cues"
 
 
 def test_strategic_decisions_have_rationale(live_output):
@@ -232,7 +240,11 @@ def test_brand_intelligence_taxonomy_for_restaurant(live_output):
 def test_brand_intelligence_funnel_stage_is_enum(live_output):
     bi = live_output["output_data"]["enrichment"]["brand_intelligence"]
     assert bi["funnel_stage_target"] in {
-        "awareness", "consideration", "conversion", "retention", "advocacy"
+        "awareness",
+        "consideration",
+        "conversion",
+        "retention",
+        "advocacy",
     }
 
 
@@ -240,9 +252,10 @@ def test_brand_intelligence_audience_persona_has_objection(live_output):
     """Prompt asks for archetype + objection. Check for objection presence."""
     bi = live_output["output_data"]["enrichment"]["brand_intelligence"]
     persona = bi["audience_persona"].lower()
-    assert any(m in persona for m in ("objeción", "objecion", "objection", "duda", "miedo", "preocupa")), (
-        f"audience_persona lacks objection signal: {persona!r}"
-    )
+    assert any(
+        m in persona
+        for m in ("objeción", "objecion", "objection", "duda", "miedo", "preocupa")
+    ), f"audience_persona lacks objection signal: {persona!r}"
 
 
 def test_brand_dna_present_and_sized(live_output):
@@ -250,7 +263,9 @@ def test_brand_dna_present_and_sized(live_output):
     dna = live_output["output_data"]["enrichment"]["brand_dna"]
     assert isinstance(dna, str) and dna.strip()
     word_count = len(dna.split())
-    assert 80 <= word_count <= 1500, f"brand_dna has {word_count} words (target 100-1500)"
+    assert 80 <= word_count <= 1500, (
+        f"brand_dna has {word_count} words (target 100-1500)"
+    )
 
 
 def test_brand_dna_contains_required_sections(live_output):
@@ -274,10 +289,10 @@ def test_brand_dna_references_brand_palette(live_output):
     """Estilo visual block should reference at least one brand palette hex."""
     dna = live_output["output_data"]["enrichment"]["brand_dna"].lower()
     # Casa Maruja palette: 8B5A2B, D4A017, 556B2F
-    palette_hits = sum(
-        1 for hx in ("#8b5a2b", "#d4a017", "#556b2f") if hx in dna
+    palette_hits = sum(1 for hx in ("#8b5a2b", "#d4a017", "#556b2f") if hx in dna)
+    assert palette_hits >= 1, (
+        f"brand_dna did not cite any brand palette hex: {dna[:200]!r}"
     )
-    assert palette_hits >= 1, f"brand_dna did not cite any brand palette hex: {dna[:200]!r}"
 
 
 def test_brand_dna_does_not_invent_contacts(live_output):

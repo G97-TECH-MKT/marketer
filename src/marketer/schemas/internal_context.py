@@ -56,7 +56,10 @@ class GalleryItem(BaseModel):
 class BrandTokens(BaseModel):
     """Hard brand-side anchors. The LLM must compose AROUND these, not invent."""
 
-    palette: list[str] = Field(default_factory=list, description="Hex codes from FIELD_COLOR_LIST_PICKER, lowercased.")
+    palette: list[str] = Field(
+        default_factory=list,
+        description="Hex codes from FIELD_COLOR_LIST_PICKER, lowercased.",
+    )
     font_style: str | None = None
     design_style: str | None = None
     post_content_style: str | None = None

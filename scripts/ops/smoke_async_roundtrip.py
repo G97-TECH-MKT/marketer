@@ -65,15 +65,23 @@ def _start_mock_server() -> HTTPServer:
 def _start_marketer() -> subprocess.Popen:
     return subprocess.Popen(
         [
-            sys.executable, "-m", "uvicorn",
+            sys.executable,
+            "-m",
+            "uvicorn",
             "marketer.main:app",
-            "--host", "127.0.0.1",
-            "--port", str(MARKETER_PORT),
-            "--log-level", "warning",
+            "--host",
+            "127.0.0.1",
+            "--port",
+            str(MARKETER_PORT),
+            "--log-level",
+            "warning",
         ],
         cwd=str(ROOT),
-        env={**__import__("os").environ, "PYTHONPATH": str(ROOT / "src"),
-             "PYTHONDONTWRITEBYTECODE": "1"},
+        env={
+            **__import__("os").environ,
+            "PYTHONPATH": str(ROOT / "src"),
+            "PYTHONDONTWRITEBYTECODE": "1",
+        },
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
@@ -94,7 +102,9 @@ def _wait_for_ready(url: str, timeout: float = 30.0) -> None:
 
 def main() -> int:
     envelope = json.loads(FIXTURE.read_text(encoding="utf-8"))
-    envelope["callback_url"] = f"http://127.0.0.1:{MOCK_PORT}/api/v1/tasks/{envelope['task_id']}/callback"
+    envelope["callback_url"] = (
+        f"http://127.0.0.1:{MOCK_PORT}/api/v1/tasks/{envelope['task_id']}/callback"
+    )
 
     mock = _start_mock_server()
     print(f"[mock] callback receiver listening on :{MOCK_PORT}")
@@ -116,10 +126,13 @@ def main() -> int:
             print(f"FAIL: expected 202, got {resp.status_code}: {resp.text}")
             return 1
         ack_body = resp.json()
-        if ack_body.get("status") != "ACCEPTED" or ack_body.get("task_id") != envelope["task_id"]:
+        if (
+            ack_body.get("status") != "ACCEPTED"
+            or ack_body.get("task_id") != envelope["task_id"]
+        ):
             print(f"FAIL: bad ACK body: {ack_body}")
             return 1
-        print(f"[step 1 OK] 202 ACK in {ack_latency*1000:.0f}ms: {ack_body}")
+        print(f"[step 1 OK] 202 ACK in {ack_latency * 1000:.0f}ms: {ack_body}")
 
         if ack_latency > 2.0:
             print(f"WARN: ACK took {ack_latency:.1f}s, router timeout is 10s. Close.")
@@ -137,14 +150,18 @@ def main() -> int:
         print(f"[step 2 OK] callback received after {total:.1f}s")
         print(f"[callback] method={_received['method']} path={_received['path']}")
         print(f"[callback] Content-Type={_received['headers'].get('Content-Type')}")
-        print(f"[callback] X-Correlation-Id={_received['headers'].get('X-Correlation-Id')}")
+        print(
+            f"[callback] X-Correlation-Id={_received['headers'].get('X-Correlation-Id')}"
+        )
 
         body = _received["body"]
         if not isinstance(body, dict):
             print(f"FAIL: callback body is not an object: {body!r}")
             return 1
         if body.get("status") != "COMPLETED":
-            print(f"FAIL: status={body.get('status')}, error_message={body.get('error_message')}")
+            print(
+                f"FAIL: status={body.get('status')}, error_message={body.get('error_message')}"
+            )
             return 1
         enrichment = (body.get("output_data") or {}).get("enrichment") or {}
         if enrichment.get("schema_version") != "2.0":
@@ -154,9 +171,11 @@ def main() -> int:
             print("FAIL: enrichment.caption.hook is empty")
             return 1
 
-        print(f"[step 3 OK] CallbackBody valid — status=COMPLETED, schema 2.0, "
-              f"cta.channel={enrichment['cta']['channel']}, "
-              f"warnings={[w['code'] for w in body['output_data']['warnings']]}")
+        print(
+            f"[step 3 OK] CallbackBody valid — status=COMPLETED, schema 2.0, "
+            f"cta.channel={enrichment['cta']['channel']}, "
+            f"warnings={[w['code'] for w in body['output_data']['warnings']]}"
+        )
         print("\nSMOKE TEST PASSED")
         return 0
     finally:

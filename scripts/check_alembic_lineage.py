@@ -33,28 +33,30 @@ def main() -> int:
         return 1
 
     history = subprocess.run(
-      ["alembic", "history"],
-      check=False,
-      text=True,
-      capture_output=True,
+        [sys.executable, "-m", "alembic", "history"],
+        check=False,
+        text=True,
+        capture_output=True,
     )
     if history.returncode != 0:
-      print(history.stdout)
-      print(history.stderr, file=sys.stderr)
-      return history.returncode
+        print(history.stdout)
+        print(history.stderr, file=sys.stderr)
+        return history.returncode
 
     revs, downs = _extract_revision_ids(history.stdout)
     unique_revs = set(revs)
     unique_downs = {
-      rev.strip()
-      for parent in downs
-      for rev in parent.split(",")
-      if rev.strip() and rev.strip() != "<base>"
+        rev.strip()
+        for parent in downs
+        for rev in parent.split(",")
+        if rev.strip() and rev.strip() != "<base>"
     }
 
     if len(unique_revs) > 1 and len(unique_downs) == 0:
-      print("Detected multiple revisions with no parent references. Migration history is not linear.")
-      return 1
+        print(
+            "Detected multiple revisions with no parent references. Migration history is not linear."
+        )
+        return 1
 
     print("Alembic lineage check passed.")
     return 0

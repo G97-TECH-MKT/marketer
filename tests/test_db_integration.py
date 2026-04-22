@@ -31,6 +31,7 @@ from marketer.schemas.enrichment import (
     CallbackOutputData,
     CaptionParts,
     CallToAction,
+    CFPayload,
     Confidence,
     GalleryStats,
     HashtagStrategy,
@@ -41,13 +42,6 @@ from marketer.schemas.enrichment import (
     TraceInfo,
     VisualSelection,
 )
-
-# CFPayload exists only in the post-WIP schema; tolerate HEAD where it isn't
-# defined so CI can collect the module either way.
-try:
-    from marketer.schemas.enrichment import CFPayload  # type: ignore
-except ImportError:
-    CFPayload = None  # type: ignore[assignment]
 
 _SETTINGS = load_settings()
 pytestmark = pytest.mark.skipif(
@@ -75,15 +69,23 @@ def _fake_callback() -> CallbackBody:
         objective="Integration test post.",
         brand_dna="Brand DNA for DB integration test.",
         strategic_decisions=StrategicDecisions(
-            surface_format=StrategicChoice(chosen="post", alternatives_considered=[], rationale="t"),
-            angle=StrategicChoice(chosen="producto", alternatives_considered=[], rationale="t"),
-            voice=StrategicChoice(chosen="cercano", alternatives_considered=[], rationale="t"),
+            surface_format=StrategicChoice(
+                chosen="post", alternatives_considered=[], rationale="t"
+            ),
+            angle=StrategicChoice(
+                chosen="producto", alternatives_considered=[], rationale="t"
+            ),
+            voice=StrategicChoice(
+                chosen="cercano", alternatives_considered=[], rationale="t"
+            ),
         ),
         visual_style_notes="style",
         image=ImageBrief(concept="c", generation_prompt="p", alt_text="a"),
         caption=CaptionParts(hook="h", body="b", cta_line="Reserva por DM"),
         cta=CallToAction(channel="dm", url_or_handle=None, label="DM"),
-        hashtag_strategy=HashtagStrategy(intent="local_discovery", suggested_volume=5, themes=[]),
+        hashtag_strategy=HashtagStrategy(
+            intent="local_discovery", suggested_volume=5, themes=[]
+        ),
         do_not=[],
         visual_selection=VisualSelection(),
         confidence=Confidence(),
@@ -99,21 +101,29 @@ def _fake_callback() -> CallbackBody:
         ),
     )
     trace = TraceInfo(
-        task_id="integration", action_code="create_post", surface="post", mode="create",
-        latency_ms=10, gemini_model="fake", repair_attempted=False, degraded=False,
+        task_id="integration",
+        action_code="create_post",
+        surface="post",
+        mode="create",
+        latency_ms=10,
+        gemini_model="fake",
+        repair_attempted=False,
+        degraded=False,
         gallery_stats=GalleryStats(),
     )
-    out_kwargs = {"enrichment": enrichment, "warnings": [], "trace": trace}
-    if CFPayload is not None:
-        out_kwargs["data"] = CFPayload(
-            total_items=1,
-            client_dna=enrichment.brand_dna,
-            client_request="CF req.",
-            resources=[],
-        )
     return CallbackBody(
         status="COMPLETED",
-        output_data=CallbackOutputData(**out_kwargs),
+        output_data=CallbackOutputData(
+            data=CFPayload(
+                total_items=1,
+                client_dna=enrichment.brand_dna,
+                client_request="CF req.",
+                resources=[],
+            ),
+            enrichment=enrichment,
+            warnings=[],
+            trace=trace,
+        ),
         error_message=None,
     )
 
@@ -138,6 +148,7 @@ def _envelope(account_uuid: UUID, task_uuid: UUID) -> dict:
 @pytest.fixture
 def patched(monkeypatch):
     """Short-circuit LLM + callback PATCH so the test is offline."""
+
     def fake_reason(envelope, gemini, extras_truncation=10):
         return _fake_callback()
 
@@ -183,7 +194,9 @@ def test_first_brief_per_user_creates_all_five_table_rows(patched):
         assert raw_brief.processed_at is not None
 
         strategy = session.execute(
-            select(Strategy).where(Strategy.user_id == account_uuid, Strategy.is_active.is_(True))
+            select(Strategy).where(
+                Strategy.user_id == account_uuid, Strategy.is_active.is_(True)
+            )
         ).scalar_one()
         assert strategy.version == 1
         # brand_intelligence promoted from the fake enrichment
@@ -191,7 +204,9 @@ def test_first_brief_per_user_creates_all_five_table_rows(patched):
         assert strategy.brand_intelligence["voice_register"] == "test-register"
 
         job = session.execute(
-            select(Job).where(Job.user_id == account_uuid, Job.raw_brief_id == raw_brief.id)
+            select(Job).where(
+                Job.user_id == account_uuid, Job.raw_brief_id == raw_brief.id
+            )
         ).scalar_one()
         assert job.status == "done"
         assert job.strategy_id == strategy.id
@@ -250,7 +265,9 @@ def test_envelope_without_account_uuid_skips_persistence(patched):
     engine = _sync_engine()
     with Session(engine) as session:
         rows = (
-            session.execute(select(RawBrief).where(RawBrief.router_task_id == task_uuid))
+            session.execute(
+                select(RawBrief).where(RawBrief.router_task_id == task_uuid)
+            )
             .scalars()
             .all()
         )
@@ -291,9 +308,13 @@ def test_golden_envelope_persists_real_router_shape(patched):
         # Full envelope stored verbatim — spot-check structural fields
         env = raw_brief.envelope
         assert env["action_code"] == "create_post"
-        assert env["payload"]["context"]["client_name"] == "Nubiex Men's Massage by Bruno"
+        assert (
+            env["payload"]["context"]["client_name"] == "Nubiex Men's Massage by Bruno"
+        )
         assert env["payload"]["action_execution_gates"]["brief"]["passed"] is True
-        assert env["payload"]["action_execution_gates"]["image_catalog"]["passed"] is True
+        assert (
+            env["payload"]["action_execution_gates"]["image_catalog"]["passed"] is True
+        )
         assert raw_brief.action_code == "create_post"
         assert raw_brief.status == "done"
 
@@ -314,9 +335,7 @@ def test_fk_rejects_raw_brief_with_unknown_action_code():
     account_uuid = uuid4()
     engine = _sync_engine()
     with Session(engine) as session:
-        session.execute(
-            User.__table__.insert().values(id=account_uuid, brand={})
-        )
+        session.execute(User.__table__.insert().values(id=account_uuid, brand={}))
         session.commit()
 
         with pytest.raises(IntegrityError):

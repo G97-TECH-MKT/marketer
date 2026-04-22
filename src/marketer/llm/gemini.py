@@ -59,8 +59,8 @@ class GeminiClient:
         raw_text = getattr(response, "text", "") or ""
         um = getattr(response, "usage_metadata", None)
         usage: dict = {
-            "input_tokens":   getattr(um, "prompt_token_count", 0) or 0,
-            "output_tokens":  getattr(um, "candidates_token_count", 0) or 0,
+            "input_tokens": getattr(um, "prompt_token_count", 0) or 0,
+            "output_tokens": getattr(um, "candidates_token_count", 0) or 0,
             "thoughts_tokens": getattr(um, "thoughts_token_count", 0) or 0,
         }
 

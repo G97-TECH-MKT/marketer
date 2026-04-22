@@ -38,16 +38,16 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
-SRC  = ROOT / "src"
+SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from marketer.config import load_settings   # noqa: E402
+from marketer.config import load_settings  # noqa: E402
 from marketer.llm.gemini import GeminiClient  # noqa: E402
-from marketer.reasoner import reason        # noqa: E402
+from marketer.reasoner import reason  # noqa: E402
 
-FIXTURE_PATH   = ROOT / "tests" / "fixtures" / "envelopes" / "nubiex_post.json"
-RUNS_LOG       = ROOT / "reports" / "quick_runs.json"
+FIXTURE_PATH = ROOT / "tests" / "fixtures" / "envelopes" / "nubiex_post.json"
+RUNS_LOG = ROOT / "reports" / "quick_runs.json"
 DASHBOARD_PATH = ROOT / "docs" / "examples" / "runs" / "nubiex_dashboard.html"
 
 SCENARIO_DESCS: dict[int, str] = {
@@ -79,17 +79,29 @@ GALLERY_NAMES: dict[str, str] = {
 
 # ── run ──────────────────────────────────────────────────────────────────────
 
-def do_run(description: str, scenario_id: int, client: GeminiClient, extras: int, max_tokens: int = 16384) -> dict[str, Any]:
+
+def do_run(
+    description: str,
+    scenario_id: int,
+    client: GeminiClient,
+    extras: int,
+    max_tokens: int = 16384,
+) -> dict[str, Any]:
     base = json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
     envelope = copy.deepcopy(base)
     run_id = int(time.time() * 1000) % 10_000_000
-    envelope["task_id"]       = f"qr-{run_id}"
+    envelope["task_id"] = f"qr-{run_id}"
     envelope["correlation_id"] = f"quick-{run_id}"
     envelope["payload"]["client_request"]["description"] = description
 
     t0 = time.time()
     try:
-        cb = reason(envelope, gemini=client, extras_truncation=extras, max_output_tokens=max_tokens)
+        cb = reason(
+            envelope,
+            gemini=client,
+            extras_truncation=extras,
+            max_output_tokens=max_tokens,
+        )
         dump = cb.model_dump(mode="json")
     except Exception as exc:  # noqa: BLE001
         return {
@@ -108,11 +120,11 @@ def do_run(description: str, scenario_id: int, client: GeminiClient, extras: int
     ws = od.get("warnings") or []
     cf_data = od.get("data") or {}
     cap = en.get("caption") or {}
-    vs  = en.get("visual_selection") or {}
-    bi  = en.get("brand_intelligence") or {}
-    cf  = en.get("cf_post_brief") or ""
+    vs = en.get("visual_selection") or {}
+    bi = en.get("brand_intelligence") or {}
+    cf = en.get("cf_post_brief") or ""
 
-    input_tok  = tr.get("input_tokens", 0)
+    input_tok = tr.get("input_tokens", 0)
     output_tok = tr.get("output_tokens", 0)
     thought_tok = tr.get("thoughts_tokens", 0)
     # Approximate Flash pricing (est.)
@@ -165,13 +177,18 @@ def do_run(description: str, scenario_id: int, client: GeminiClient, extras: int
 
 # ── dashboard HTML builder ────────────────────────────────────────────────────
 
+
 def _e(s: Any) -> str:
     import html
+
     return html.escape(str(s or ""), quote=True)
+
 
 def _nl(s: str) -> str:
     import html
+
     return html.escape(str(s or "")).replace("\n", "<br>")
+
 
 def render_concept_html(block: str) -> str:
     lines = block.split("\n")
@@ -183,12 +200,17 @@ def render_concept_html(block: str) -> str:
         if s.startswith("CONCEPT —"):
             out.append(f'<div class="ct">{_e(s)}</div>')
         elif s.startswith("Imagen:"):
-            out.append(f'<div class="cm"><span class="ck">Imagen</span><span class="cv">{_e(s[7:].strip())}</span></div>')
+            out.append(
+                f'<div class="cm"><span class="ck">Imagen</span><span class="cv">{_e(s[7:].strip())}</span></div>'
+            )
         elif s.startswith("Tipo:"):
-            out.append(f'<div class="cm"><span class="ck">Tipo</span><span class="cv tp">{_e(s[5:].strip())}</span></div>')
+            out.append(
+                f'<div class="cm"><span class="ck">Tipo</span><span class="cv tp">{_e(s[5:].strip())}</span></div>'
+            )
         else:
             out.append(f'<div class="cb">{_e(s)}</div>')
     return "\n".join(out)
+
 
 def render_img_strip(selected_urls: list[str]) -> str:
     tiles = []
@@ -201,11 +223,13 @@ def render_img_strip(selected_urls: list[str]) -> str:
         tiles.append(
             f'<figure class="{cls}">{badge}'
             f'<img src="{_e(local_path)}" alt="{_e(name)}">'
-            f'<figcaption>{_e(name)}</figcaption></figure>'
+            f"<figcaption>{_e(name)}</figcaption></figure>"
         )
     return "\n".join(tiles)
 
+
 _COST_NOTE = "est. Flash pricing"
+
 
 def _token_pill(r: dict) -> str:
     it = r.get("input_tokens", 0)
@@ -215,39 +239,50 @@ def _token_pill(r: dict) -> str:
     if not it and not ot:
         return ""
     th_part = f" +{tt}th" if tt else ""
-    return (f'<span class="tok-pill" title="{_COST_NOTE}">'
-            f'{it}in / {ot}out{th_part} &nbsp;~${cost:.4f}</span>')
+    return (
+        f'<span class="tok-pill" title="{_COST_NOTE}">'
+        f"{it}in / {ot}out{th_part} &nbsp;~${cost:.4f}</span>"
+    )
 
 
 def render_run_card(r: dict[str, Any], label: str = "") -> str:
-    sel      = r.get("selected_urls") or []
-    concept  = r.get("concept_block") or ""
-    cf_full  = r.get("cf_post_brief") or ""
-    hook     = r.get("hook") or ""
+    sel = r.get("selected_urls") or []
+    concept = r.get("concept_block") or ""
+    cf_full = r.get("cf_post_brief") or ""
+    hook = r.get("hook") or ""
     body_txt = r.get("body") or ""
-    cta_txt  = r.get("cta_line") or ""
-    tags     = r.get("hashtags") or []
-    dna      = r.get("brand_dna") or ""
-    status   = r.get("status") or "?"
-    sf       = r.get("surface") or "—"
-    pil      = r.get("pillar") or "—"
-    lat      = f"{(r.get('latency_ms') or 0) / 1000:.1f}s"
-    beat     = r.get("emotional_beat") or "—"
-    angle    = r.get("angle") or "—"
-    ts_raw   = r.get("ts") or ""
-    ts_disp  = ts_raw[:19].replace("T", " ") if ts_raw else "—"
+    cta_txt = r.get("cta_line") or ""
+    tags = r.get("hashtags") or []
+    dna = r.get("brand_dna") or ""
+    status = r.get("status") or "?"
+    sf = r.get("surface") or "—"
+    pil = r.get("pillar") or "—"
+    lat = f"{(r.get('latency_ms') or 0) / 1000:.1f}s"
+    beat = r.get("emotional_beat") or "—"
+    angle = r.get("angle") or "—"
+    ts_raw = r.get("ts") or ""
+    ts_disp = ts_raw[:19].replace("T", " ") if ts_raw else "—"
     repair_badge = '<span class="chip warn">repair</span>' if r.get("repair") else ""
     status_cls = "ok" if status == "COMPLETED" else "bad"
-    tags_html  = " ".join(f'<code class="tag">{_e(t)}</code>' for t in tags)
+    tags_html = " ".join(f'<code class="tag">{_e(t)}</code>' for t in tags)
 
     import json as _json
+
     cf_data = r.get("cf_data") or {}
-    cf_json = _json.dumps(cf_data, ensure_ascii=False, indent=2) if cf_data else _json.dumps({
-        "total_items": 1,
-        "client_dna": dna,
-        "client_request": cf_full,
-        "resources": r.get("selected_urls") or [],
-    }, ensure_ascii=False, indent=2)
+    cf_json = (
+        _json.dumps(cf_data, ensure_ascii=False, indent=2)
+        if cf_data
+        else _json.dumps(
+            {
+                "total_items": 1,
+                "client_dna": dna,
+                "client_request": cf_full,
+                "resources": r.get("selected_urls") or [],
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
     card_id = f"card-{abs(hash(ts_raw))}"
 
     # Caption / brief section — surface-specific layout
@@ -265,7 +300,7 @@ def render_run_card(r: dict[str, Any], label: str = "") -> str:
         <div class="cap-lbl">BODY</div>
         <div class="cap-txt">{_nl(body_txt)}</div>
       </div>
-      {'<div class="cap-card cta-cap"><div class="cap-lbl">CTA</div><div class="cap-txt cta-txt">' + _nl(cta_txt) + '</div></div>' if cta_txt else ''}"""
+      {'<div class="cap-card cta-cap"><div class="cap-lbl">CTA</div><div class="cap-txt cta-txt">' + _nl(cta_txt) + "</div></div>" if cta_txt else ""}"""
 
     label_badge = f'<span class="run-label">{_e(label)}</span>' if label else ""
 
@@ -289,18 +324,18 @@ def render_run_card(r: dict[str, Any], label: str = "") -> str:
   <div class="lc-grid">
     <div class="lc-left-col">
       <div class="section-lbl cf-lbl">Para Content Factory</div>
-      {'<div class="concept-card">' + render_concept_html(concept) + '</div>' if not is_carousel else ''}
+      {'<div class="concept-card">' + render_concept_html(concept) + "</div>" if not is_carousel else ""}
       {cf_main_html}
-      {'<div class="tags-row">' + tags_html + '</div>' if tags_html and not is_carousel else ''}
+      {'<div class="tags-row">' + tags_html + "</div>" if tags_html and not is_carousel else ""}
     </div>
     <div class="lc-right-col">
       <div class="section-lbl">Imagenes</div>
       <div class="img-strip">{render_img_strip(sel)}</div>
-      {'<div class="section-lbl" style="margin-top:14px">Gen prompt</div><div class="genprompt">' + _e(r.get("gen_prompt") or "") + '</div>' if r.get("gen_prompt") else ''}
+      {'<div class="section-lbl" style="margin-top:14px">Gen prompt</div><div class="genprompt">' + _e(r.get("gen_prompt") or "") + "</div>" if r.get("gen_prompt") else ""}
     </div>
   </div>
 
-  {'<details class="dna-details"><summary class="dna-summary">Brand DNA</summary><div class="dna-body"><pre class="dna-pre">' + _e(dna) + '</pre></div></details>' if dna else ''}
+  {'<details class="dna-details"><summary class="dna-summary">Brand DNA</summary><div class="dna-body"><pre class="dna-pre">' + _e(dna) + "</pre></div></details>" if dna else ""}
 
   <details class="cf-details">
     <summary class="cf-summary">CF JSON — copiar para compartir
@@ -315,33 +350,37 @@ def render_run_card(r: dict[str, Any], label: str = "") -> str:
 
 def build_dashboard(runs: list[dict[str, Any]]) -> str:
     if not runs:
-        recent_html  = "<p style='color:var(--muted);padding:40px'>No runs yet. Run quick_run.py.</p>"
+        recent_html = "<p style='color:var(--muted);padding:40px'>No runs yet. Run quick_run.py.</p>"
         history_html = ""
     else:
         # Show last 2 runs in full cards
         recent = runs[-2:] if len(runs) >= 2 else runs[-1:]
-        recent_cards = [render_run_card(r, label=f"Run #{i+1}" if len(recent) > 1 else "")
-                        for i, r in enumerate(recent)]
-        compare_cls  = "compare-grid" if len(recent) == 2 else "solo-grid"
-        recent_html  = f'<div class="{compare_cls}">{"".join(recent_cards)}</div>'
+        recent_cards = [
+            render_run_card(r, label=f"Run #{i + 1}" if len(recent) > 1 else "")
+            for i, r in enumerate(recent)
+        ]
+        compare_cls = "compare-grid" if len(recent) == 2 else "solo-grid"
+        recent_html = f'<div class="{compare_cls}">{"".join(recent_cards)}</div>'
 
         # History table — everything
         history = list(reversed(runs))
         rows = []
         for r in history:
-            hook_short = (r.get("hook") or "")[:75] + ("…" if len(r.get("hook") or "") > 75 else "")
-            img_names  = ", ".join(r.get("selected_names") or []) or "AI-gen"
-            tipo       = r.get("tipo_line") or "—"
-            warns      = ", ".join(r.get("warnings") or []) or "—"
-            st  = r.get("status") or "?"
-            sc  = "ok" if st == "COMPLETED" else "bad"
+            hook_short = (r.get("hook") or "")[:75] + (
+                "…" if len(r.get("hook") or "") > 75 else ""
+            )
+            img_names = ", ".join(r.get("selected_names") or []) or "AI-gen"
+            tipo = r.get("tipo_line") or "—"
+            warns = ", ".join(r.get("warnings") or []) or "—"
+            st = r.get("status") or "?"
+            sc = "ok" if st == "COMPLETED" else "bad"
             ts_short = (r.get("ts") or "")[:19].replace("T", " ")
             lat_s = f"{(r.get('latency_ms') or 0) / 1000:.0f}s"
             rows.append(f"""<tr>
               <td class="mono">{_e(ts_short)}</td>
               <td class="status-{sc}">{_e(st[:4])}</td>
-              <td>{_e(r.get('surface') or '—')}</td>
-              <td>{_e(r.get('pillar') or '—')}</td>
+              <td>{_e(r.get("surface") or "—")}</td>
+              <td>{_e(r.get("pillar") or "—")}</td>
               <td class="hook-cell">{_e(hook_short)}</td>
               <td class="mono img-cell">{_e(img_names)}</td>
               <td class="mono">{_e(tipo)}</td>
@@ -567,12 +606,22 @@ function fallbackCopy(text, cb) {{
 
 # ── main ─────────────────────────────────────────────────────────────────────
 
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Quick single-run Nubiex tester")
-    parser.add_argument("description", nargs="?", default=None,
-                        help="Custom request description (overrides scenario default)")
-    parser.add_argument("--scenario", "-s", type=int, default=1,
-                        help="Scenario ID 1-10 for default description (default: 1)")
+    parser.add_argument(
+        "description",
+        nargs="?",
+        default=None,
+        help="Custom request description (overrides scenario default)",
+    )
+    parser.add_argument(
+        "--scenario",
+        "-s",
+        type=int,
+        default=1,
+        help="Scenario ID 1-10 for default description (default: 1)",
+    )
     args = parser.parse_args()
 
     if not os.environ.get("MARKETER_RUN_LIVE"):
@@ -584,7 +633,9 @@ def main() -> None:
         print("ERROR: GEMINI_API_KEY not set", file=sys.stderr)
         sys.exit(2)
 
-    description = args.description or SCENARIO_DESCS.get(args.scenario, SCENARIO_DESCS[1])
+    description = args.description or SCENARIO_DESCS.get(
+        args.scenario, SCENARIO_DESCS[1]
+    )
     scenario_id = args.scenario
 
     client = GeminiClient(
@@ -597,14 +648,22 @@ def main() -> None:
     print(f"  > {description[:80]}...")
     t0 = time.time()
 
-    result = do_run(description, scenario_id, client, settings.extras_list_truncation, settings.llm_max_output_tokens)
+    result = do_run(
+        description,
+        scenario_id,
+        client,
+        settings.extras_list_truncation,
+        settings.llm_max_output_tokens,
+    )
     elapsed = time.time() - t0
 
     status = result.get("status") or "FAILED"
-    sf     = result.get("surface") or "—"
-    img    = ", ".join(result.get("selected_names") or []) or "AI-gen"
-    warns  = result.get("warnings") or []
-    print(f"  {status} | surface={sf} | imgs={img} | lat={result.get('latency_ms',0)}ms | warns={warns} | {elapsed:.1f}s total")
+    sf = result.get("surface") or "—"
+    img = ", ".join(result.get("selected_names") or []) or "AI-gen"
+    warns = result.get("warnings") or []
+    print(
+        f"  {status} | surface={sf} | imgs={img} | lat={result.get('latency_ms', 0)}ms | warns={warns} | {elapsed:.1f}s total"
+    )
 
     # Load existing runs
     existing: list[dict] = []
@@ -615,7 +674,10 @@ def main() -> None:
             existing = []
 
     existing.append(result)
-    RUNS_LOG.write_text(json.dumps(existing, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
+    RUNS_LOG.write_text(
+        json.dumps(existing, ensure_ascii=False, indent=2, default=str),
+        encoding="utf-8",
+    )
 
     # Rebuild dashboard
     html_content = build_dashboard(existing)

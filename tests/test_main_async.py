@@ -23,6 +23,7 @@ from marketer.schemas.enrichment import (
     CallbackOutputData,
     CaptionParts,
     CallToAction,
+    CFPayload,
     Confidence,
     GalleryStats,
     HashtagStrategy,
@@ -34,13 +35,6 @@ from marketer.schemas.enrichment import (
     VisualSelection,
 )
 
-# CFPayload exists only in the post-WIP schema; tolerate HEAD where it isn't
-# defined so CI can collect the module either way.
-try:
-    from marketer.schemas.enrichment import CFPayload  # type: ignore
-except ImportError:
-    CFPayload = None  # type: ignore[assignment]
-
 
 def _fake_callback() -> CallbackBody:
     enrichment = PostEnrichment(
@@ -51,15 +45,23 @@ def _fake_callback() -> CallbackBody:
         objective="Fake objective for async test.",
         brand_dna="Bienvenidos a Fake. Narrativa de prueba para el test.",
         strategic_decisions=StrategicDecisions(
-            surface_format=StrategicChoice(chosen="post", alternatives_considered=["story"], rationale="test"),
-            angle=StrategicChoice(chosen="producto", alternatives_considered=[], rationale="test"),
-            voice=StrategicChoice(chosen="cercano", alternatives_considered=[], rationale="test"),
+            surface_format=StrategicChoice(
+                chosen="post", alternatives_considered=["story"], rationale="test"
+            ),
+            angle=StrategicChoice(
+                chosen="producto", alternatives_considered=[], rationale="test"
+            ),
+            voice=StrategicChoice(
+                chosen="cercano", alternatives_considered=[], rationale="test"
+            ),
         ),
         visual_style_notes="test",
         image=ImageBrief(concept="c", generation_prompt="p", alt_text="a"),
         caption=CaptionParts(hook="h", body="b", cta_line="Reserva por DM"),
         cta=CallToAction(channel="dm", url_or_handle=None, label="DM"),
-        hashtag_strategy=HashtagStrategy(intent="local_discovery", suggested_volume=5, themes=[]),
+        hashtag_strategy=HashtagStrategy(
+            intent="local_discovery", suggested_volume=5, themes=[]
+        ),
         do_not=[],
         visual_selection=VisualSelection(),
         confidence=Confidence(),
@@ -85,17 +87,19 @@ def _fake_callback() -> CallbackBody:
         degraded=False,
         gallery_stats=GalleryStats(),
     )
-    out_kwargs = {"enrichment": enrichment, "warnings": [], "trace": trace}
-    if CFPayload is not None:
-        out_kwargs["data"] = CFPayload(
-            total_items=1,
-            client_dna=enrichment.brand_dna,
-            client_request="Fake CF request.",
-            resources=[],
-        )
     return CallbackBody(
         status="COMPLETED",
-        output_data=CallbackOutputData(**out_kwargs),
+        output_data=CallbackOutputData(
+            data=CFPayload(
+                total_items=1,
+                client_dna=enrichment.brand_dna,
+                client_request="Fake CF request.",
+                resources=[],
+            ),
+            enrichment=enrichment,
+            warnings=[],
+            trace=trace,
+        ),
         error_message=None,
     )
 
@@ -103,7 +107,11 @@ def _fake_callback() -> CallbackBody:
 @pytest.fixture
 def patched_pipeline(monkeypatch):
     """Intercept reason() + callback PATCH so no network or LLM is used."""
-    calls: dict[str, Any] = {"patch_called": False, "patch_args": None, "reason_called_with": None}
+    calls: dict[str, Any] = {
+        "patch_called": False,
+        "patch_args": None,
+        "reason_called_with": None,
+    }
 
     def fake_reason(envelope, gemini, extras_truncation=10):
         calls["reason_called_with"] = envelope
@@ -196,21 +204,27 @@ def test_post_tasks_rejects_missing_callback_url(client):
 
 
 def test_post_tasks_rejects_invalid_json(client):
-    resp = client.post("/tasks", content=b"not json", headers={"Content-Type": "application/json"})
+    resp = client.post(
+        "/tasks", content=b"not json", headers={"Content-Type": "application/json"}
+    )
     assert resp.status_code == 400
 
 
 def test_inbound_auth_rejects_bad_token(patched_pipeline, monkeypatch):
     monkeypatch.setattr(main_module.settings, "inbound_token", "secret")
     c = TestClient(main_module.app)
-    resp = c.post("/tasks", json=_valid_envelope(), headers={"Authorization": "Bearer wrong"})
+    resp = c.post(
+        "/tasks", json=_valid_envelope(), headers={"Authorization": "Bearer wrong"}
+    )
     assert resp.status_code == 401
 
 
 def test_inbound_auth_accepts_correct_token(patched_pipeline, monkeypatch):
     monkeypatch.setattr(main_module.settings, "inbound_token", "secret")
     c = TestClient(main_module.app)
-    resp = c.post("/tasks", json=_valid_envelope(), headers={"Authorization": "Bearer secret"})
+    resp = c.post(
+        "/tasks", json=_valid_envelope(), headers={"Authorization": "Bearer secret"}
+    )
     assert resp.status_code == 202
 
 

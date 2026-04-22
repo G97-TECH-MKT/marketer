@@ -121,7 +121,9 @@ async def persist_on_ingest(envelope: dict[str, Any]) -> PersistCtx | None:
                 action_code=action_code,
             )
     except Exception:
-        logger.exception('"persist_on_ingest_failed task_id=%s"', envelope.get("task_id"))
+        logger.exception(
+            '"persist_on_ingest_failed task_id=%s"', envelope.get("task_id")
+        )
         return None
 
 
@@ -135,7 +137,9 @@ async def persist_on_complete(
     try:
         async with session_scope() as session:
             if callback.status == "COMPLETED" and callback.output_data is not None:
-                brand_intelligence = callback.output_data.enrichment.brand_intelligence.model_dump()
+                brand_intelligence = (
+                    callback.output_data.enrichment.brand_intelligence.model_dump()
+                )
                 strategy = await ensure_strategy(
                     session,
                     user_id=pctx.user_id,
@@ -163,4 +167,6 @@ async def persist_on_complete(
                     session, raw_brief_id=pctx.raw_brief_id, status="failed"
                 )
     except Exception:
-        logger.exception('"persist_on_complete_failed raw_brief_id=%s"', pctx.raw_brief_id)
+        logger.exception(
+            '"persist_on_complete_failed raw_brief_id=%s"', pctx.raw_brief_id
+        )

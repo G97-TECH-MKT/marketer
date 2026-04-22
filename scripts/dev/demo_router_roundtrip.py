@@ -25,7 +25,9 @@ ROOT = Path(__file__).resolve().parents[2]
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--fixture", default="casa_maruja_post.json")
-    parser.add_argument("--url", default=os.environ.get("MARKETER_URL", "http://127.0.0.1:8021"))
+    parser.add_argument(
+        "--url", default=os.environ.get("MARKETER_URL", "http://127.0.0.1:8021")
+    )
     parser.add_argument("--out", default="tmp_merged_marketer_run.json")
     args = parser.parse_args()
 
@@ -76,7 +78,9 @@ def main() -> None:
         },
         "router_record_after_step": {
             "job_id": dispatch.get("job_id"),
-            "gate_responses": dispatch.get("payload", {}).get("action_execution_gates", {}),
+            "gate_responses": dispatch.get("payload", {}).get(
+                "action_execution_gates", {}
+            ),
             "sequence_responses": {
                 "marketer": {
                     "status": resp.get("status"),

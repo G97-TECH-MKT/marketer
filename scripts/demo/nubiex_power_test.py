@@ -154,7 +154,9 @@ def _extract_concept_metrics(cf_post_brief: str) -> dict[str, Any]:
         "tipo_line": tipo_match.group(1).strip() if tipo_match else None,
         "imagen_present": imagen_match is not None,
         "tipo_present": tipo_match is not None,
-        "concept_section_len": len(cf_post_brief.split("Caption:")[0].strip()) if "Caption:" in cf_post_brief else 0,
+        "concept_section_len": len(cf_post_brief.split("Caption:")[0].strip())
+        if "Caption:" in cf_post_brief
+        else 0,
     }
 
 
@@ -224,7 +226,8 @@ def _extract_run_metrics(
             "gen_prompt_len": len(image.get("generation_prompt") or ""),
             # brand_dna quality
             "brand_dna_word_count": len((brand_dna or "").split()),
-            "brand_dna_has_colors": "#5e204d" in brand_dna.lower() or "#9c7945" in brand_dna.lower(),
+            "brand_dna_has_colors": "#5e204d" in brand_dna.lower()
+            or "#9c7945" in brand_dna.lower(),
             "brand_dna_has_json": '"style_reference_analysis"' in brand_dna,
             # Meta
             "warning_codes": warning_codes,
@@ -326,11 +329,17 @@ def _render_report(
     completed = sum(1 for r in results if r.get("status") == "COMPLETED")
     failed = n - completed
     surface_correct = sum(1 for r in results if r.get("surface_correct"))
-    imgs_selected = sum(1 for r in results if (r.get("gallery_assets_selected") or 0) > 0)
+    imgs_selected = sum(
+        1 for r in results if (r.get("gallery_assets_selected") or 0) > 0
+    )
     concept_ok = sum(1 for r in results if r.get("concept_prefix_ok"))
     imagen_ok = sum(1 for r in results if r.get("concept_imagen_present"))
     tipo_ok = sum(1 for r in results if r.get("concept_tipo_present"))
-    brand_dna_ok = sum(1 for r in results if r.get("brand_dna_has_colors") and r.get("brand_dna_has_json"))
+    brand_dna_ok = sum(
+        1
+        for r in results
+        if r.get("brand_dna_has_colors") and r.get("brand_dna_has_json")
+    )
     red_flags = sum(1 for r in results if r.get("red_flag"))
     degraded = sum(1 for r in results if r.get("degraded"))
     repairs = sum(1 for r in results if r.get("repair_attempted"))
@@ -361,7 +370,9 @@ def _render_report(
         if r.get("status") != "COMPLETED" or shown >= 3:
             continue
         lines.append(f"### Escenario {r['scenario_id']}: {r['scenario_label']}")
-        lines.append(f"- Surface: `{r.get('surface_format')}` | Pillar: `{r.get('content_pillar')}`")
+        lines.append(
+            f"- Surface: `{r.get('surface_format')}` | Pillar: `{r.get('content_pillar')}`"
+        )
         lines.append(f"- Imagen seleccionada: {r.get('concept_imagen_line') or '—'}")
         lines.append(f"- Tipo: {r.get('concept_tipo_line') or '—'}")
         lines.append(f"- Emotional beat: `{r.get('emotional_beat')}`")
@@ -374,6 +385,7 @@ def _render_report(
         all_warnings.extend(r.get("warning_codes") or [])
     if all_warnings:
         from collections import Counter
+
         counts = Counter(all_warnings).most_common()
         lines.append("## Warning codes")
         lines.append("")
@@ -393,7 +405,9 @@ def _render_report(
 
 def main() -> None:
     if not os.environ.get("MARKETER_RUN_LIVE"):
-        print("ERROR: set MARKETER_RUN_LIVE=1 to run live Gemini calls.", file=sys.stderr)
+        print(
+            "ERROR: set MARKETER_RUN_LIVE=1 to run live Gemini calls.", file=sys.stderr
+        )
         sys.exit(2)
 
     settings = load_settings()
@@ -422,14 +436,18 @@ def main() -> None:
         envelope["payload"]["client_request"]["description"] = scenario["description"]
 
         t0 = time.time()
-        metrics, full_dump = _run_once(envelope, client, settings.extras_list_truncation, scenario)
+        metrics, full_dump = _run_once(
+            envelope, client, settings.extras_list_truncation, scenario
+        )
 
         if metrics.get("exception"):
             print(
                 f"[{scenario['id']:2d}/{len(SCENARIOS)}] {scenario['label']} FAILED "
                 f"({metrics['exception']}); retrying once..."
             )
-            metrics, full_dump = _run_once(envelope, client, settings.extras_list_truncation, scenario)
+            metrics, full_dump = _run_once(
+                envelope, client, settings.extras_list_truncation, scenario
+            )
 
         elapsed = time.time() - t0
         status = metrics.get("status", "?")
@@ -448,7 +466,9 @@ def main() -> None:
         full_outputs.append({"scenario": scenario, "callback": full_dump})
 
     total = time.time() - overall_started
-    report_md = _render_report(results, model_name=client.model_name, total_seconds=total)
+    report_md = _render_report(
+        results, model_name=client.model_name, total_seconds=total
+    )
 
     md_path = REPORT_DIR / f"nubiex_power_test_{REPORT_DATE}.md"
     json_path = REPORT_DIR / f"nubiex_power_test_{REPORT_DATE}.json"

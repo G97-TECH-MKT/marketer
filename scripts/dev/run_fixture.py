@@ -33,7 +33,9 @@ def _resolve_fixture_path(raw: str) -> Path:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="POST fixture JSON to POST /tasks")
-    parser.add_argument("fixture", help="Path to JSON or filename under tests/fixtures/envelopes/")
+    parser.add_argument(
+        "fixture", help="Path to JSON or filename under tests/fixtures/envelopes/"
+    )
     parser.add_argument(
         "--url",
         default=DEFAULT_BASE,

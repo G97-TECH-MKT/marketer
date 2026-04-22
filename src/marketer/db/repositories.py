@@ -73,9 +73,7 @@ async def get_action_type(session: AsyncSession, code: str) -> ActionType | None
     ).scalar_one_or_none()
 
 
-async def get_active_strategy(
-    session: AsyncSession, user_id: UUID
-) -> Strategy | None:
+async def get_active_strategy(session: AsyncSession, user_id: UUID) -> Strategy | None:
     stmt = select(Strategy).where(
         Strategy.user_id == user_id, Strategy.is_active.is_(True)
     )
