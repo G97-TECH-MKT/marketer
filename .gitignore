@@ -37,5 +37,5 @@ images/
 *.tfplan*
 
 # Local agent/editor state
-.agents/
-.claude/
+*.agents/*
+*.claude/*
