@@ -39,6 +39,11 @@ variable "task_role_arn" {
   type        = string
 }
 
+variable "permission_boundary_arn" {
+  description = "Permission boundary ARN for IAM roles created by this module"
+  type        = string
+}
+
 variable "ecr_repository_url" {
   description = "ECR repository URL (without tag)"
   type        = string
@@ -116,4 +121,54 @@ variable "assign_public_ip" {
   description = "Assign public IP to Fargate tasks (true for dev without NAT)"
   type        = bool
   default     = false
+}
+
+variable "rds_security_group_id" {
+  description = "RDS security group ID for Postgres egress rule"
+  type        = string
+}
+
+variable "database_url_secret_arn" {
+  description = "Secrets Manager ARN with database URL JSON"
+  type        = string
+}
+
+variable "db_pool_size" {
+  description = "SQLAlchemy DB pool size"
+  type        = number
+  default     = 10
+}
+
+variable "db_pool_max_overflow" {
+  description = "SQLAlchemy DB pool max overflow"
+  type        = number
+  default     = 5
+}
+
+variable "db_pool_timeout_seconds" {
+  description = "SQLAlchemy DB pool timeout seconds"
+  type        = number
+  default     = 10
+}
+
+variable "migrator_cpu" {
+  description = "CPU for migrator one-off task"
+  type        = number
+  default     = 512
+}
+
+variable "migrator_memory" {
+  description = "Memory for migrator one-off task"
+  type        = number
+  default     = 1024
+}
+
+variable "alb_arn_suffix" {
+  description = "ALB ARN suffix used by ALBRequestCountPerTarget"
+  type        = string
+}
+
+variable "target_group_arn_suffix" {
+  description = "Target group ARN suffix used by ALBRequestCountPerTarget"
+  type        = string
 }

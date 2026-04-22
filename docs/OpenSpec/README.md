@@ -133,8 +133,8 @@ marketer/
 │   ├── schemas/           # Pydantic models
 │   └── llm/               # Gemini wrapper + prompts
 ├── tests/                 # 62 tests (36 offline + 26 live)
-├── fixtures/envelopes/    # 9 test envelopes
-├── golden/posts/          # 3 regression baselines
+├── tests/fixtures/envelopes/  # 9 test envelopes
+├── tests/golden/posts/        # 3 regression baselines
 ├── scripts/               # Dev/smoke test utilities
 ├── docs/OpenSpec/         # ← This directory
 ├── Dockerfile

@@ -74,6 +74,31 @@ resource "aws_iam_policy" "marketer_boundary" {
           "secretsmanager:GetSecretValue",
           "ssm:GetParameter",
           "ssm:GetParameters",
+          "ssm:UpdateInstanceInformation",
+          "ssm:ListInstanceAssociations",
+          "ssm:DescribeDocument",
+          "ssm:DescribeAssociation",
+          "ssm:GetDeployablePatchSnapshotForInstance",
+          "ssm:GetDocument",
+          "ssm:GetManifest",
+          "ssm:PutInventory",
+          "ssm:PutComplianceItems",
+          "ssm:PutConfigurePackageResult",
+          "ssm:UpdateAssociationStatus",
+          "ssm:UpdateInstanceAssociationStatus",
+          "ssmmessages:CreateControlChannel",
+          "ssmmessages:CreateDataChannel",
+          "ssmmessages:OpenControlChannel",
+          "ssmmessages:OpenDataChannel",
+          "ec2messages:AcknowledgeMessage",
+          "ec2messages:DeleteMessage",
+          "ec2messages:FailMessage",
+          "ec2messages:GetEndpoint",
+          "ec2messages:GetMessages",
+          "ec2messages:SendReply",
+          "rds:DescribeDBInstances",
+          "kms:Decrypt",
+          "kms:GenerateDataKey",
         ]
         Resource = "*"
       }
@@ -208,6 +233,19 @@ resource "aws_iam_role_policy" "gh_ecs" {
           "ecs:DeleteService",
         ]
         Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ecs:RunTask",
+          "ecs:DescribeTasks",
+          "ecs:StopTask",
+          "ecs:ListTasks",
+        ]
+        Resource = [
+          "arn:aws:ecs:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:task-definition/marketer-*-migrator:*",
+          "arn:aws:ecs:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:task/marketer-*/*",
+        ]
       }
     ]
   })
@@ -360,6 +398,151 @@ resource "aws_iam_role_policy" "gh_monitoring" {
           "application-autoscaling:TagResource",
         ]
         Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "gh_rds" {
+  name = "marketer-rds"
+  role = aws_iam_role.github_actions.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "rds:CreateDBInstance",
+          "rds:ModifyDBInstance",
+          "rds:DeleteDBInstance",
+          "rds:CreateDBSubnetGroup",
+          "rds:ModifyDBSubnetGroup",
+          "rds:DeleteDBSubnetGroup",
+          "rds:CreateDBParameterGroup",
+          "rds:ModifyDBParameterGroup",
+          "rds:DeleteDBParameterGroup",
+          "rds:CreateOptionGroup",
+          "rds:ModifyOptionGroup",
+          "rds:DeleteOptionGroup",
+          "rds:CreateEventSubscription",
+          "rds:ModifyEventSubscription",
+          "rds:DeleteEventSubscription",
+          "rds:AddTagsToResource",
+          "rds:ListTagsForResource",
+          "rds:DescribeDBInstances",
+          "rds:DescribeDBSubnetGroups",
+          "rds:DescribeDBParameterGroups",
+          "rds:DescribeOptionGroups",
+          "rds:DescribeEventSubscriptions",
+        ]
+        Resource = [
+          "arn:aws:rds:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:db:marketer-*",
+          "arn:aws:rds:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:subgrp:marketer-*",
+          "arn:aws:rds:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:pg:marketer-*",
+          "arn:aws:rds:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:og:marketer-*",
+          "arn:aws:rds:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:es:marketer-*",
+        ]
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["rds:DescribeDBEngineVersions"]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "gh_ec2_bastion" {
+  name = "marketer-ec2-bastion"
+  role = aws_iam_role.github_actions.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ec2:RunInstances",
+          "ec2:TerminateInstances",
+          "ec2:StartInstances",
+          "ec2:StopInstances",
+          "ec2:DescribeInstances",
+          "ec2:DescribeImages",
+          "ec2:DescribeVolumes",
+          "ec2:ModifyInstanceAttribute",
+          "ec2:ModifyInstanceMetadataOptions",
+          "ec2:CreateTags",
+          "ec2:DescribeSecurityGroups",
+          "ec2:DescribeSubnets",
+          "ec2:DescribeVpcs",
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "iam:CreateInstanceProfile",
+          "iam:DeleteInstanceProfile",
+          "iam:AddRoleToInstanceProfile",
+          "iam:RemoveRoleFromInstanceProfile",
+          "iam:GetInstanceProfile",
+        ]
+        Resource = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:instance-profile/marketer/*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "gh_kms" {
+  name = "marketer-kms"
+  role = aws_iam_role.github_actions.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "kms:CreateKey",
+          "kms:CreateAlias",
+          "kms:DeleteAlias",
+          "kms:UpdateAlias",
+          "kms:DescribeKey",
+          "kms:EnableKeyRotation",
+          "kms:GetKeyPolicy",
+          "kms:PutKeyPolicy",
+          "kms:ListAliases",
+          "kms:ListResourceTags",
+          "kms:TagResource",
+          "kms:UntagResource",
+          "kms:ScheduleKeyDeletion",
+          "kms:CancelKeyDeletion",
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "gh_events" {
+  name = "marketer-events"
+  role = aws_iam_role.github_actions.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "events:PutRule",
+          "events:PutTargets",
+          "events:DeleteRule",
+          "events:RemoveTargets",
+          "events:DescribeRule",
+          "events:ListTargetsByRule",
+        ]
+        Resource = "arn:aws:events:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:rule/marketer-*"
       }
     ]
   })

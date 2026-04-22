@@ -138,7 +138,7 @@ aws ecs describe-services \
 curl -X POST https://marketer.internal.plinng.io/tasks/sync \
   -H "Authorization: Bearer $INBOUND_TOKEN" \
   -H "Content-Type: application/json" \
-  -d @fixtures/envelopes/minimal_post.json \
+  -d @tests/fixtures/envelopes/minimal_post.json \
   | python3 -c "import sys,json; d=json.load(sys.stdin); print('OK' if d['status']=='COMPLETED' else 'FAIL')"
 ```
 

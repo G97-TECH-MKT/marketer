@@ -71,6 +71,24 @@ jobs:
         run: terraform fmt -check -recursive -no-color
         continue-on-error: true
 
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+
+      - name: Run TFLint
+        working-directory: infraestructure/terraform
+        run: |
+          tflint --init
+          tflint -f compact --recursive
+        continue-on-error: true
+
+      - name: Run Checkov
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: infraestructure/terraform
+          soft_fail: true
+          framework: terraform
+          quiet: true
+
       - name: Terraform Plan
         id: plan
         run: |

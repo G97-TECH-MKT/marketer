@@ -2,7 +2,7 @@
 """Build the Nubiex power-test demo HTML from the _full.json output.
 
 Usage:
-    PYTHONPATH=src python scripts/build_nubiex_demo_html.py
+    PYTHONPATH=src python scripts/demo/build_nubiex_demo_html.py
 """
 
 from __future__ import annotations
@@ -12,15 +12,15 @@ import json
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 FULL_JSON = ROOT / "reports" / "nubiex_power_test_2026-04-21_full.json"
-OUT_HTML  = ROOT / "samples" / "nubiex_demo_2026-04-21.html"
+OUT_HTML  = ROOT / "docs" / "examples" / "runs" / "nubiex_demo_2026-04-21.html"
 
-# Maps fixture CDN URL → (display name, local relative path from samples/ folder)
+# Maps fixture CDN URL → (display name, local relative path from docs/examples/runs/ folder)
 GALLERY = {
     "https://cdn.nubiex.es/brand/nubiex_valores_1.jpg": ("nubiex_valores_1.jpg", "../images/Nubiex Valores 1.jpg"),
     "https://cdn.nubiex.es/brand/nubiex_valores_2.jpg": ("nubiex_valores_2.jpg", "../images/Nubiex Valores 2.jpg"),
@@ -157,7 +157,6 @@ def render_tab_content(idx: int, run: dict) -> str:
 
     selected_urls = vs.get("recommended_asset_urls") or []
     avoid_urls    = vs.get("avoid_asset_urls") or []
-    all_shown = set(list(GALLERY.keys()))
 
     concept_block, caption_block, hashtag_block = split_cf_brief(cf_brief)
 
@@ -624,7 +623,6 @@ def _summary_rows(runs: list[dict]) -> str:
         cb = run.get("callback") or {}
         en = (cb.get("output_data") or {}).get("enrichment") or {}
         bi = en.get("brand_intelligence") or {}
-        vs = en.get("visual_selection") or {}
         trace = (cb.get("output_data") or {}).get("trace") or {}
         status = cb.get("status") or "FAILED"
 

@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Generate samples/marketer_demo_v2.html — multi-fixture comparison view.
+"""Generate docs/examples/runs/marketer_demo_v2.html — multi-fixture comparison view.
 
 Runs 6 fixtures through reason() in parallel, then renders a single HTML
 with tab navigation, a cross-vertical comparison table, and a per-fixture
 detail panel that surfaces the new brand_dna + brand_intelligence layers.
 
 Usage:
-  MARKETER_RUN_LIVE=1 PYTHONPATH=src python scripts/build_multi_demo_html.py
+  MARKETER_RUN_LIVE=1 PYTHONPATH=src python scripts/demo/build_multi_demo_html.py
 """
 
 from __future__ import annotations
@@ -18,7 +18,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
 from marketer.config import load_settings  # noqa: E402
@@ -38,7 +38,7 @@ FIXTURES: list[tuple[str, str, str]] = [
 
 def _run_fixture(fixture: str, label: str, subtitle: str) -> dict:
     envelope = json.loads(
-        (ROOT / "fixtures" / "envelopes" / f"{fixture}.json").read_text(encoding="utf-8")
+        (ROOT / "tests" / "fixtures" / "envelopes" / f"{fixture}.json").read_text(encoding="utf-8")
     )
     settings = load_settings()
     client = GeminiClient(
@@ -638,7 +638,7 @@ def _build_html(results: list[dict]) -> str:
 
   {panels}
 
-  <footer>Generated with scripts/build_multi_demo_html.py · one call per fixture through <code>reason()</code></footer>
+  <footer>Generated with scripts/demo/build_multi_demo_html.py · one call per fixture through <code>reason()</code></footer>
 </div>
 
 <script>
@@ -670,7 +670,7 @@ def main() -> None:
         results = [f.result() for f in futures]
     print(f"\nBuilding HTML with {len(results)} panels...")
     html = _build_html(results)
-    out = ROOT / "samples" / "marketer_demo_v2.html"
+    out = ROOT / "docs" / "examples" / "runs" / "marketer_demo_v2.html"
     out.write_text(html, encoding="utf-8")
     size_kb = out.stat().st_size / 1024
     print(f"Wrote {out} ({size_kb:.1f} KB)")

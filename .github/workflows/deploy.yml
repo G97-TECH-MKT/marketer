@@ -94,10 +94,62 @@ jobs:
           docker push "${{ steps.meta.outputs.uri }}"
           docker push "${{ steps.meta.outputs.registry }}:latest"
 
+  migrate:
+    name: DB Migrations (${{ github.event.inputs.environment || 'prod' }})
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    environment: ${{ github.event.inputs.environment || 'prod' }}
+    steps:
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: marketer-migrate-${{ github.run_id }}
+
+      - name: Run alembic upgrade head via ECS run-task
+        run: |
+          ENV="${{ github.event.inputs.environment || 'prod' }}"
+          CLUSTER="marketer-${ENV}"
+          SERVICE="marketer"
+          TASK_DEF="marketer-${ENV}-migrator"
+
+          SUBNETS=$(aws ecs describe-services \
+            --cluster "$CLUSTER" \
+            --services "$SERVICE" \
+            --query "services[0].networkConfiguration.awsvpcConfiguration.subnets" \
+            --output text | tr '\t' ',')
+
+          SGS=$(aws ecs describe-services \
+            --cluster "$CLUSTER" \
+            --services "$SERVICE" \
+            --query "services[0].networkConfiguration.awsvpcConfiguration.securityGroups" \
+            --output text | tr '\t' ',')
+
+          TASK_ARN=$(aws ecs run-task \
+            --cluster "$CLUSTER" \
+            --task-definition "$TASK_DEF" \
+            --launch-type FARGATE \
+            --network-configuration "awsvpcConfiguration={subnets=[${SUBNETS}],securityGroups=[${SGS}],assignPublicIp=DISABLED}" \
+            --overrides "{\"containerOverrides\":[{\"name\":\"migrator\",\"image\":\"${{ needs.build-and-push.outputs.image_uri }}\"}]}" \
+            --query 'tasks[0].taskArn' \
+            --output text)
+
+          test -n "$TASK_ARN"
+          aws ecs wait tasks-stopped --cluster "$CLUSTER" --tasks "$TASK_ARN"
+
+          EXIT_CODE=$(aws ecs describe-tasks \
+            --cluster "$CLUSTER" \
+            --tasks "$TASK_ARN" \
+            --query 'tasks[0].containers[0].exitCode' \
+            --output text)
+
+          test "$EXIT_CODE" = "0"
+
   deploy:
     name: Deploy to ECS (${{ github.event.inputs.environment || 'prod' }})
     runs-on: ubuntu-latest
-    needs: build-and-push
+    needs: [build-and-push, migrate]
     environment: ${{ github.event.inputs.environment || 'prod' }}
 
     steps:

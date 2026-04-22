@@ -7,8 +7,10 @@
 .venv
 venv
 .pytest_cache
+.pytest_cache/
 .mypy_cache
 .ruff_cache
+.ruff_cache/
 .vscode
 .idea
 __pycache__
@@ -23,9 +25,7 @@ htmlcov
 
 # Dev-only dirs — not needed at runtime
 tests/
-fixtures/
-golden/
-samples/
+legacy/
 scripts/
 reports/
 docs/

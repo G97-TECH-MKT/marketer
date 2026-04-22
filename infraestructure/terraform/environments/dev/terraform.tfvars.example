@@ -6,10 +6,12 @@ vpc_id             = "vpc-xxxxxxxxxxxxxxxxx"
 vpc_cidr           = "10.0.0.0/16"
 public_subnet_ids  = ["subnet-xxxxxxxxxxxxxxxxx", "subnet-yyyyyyyyyyyyyyyyy"]
 private_subnet_ids = ["subnet-xxxxxxxxxxxxxxxxx", "subnet-yyyyyyyyyyyyyyyyy"]
+db_subnet_ids      = []  # optional dedicated DB subnets
 
 certificate_arn  = "arn:aws:acm:us-east-1:ACCOUNT_ID:certificate/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 
 permission_boundary_arn = "arn:aws:iam::ACCOUNT_ID:policy/MarketerPermissionBoundary"
+enable_bastion          = true
 
 image_tag        = "latest"
 gemini_model     = "gemini-2.5-flash-preview"
@@ -21,4 +23,6 @@ orch_callback_api_key = "REPLACE_ME"
 
 # Dev-specific: true = no NAT gateway needed for Gemini egress
 assign_public_ip = true
+db_pool_size     = 5
+db_pool_max_overflow = 5
 alert_email      = ""

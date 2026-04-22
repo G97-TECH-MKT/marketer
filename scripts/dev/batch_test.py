@@ -1,24 +1,23 @@
 #!/usr/bin/env python3
 """Batch stress-test the MARKETER prompt across 3 verticals × 3 runs.
 
-Reads 3 fixtures from fixtures/envelopes/, runs reason() three times each,
+Reads 3 fixtures from tests/fixtures/envelopes/, runs reason() three times each,
 collects qualitative signals, and writes a markdown report under reports/.
 
 Usage (live):
-    MARKETER_RUN_LIVE=1 PYTHONPATH=src python scripts/batch_test.py
+    MARKETER_RUN_LIVE=1 PYTHONPATH=src python scripts/dev/batch_test.py
 """
 
 from __future__ import annotations
 
 import json
-import os
 import statistics
 import sys
 import time
 from pathlib import Path
 from typing import Any
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
@@ -28,9 +27,9 @@ from marketer.llm.gemini import GeminiClient  # noqa: E402
 from marketer.reasoner import reason  # noqa: E402
 
 FIXTURES = [
-    ("saas_b2b", ROOT / "fixtures" / "envelopes" / "saas_b2b_post.json"),
-    ("retail_ecom", ROOT / "fixtures" / "envelopes" / "retail_ecom_post.json"),
-    ("dentist", ROOT / "fixtures" / "envelopes" / "dentist_post.json"),
+    ("saas_b2b", ROOT / "tests" / "fixtures" / "envelopes" / "saas_b2b_post.json"),
+    ("retail_ecom", ROOT / "tests" / "fixtures" / "envelopes" / "retail_ecom_post.json"),
+    ("dentist", ROOT / "tests" / "fixtures" / "envelopes" / "dentist_post.json"),
 ]
 
 RED_FLAG_CODES = {

@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  push:
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "alembic/**"
+      - "pyproject.toml"
+      - "requirements*.txt"
+      - "scripts/check_alembic_lineage.py"
+  pull_request:
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "alembic/**"
+      - "pyproject.toml"
+      - "requirements*.txt"
+      - "scripts/check_alembic_lineage.py"
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install dependencies
+        run: pip install -r requirements.txt ruff
+      - name: Ruff lint
+        run: ruff check .
+      - name: Ruff format check
+        run: ruff format --check .
+
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install dependencies
+        run: pip install -r requirements.txt mypy
+      - name: Run mypy
+        run: mypy src tests
+
+  tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: marketer
+          POSTGRES_PASSWORD: marketer
+          POSTGRES_DB: marketer_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U marketer -d marketer_test"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      DATABASE_URL: postgresql+asyncpg://marketer:marketer@localhost:5432/marketer_test
+      GEMINI_API_KEY: test-key
+      INBOUND_TOKEN: test-token
+      ORCH_CALLBACK_API_KEY: test-callback
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install dependencies
+        run: pip install -r requirements.txt pytest pytest-cov
+      - name: Apply migrations
+        run: alembic upgrade head
+      - name: Run tests
+        run: pytest tests/ -v --cov=src/marketer --cov-report=xml
+
+  migrations-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Check migration lineage
+        run: python scripts/check_alembic_lineage.py

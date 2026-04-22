@@ -343,7 +343,7 @@ PYTHONPATH=src \
 uvicorn marketer.main:app --port 8080 &
 
 # Run smoke test (starts mock callback server)
-PYTHONPATH=src python scripts/smoke_async_roundtrip.py
+PYTHONPATH=src python scripts/ops/smoke_async_roundtrip.py
 
 # Expected output:
 # ✓ POST /tasks → 202 ACCEPTED
@@ -362,13 +362,13 @@ Use `/tasks/sync` during integration development to get inline responses:
 ```bash
 curl -X POST http://localhost:8080/tasks/sync \
   -H "Content-Type: application/json" \
-  -d @fixtures/envelopes/casa_maruja_post.json \
+  -d @tests/fixtures/envelopes/casa_maruja_post.json \
   | python3 -m json.tool
 ```
 
 ### 4.3 Test Fixtures
 
-Available test envelopes in `fixtures/envelopes/`:
+Available test envelopes in `tests/fixtures/envelopes/`:
 
 | Fixture | Use Case | Notes |
 |---------|----------|-------|

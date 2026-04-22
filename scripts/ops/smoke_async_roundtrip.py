@@ -10,7 +10,7 @@ Flow:
   6. Validate the PATCH body is a well-formed CallbackBody with status=COMPLETED.
 
 Usage:
-  PYTHONPATH=src python scripts/smoke_async_roundtrip.py
+  PYTHONPATH=src python scripts/ops/smoke_async_roundtrip.py
 """
 
 from __future__ import annotations
@@ -25,8 +25,8 @@ from pathlib import Path
 
 import httpx
 
-ROOT = Path(__file__).resolve().parents[1]
-FIXTURE = ROOT / "fixtures" / "envelopes" / "casa_maruja_post.json"
+ROOT = Path(__file__).resolve().parents[2]
+FIXTURE = ROOT / "tests" / "fixtures" / "envelopes" / "casa_maruja_post.json"
 
 MOCK_PORT = 9000
 MARKETER_PORT = 8000

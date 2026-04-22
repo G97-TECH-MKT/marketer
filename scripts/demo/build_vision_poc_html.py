@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate samples/vision_poc_demo.html — visual viewer for vision POC runs.
+"""Generate docs/examples/runs/vision_poc_demo.html — visual viewer for vision POC runs.
 
 For each run renders:
   - KPI cards (status, latency, warnings, degraded, gallery counts)
@@ -12,10 +12,10 @@ For each run renders:
   - Collapsibles with input envelope + full callback_body raw JSON
 
 Usage:
-  python scripts/build_vision_poc_html.py
+  python scripts/demo/build_vision_poc_html.py
 
 Prerequisites:
-  reports/vision_poc_runs.json must exist — run scripts/vision_poc.py first.
+  reports/vision_poc_runs.json must exist — run scripts/demo/vision_poc.py first.
 """
 
 from __future__ import annotations
@@ -31,11 +31,11 @@ from pathlib import Path
 
 from PIL import Image
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 IMAGES_DIR = ROOT / "images"
 RUNS_PATH = ROOT / "reports" / "vision_poc_runs.json"
 CACHE_DIR = ROOT / "reports" / "_images_cache"
-OUT_PATH = ROOT / "samples" / "vision_poc_demo.html"
+OUT_PATH = ROOT / "docs" / "examples" / "runs" / "vision_poc_demo.html"
 
 THUMB_MAX_EDGE = 720
 THUMB_JPEG_QUALITY = 78
@@ -681,7 +681,7 @@ footer { color:var(--muted); font-size:12px; margin-top:26px; text-align:center;
 
 def main() -> int:
     if not RUNS_PATH.exists():
-        print(f"ERROR: {RUNS_PATH} not found. Run scripts/vision_poc.py first.")
+        print(f"ERROR: {RUNS_PATH} not found. Run scripts/demo/vision_poc.py first.")
         return 1
 
     runs = json.loads(RUNS_PATH.read_text(encoding="utf-8"))
@@ -757,7 +757,7 @@ def main() -> int:
 
   {panels}
 
-  <footer>Generated with scripts/build_vision_poc_html.py · images embedded as base64 data URIs</footer>
+  <footer>Generated with scripts/demo/build_vision_poc_html.py · images embedded as base64 data URIs</footer>
 </div>
 
 <script>

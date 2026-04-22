@@ -24,9 +24,9 @@ from marketer.config import load_settings
 from marketer.llm.gemini import GeminiClient
 from marketer.reasoner import reason
 
-ROOT = Path(__file__).resolve().parents[1]
-FIXTURE = ROOT / "fixtures" / "envelopes" / "casa_maruja_post.json"
-GOLDEN = ROOT / "golden" / "posts" / "casa_maruja_v1.json"
+TESTS_DIR = Path(__file__).resolve().parent
+FIXTURE = TESTS_DIR / "fixtures" / "envelopes" / "casa_maruja_post.json"
+GOLDEN = TESTS_DIR / "golden" / "posts" / "casa_maruja_v1.json"
 
 def _has_key() -> bool:
     if os.environ.get("GEMINI_API_KEY"):

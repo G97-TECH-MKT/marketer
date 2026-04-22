@@ -5,10 +5,10 @@ Run one scenario against the Nubiex fixture, append to the runs log,
 rebuild the dashboard, and open it in the browser.
 
 Usage:
-    MARKETER_RUN_LIVE=1 PYTHONPATH=src python scripts/quick_run.py
-    MARKETER_RUN_LIVE=1 PYTHONPATH=src python scripts/quick_run.py "Crea un post sobre energía tántrica"
-    MARKETER_RUN_LIVE=1 PYTHONPATH=src python scripts/quick_run.py --scenario 3
-    MARKETER_RUN_LIVE=1 PYTHONPATH=src python scripts/quick_run.py --scenario 3 "Override description"
+    MARKETER_RUN_LIVE=1 PYTHONPATH=src python scripts/dev/quick_run.py
+    MARKETER_RUN_LIVE=1 PYTHONPATH=src python scripts/dev/quick_run.py "Crea un post sobre energía tántrica"
+    MARKETER_RUN_LIVE=1 PYTHONPATH=src python scripts/dev/quick_run.py --scenario 3
+    MARKETER_RUN_LIVE=1 PYTHONPATH=src python scripts/dev/quick_run.py --scenario 3 "Override description"
 
 Scenarios (default descriptions):
   1  post      producto    masaje holístico
@@ -37,7 +37,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 SRC  = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
@@ -46,9 +46,9 @@ from marketer.config import load_settings   # noqa: E402
 from marketer.llm.gemini import GeminiClient  # noqa: E402
 from marketer.reasoner import reason        # noqa: E402
 
-FIXTURE_PATH   = ROOT / "fixtures" / "envelopes" / "nubiex_post.json"
+FIXTURE_PATH   = ROOT / "tests" / "fixtures" / "envelopes" / "nubiex_post.json"
 RUNS_LOG       = ROOT / "reports" / "quick_runs.json"
-DASHBOARD_PATH = ROOT / "samples" / "nubiex_dashboard.html"
+DASHBOARD_PATH = ROOT / "docs" / "examples" / "runs" / "nubiex_dashboard.html"
 
 SCENARIO_DESCS: dict[int, str] = {
     1: "Crea un post para Instagram presentando el servicio de masaje holístico y tántrico de Nubiex, destacando el espacio exclusivo, seguro y transformador para hombres en Barcelona.",

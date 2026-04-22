@@ -1,127 +1,98 @@
 # 04 — AWS Deployment Architecture
 
-**Version:** 2.0  
-**Last Updated:** 2026-04-21  
-**Target:** Production-grade, economical, Terraform-deployable
+**Version:** 3.0  
+**Last Updated:** 2026-04-22  
+**Target:** Production-grade, secure, highly available, cost-aware
 
 ---
 
 ## 1. Architecture Overview
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                         AWS Account                                  │
-│                                                                       │
-│  ┌─────────────────────────────────────────────────────────────┐    │
-│  │                    VPC (10.0.0.0/16)                         │    │
-│  │                                                               │    │
-│  │  Public Subnets (10.0.1.0/24, 10.0.2.0/24)                  │    │
-│  │  ┌──────────────────────────────────────────────────────┐   │    │
-│  │  │              Application Load Balancer               │   │    │
-│  │  │         HTTPS :443 → HTTP :8080 (internal)           │   │    │
-│  │  │              ACM Certificate (TLS)                   │   │    │
-│  │  └──────────────────────┬───────────────────────────────┘   │    │
-│  │                         │                                     │    │
-│  │  Private Subnets (10.0.10.0/24, 10.0.11.0/24)               │    │
-│  │  ┌──────────────────────▼───────────────────────────────┐   │    │
-│  │  │              ECS Fargate Cluster                     │   │    │
-│  │  │                                                       │   │    │
-│  │  │  ┌─────────────┐  ┌─────────────┐                   │   │    │
-│  │  │  │  Task 1     │  │  Task 2     │  (auto-scaled)    │   │    │
-│  │  │  │  marketer   │  │  marketer   │                   │   │    │
-│  │  │  │  0.25 vCPU  │  │  0.25 vCPU  │                   │   │    │
-│  │  │  │  512 MB     │  │  512 MB     │                   │   │    │
-│  │  │  └──────┬──────┘  └──────┬──────┘                   │   │    │
-│  │  └─────────┼────────────────┼────────────────────────── ┘   │    │
-│  │            │                │                                 │    │
-│  │  ┌─────────▼────────────────▼────────────────────────────┐  │    │
-│  │  │           VPC Endpoints (no NAT Gateway!)             │  │    │
-│  │  │  • ECR API / ECR DKR (image pulls)                    │  │    │
-│  │  │  • Secrets Manager (GEMINI_API_KEY, tokens)           │  │    │
-│  │  │  • CloudWatch Logs (log streaming)                    │  │    │
-│  │  │  • SSM (parameter store)                              │  │    │
-│  │  └───────────────────────────────────────────────────────┘  │    │
-│  │                                                               │    │
-│  │  ┌───────────────────────────────────────────────────────┐  │    │
-│  │  │  RDS PostgreSQL (future, t3.micro, Multi-AZ off dev)  │  │    │
-│  │  └───────────────────────────────────────────────────────┘  │    │
-│  └─────────────────────────────────────────────────────────────┘    │
-│                                                                       │
-│  ECR Repository          CloudWatch          Secrets Manager         │
-│  (container images)      (logs, metrics,     (GEMINI_API_KEY,        │
-│                           alarms, dashboard)  INBOUND_TOKEN, etc.)   │
-│                                                                       │
-└─────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+  subgraph GH[GitHub Actions]
+    ci[ci.yml\nruff, mypy, pytest]
+    deploy[deploy.yml\nbuild, migrate, deploy]
+    tf[terraform.yml\nplan, apply]
+  end
 
-External:
-  Google Gemini API (HTTPS egress via NAT or Internet Gateway)
-  ROUTER service (internal VPC or peered VPC)
+  subgraph VPC[VPC existente 10.0.0.0/16]
+    subgraph Public[Public subnets]
+      ALB[ALB internal/external]
+      BAST["Bastion EC2 t4g.nano\nSSM only, sin IP publica"]
+    end
+    subgraph Private[Private subnets]
+      ECS["ECS Fargate\nmarketer-service"]
+      MIG["ECS RunTask\nalembic upgrade head"]
+    end
+    subgraph DB[DB subnets]
+      RDS["RDS Postgres 17\nMulti-AZ standby"]
+    end
+  end
+
+  SM["Secrets Manager\ndatabase-url + gemini keys"]
+  KMS["KMS CMK\nstorage + PI + logs"]
+  CW["CloudWatch\nlogs, alarms, dashboard"]
+
+  ci --> deploy
+  deploy -->|run-task| MIG --> RDS
+  deploy --> ECS
+  ECS -->|5432| RDS
+  BAST -->|5432| RDS
+  MIG -->|5432| RDS
+  ECS --> SM
+  MIG --> SM
+  RDS --> KMS
+  RDS --> CW
+  ECS --> CW
 ```
 
 ---
 
 ## 2. Service Choices & Rationale
 
-### 2.1 ECS Fargate (not EKS, not EC2)
+### 2.1 ECS Fargate
 
-| Option | Cost | Complexity | Fit |
-|--------|------|------------|-----|
-| **ECS Fargate** | Pay-per-task-second | Low (managed) | ✅ Recommended |
-| EKS | Fixed control plane ~$73/mo | High (K8s ops) | ❌ Overkill for single service |
-| EC2 Auto Scaling | Idle costs ~$15-30/mo min | Medium | ❌ Wasteful for variable traffic |
-| Lambda | 15s hard limit + cold start | Low | ❌ 12s LLM call is too risky |
+Fargate se mantiene como opción principal por simplicidad operativa y escalado automático. El servicio sigue siendo mayormente I/O-bound (espera de LLM), por eso se usan políticas híbridas en lugar de CPU-only.
 
-**Rationale:** Fargate charges only for running task seconds. At 2 tasks × 0.25 vCPU × 512 MB, monthly cost is ~$15–30. Scales to 0 in dev. No cluster management.
+### 2.2 ALB
 
-### 2.2 ALB (not NLB, not API Gateway)
+ALB sigue siendo el frontend recomendado por integración nativa con ECS, health checks y métrica `ALBRequestCountPerTarget` para escalado basado en carga real.
 
-**ALB chosen because:**
-- L7 routing — path-based rules, health checks on `/ready`
-- Native ECS target group integration
-- Sticky sessions (not needed here, but available)
-- WAF integration (security add-on)
+### 2.3 VPC Endpoints + egress
 
-**API Gateway rejected because:**
-- Long-lived connections (18s+ for p95) near 29s proxy timeout
-- Adds $3.50/million request cost
-- Adds 10–50ms overhead
+Se priorizan endpoints privados para servicios AWS internos y salida controlada para dependencias externas.
 
-### 2.3 VPC Endpoints (not NAT Gateway)
+### 2.4 Secrets Manager + KMS
 
-This is the **biggest cost optimization** in the architecture.
+Se centralizan secretos (`gemini`, tokens, `database-url`) y cifrado con CMKs dedicadas para RDS/PI/logs.
 
-| Option | Monthly Cost |
-|--------|-------------|
-| NAT Gateway (1 AZ) | ~$35 + data charges |
-| **VPC Endpoints** | ~$7–10 (interface endpoints × hours) |
+### 2.5 ECR
 
-VPC Endpoints needed for Fargate tasks in private subnets:
-- `com.amazonaws.{region}.ecr.api` — Docker image manifests
-- `com.amazonaws.{region}.ecr.dkr` — Docker image layers
-- `com.amazonaws.{region}.logs` — CloudWatch Logs
-- `com.amazonaws.{region}.secretsmanager` — Secrets Manager
-- `com.amazonaws.{region}.ssm` — Parameter Store
+ECR continúa como registry principal.
 
-**Gemini API egress** still requires a NAT Gateway or public subnet placement. Recommendation: place Fargate tasks in a **public subnet with private IP** (no public IP assigned), or use a single small NAT Gateway.
+### 2.6 RDS PostgreSQL Multi-AZ (nuevo)
 
-> **Cost decision:** If budget is very tight, run Fargate tasks in public subnets (`assign_public_ip = ENABLED`) and use VPC Endpoints only for ECR/Secrets Manager. Gemini traffic flows via Internet Gateway (no NAT Gateway cost). Trade-off: slightly reduced security posture.
+| Opción | Costo | Operación | Fit |
+|---|---:|---|---|
+| **RDS PostgreSQL Multi-AZ** | Medio | Bajo | ✅ Recomendado |
+| Aurora PostgreSQL | Alto | Medio | ⚠ Solo si se necesita escala superior |
+| Self-managed EC2 | Bajo/medio | Alto | ❌ Mayor riesgo operacional |
 
-### 2.4 Secrets Manager (not SSM Parameter Store, not env vars)
+Decisión:
+- Prod: `db.t4g.small`, `multi_az=true`, `backup_retention_period=14`.
+- Dev: `db.t4g.micro`, `multi_az=false`, `backup_retention_period=7`.
+- `storage_type="gp3"` explícito para mejor costo/rendimiento.
+- `rds.force_ssl=1`, `pgaudit`, `pg_stat_statements`.
 
-| Option | Cost | Security |
-|--------|------|----------|
-| **Secrets Manager** | $0.40/secret/month | ✅ Rotation, audit, KMS |
-| SSM SecureString | $0.05/parameter/month | Good (no auto-rotation) |
-| Task definition env | Free | ❌ Visible in console/API |
-| Dockerfile ENV | Free | ❌ Baked into image |
+### 2.7 Bastion vía SSM (nuevo)
 
-Secrets Manager for: `GEMINI_API_KEY`, `INBOUND_TOKEN`, `ORCH_CALLBACK_API_KEY`, `DATABASE_URL`
+El bastion se despliega sin IP pública, sin SSH abierto (`22` cerrado), con acceso exclusivo vía Session Manager.
 
-SSM Parameter Store (free tier) for: `GEMINI_MODEL`, `LOG_LEVEL`, `LLM_TIMEOUT_SECONDS`
-
-### 2.5 ECR (not DockerHub, not GitHub Packages)
-
-ECR is in the same AWS account — no cross-cloud auth, no external dependency, native IAM integration. Cost: ~$0.10/GB/month. Image size ~200MB → ~$0.02/month.
+Ventajas:
+- Elimina exposición directa a Internet.
+- Audita sesiones por CloudTrail/SSM.
+- Habilita port-forward seguro a RDS (`5432`) para operaciones puntuales.
 
 ---
 
@@ -129,50 +100,29 @@ ECR is in the same AWS account — no cross-cloud auth, no external dependency, 
 
 ### 3.1 VPC Layout
 
-```
-VPC CIDR: 10.0.0.0/16
-
-Public Subnets (AZ-A, AZ-B):
-  10.0.1.0/24  (us-east-1a)   ← ALB
-  10.0.2.0/24  (us-east-1b)   ← ALB
-
-Private Subnets (AZ-A, AZ-B):
-  10.0.10.0/24 (us-east-1a)   ← ECS tasks, RDS
-  10.0.11.0/24 (us-east-1b)   ← ECS tasks, RDS
-
-Database Subnets (AZ-A, AZ-B):
-  10.0.20.0/24 (us-east-1a)   ← RDS (future)
-  10.0.21.0/24 (us-east-1b)   ← RDS (future)
-```
+- Public subnets: ALB (y host bastion si aplica subnet pública sin IP pública).
+- Private subnets: ECS service + migrator run-task.
+- DB subnets: RDS.
 
 ### 3.2 Security Groups
 
-**ALB Security Group (`sg-alb`):**
-```
-Inbound:
-  HTTPS 443  from 0.0.0.0/0   (public traffic)
-  HTTP  80   from 0.0.0.0/0   (redirect to HTTPS)
-Outbound:
-  TCP 8080   to sg-ecs
-```
+**ALB (`sg-alb`)**
+- Inbound: `443` (y opcional `80` redirect).
+- Egress: `8080` a `sg-ecs`.
 
-**ECS Tasks Security Group (`sg-ecs`):**
-```
-Inbound:
-  TCP 8080   from sg-alb       (ALB only)
-Outbound:
-  HTTPS 443  to 0.0.0.0/0     (Gemini API, external callbacks)
-  HTTPS 443  to VPC Endpoints  (ECR, Secrets Manager, CloudWatch)
-  TCP 5432   to sg-rds         (PostgreSQL, future)
-```
+**ECS (`sg-ecs`)**
+- Inbound: `8080` desde `sg-alb`.
+- Egress: `443` a Internet/endpoints AWS.
+- Egress: `5432` a `sg-rds`.
 
-**RDS Security Group (`sg-rds`, future):**
-```
-Inbound:
-  TCP 5432   from sg-ecs
-Outbound:
-  (none needed)
-```
+**RDS (`sg-rds`)**
+- Inbound: `5432` desde `sg-ecs`.
+- Inbound: `5432` desde `sg-bastion`.
+- Sin ingress adicional.
+
+**Bastion (`sg-bastion`)**
+- Sin ingress.
+- Egress `443` (SSM) y `5432` a `sg-rds`.
 
 ---
 
@@ -180,7 +130,21 @@ Outbound:
 
 ### 4.1 ECS Task Execution Role
 
-Used by Fargate to pull images and fetch secrets at startup.
+Incluye:
+- ECR pull.
+- `secretsmanager:GetSecretValue`.
+- `kms:Decrypt` sobre CMK usada por `database-url`.
+- CloudWatch logs.
+
+### 4.2 ECS Task Role (service runtime)
+
+Permisos mínimos de aplicación; sin acceso directo a secretos de DB.
+
+### 4.3 Migrator Task Role (nuevo)
+
+Rol separado del servicio para evitar overlap:
+- `secretsmanager:GetSecretValue` sobre `marketer/{env}/database-url`.
+- Logs del migrador (`/ecs/marketer-{env}-migrator`).
 
 ```json
 {
@@ -188,46 +152,23 @@ Used by Fargate to pull images and fetch secrets at startup.
   "Statement": [
     {
       "Effect": "Allow",
-      "Action": [
-        "ecr:GetAuthorizationToken",
-        "ecr:BatchCheckLayerAvailability",
-        "ecr:GetDownloadUrlForLayer",
-        "ecr:BatchGetImage"
-      ],
-      "Resource": "*"
+      "Action": ["secretsmanager:GetSecretValue"],
+      "Resource": "arn:aws:secretsmanager:*:*:secret:marketer/*/database-url-*"
     },
     {
       "Effect": "Allow",
-      "Action": [
-        "secretsmanager:GetSecretValue"
-      ],
-      "Resource": [
-        "arn:aws:secretsmanager:{region}:{account}:secret:marketer/*"
-      ]
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "logs:CreateLogStream",
-        "logs:PutLogEvents"
-      ],
-      "Resource": "arn:aws:logs:{region}:{account}:log-group:/ecs/marketer:*"
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "ssm:GetParameter",
-        "ssm:GetParameters"
-      ],
-      "Resource": "arn:aws:ssm:{region}:{account}:parameter/marketer/*"
+      "Action": ["logs:CreateLogStream", "logs:PutLogEvents"],
+      "Resource": "arn:aws:logs:*:*:log-group:/ecs/marketer-*-migrator:*"
     }
   ]
 }
 ```
 
-### 4.2 ECS Task Role
+### 4.4 Bastion Instance Role (nuevo)
 
-Used by the application at runtime (minimal permissions).
+Rol dedicado:
+- `AmazonSSMManagedInstanceCore`.
+- `secretsmanager:GetSecretValue` solo para `database-url`.
 
 ```json
 {
@@ -235,320 +176,214 @@ Used by the application at runtime (minimal permissions).
   "Statement": [
     {
       "Effect": "Allow",
-      "Action": [
-        "logs:CreateLogGroup",
-        "logs:CreateLogStream",
-        "logs:PutLogEvents",
-        "logs:DescribeLogStreams"
-      ],
-      "Resource": "arn:aws:logs:{region}:{account}:log-group:/ecs/marketer:*"
+      "Action": ["secretsmanager:GetSecretValue"],
+      "Resource": "arn:aws:secretsmanager:*:*:secret:marketer/*/database-url-*"
     }
   ]
 }
 ```
-
-> **Principle of least privilege:** The task role has no S3, DynamoDB, SQS, or other permissions. Add only what's needed when persistence is implemented.
 
 ---
 
 ## 5. Container Configuration
 
-### 5.1 ECS Task Definition
+### 5.1 Service Task Definition
 
-```json
-{
-  "family": "marketer",
-  "networkMode": "awsvpc",
-  "requiresCompatibilities": ["FARGATE"],
-  "cpu": "256",
-  "memory": "512",
-  "executionRoleArn": "arn:aws:iam::{account}:role/marketer-task-execution-role",
-  "taskRoleArn": "arn:aws:iam::{account}:role/marketer-task-role",
-  "containerDefinitions": [
-    {
-      "name": "marketer",
-      "image": "{account}.dkr.ecr.{region}.amazonaws.com/marketer:latest",
-      "portMappings": [
-        {"containerPort": 8080, "protocol": "tcp"}
-      ],
-      "environment": [
-        {"name": "LOG_LEVEL", "value": "INFO"},
-        {"name": "GEMINI_MODEL", "value": "gemini-2.5-flash-preview"},
-        {"name": "LLM_TIMEOUT_SECONDS", "value": "30"},
-        {"name": "CALLBACK_RETRY_ATTEMPTS", "value": "2"}
-      ],
-      "secrets": [
-        {
-          "name": "GEMINI_API_KEY",
-          "valueFrom": "arn:aws:secretsmanager:{region}:{account}:secret:marketer/gemini-api-key"
-        },
-        {
-          "name": "INBOUND_TOKEN",
-          "valueFrom": "arn:aws:secretsmanager:{region}:{account}:secret:marketer/inbound-token"
-        },
-        {
-          "name": "ORCH_CALLBACK_API_KEY",
-          "valueFrom": "arn:aws:secretsmanager:{region}:{account}:secret:marketer/callback-api-key"
-        }
-      ],
-      "healthCheck": {
-        "command": ["CMD", "curl", "-f", "http://localhost:8080/ready"],
-        "interval": 30,
-        "timeout": 5,
-        "retries": 3,
-        "startPeriod": 15
-      },
-      "logConfiguration": {
-        "logDriver": "awslogs",
-        "options": {
-          "awslogs-group": "/ecs/marketer",
-          "awslogs-region": "{region}",
-          "awslogs-stream-prefix": "ecs"
-        }
-      },
-      "essential": true
-    }
-  ]
-}
-```
+Nuevos puntos:
+- Inyección de `DATABASE_URL` desde secret JSON key: `:url::`.
+- Variables de pool:
+  - `DB_POOL_SIZE`
+  - `DB_POOL_MAX_OVERFLOW`
+  - `DB_POOL_TIMEOUT_SECONDS`
 
-### 5.2 Sizing Rationale
+### 5.2 Sizing
 
-| Resource | Allocated | Typical Usage | Headroom |
-|----------|-----------|--------------|---------|
-| CPU | 0.25 vCPU | ~0.02 vCPU | 12x |
-| Memory | 512 MB | ~100 MB | 5x |
+Se mantiene sizing base para servicio HTTP y se agrega task efímera de migración (`cpu=512`, `memory=1024`).
 
-The service is almost entirely I/O-bound (waiting on Gemini). CPU and memory allocations are minimal. If concurrent task count grows (>20 per replica), consider bumping to 0.5 vCPU / 1 GB.
+### 5.3 Migration Task Definition (nuevo)
+
+Task definition dedicada (`marketer-{env}-migrator`) ejecutada por `ecs run-task`:
+- `command = ["sh","-c","alembic upgrade head"]`
+- `essential=true`
+- Log group propio
+- Sin `ecs_service` asociado (solo one-off run).
+
+Flujo:
+1. Build + push imagen.
+2. `run-task` migrador con esa imagen.
+3. Esperar `tasks-stopped`.
+4. Validar `exitCode == 0`.
+5. Si falla, no se despliega servicio.
 
 ---
 
 ## 6. Auto Scaling
 
-### 6.1 Target Tracking Policy
+### 6.1 Hybrid Strategy (nuevo)
 
-```hcl
-resource "aws_appautoscaling_policy" "marketer_cpu" {
-  name               = "marketer-cpu-scaling"
-  policy_type        = "TargetTrackingScaling"
-  resource_id        = aws_appautoscaling_target.marketer.resource_id
-  scalable_dimension = "ecs:service:DesiredCount"
-  service_namespace  = "ecs"
+Para carga I/O-bound se usa estrategia combinada:
+- Target tracking CPU (70%).
+- Target tracking Memory (75%).
+- Target tracking `ALBRequestCountPerTarget` (primaria para throughput web).
+- Step scaling por CPU burst (`>70/+1`, `>85/+2`, `>95/+3`).
 
-  target_tracking_scaling_policy_configuration {
-    target_value       = 70.0
-    predefined_metric_specification {
-      predefined_metric_type = "ECSServiceAverageCPUUtilization"
-    }
-    scale_in_cooldown  = 300
-    scale_out_cooldown = 60
-  }
-}
-```
+Cooldowns:
+- Scale out: `60s`
+- Scale in: `300s`
 
 ### 6.2 Scaling Limits
 
 | Environment | Min Tasks | Max Tasks |
-|-------------|-----------|-----------|
+|---|---:|---:|
 | dev | 0 | 2 |
-| staging | 1 | 4 |
 | prod | 2 | 10 |
 
-**Note:** Min=0 for dev saves cost during off-hours. Cold start for Fargate Fargate is ~15–30s (image pull cached after first).
+### 6.3 Zero-downtime Deployment
 
-### 6.3 Custom Scaling Metric (Optional)
-
-For more accurate scaling (this service is network-bound, not CPU-bound), use a custom CloudWatch metric based on active background tasks. This requires the app to emit a `ActiveTasks` metric:
-
-```python
-# In reasoner.py, wrap background task counter with CloudWatch metric
-cloudwatch.put_metric_data(
-    Namespace='Marketer',
-    MetricData=[{'MetricName': 'ActiveTasks', 'Value': active_count, 'Unit': 'Count'}]
-)
-```
+- `deployment_minimum_healthy_percent = 100`
+- `deployment_maximum_percent = 200`
+- `deployment_circuit_breaker { enable=true, rollback=true }`
 
 ---
 
 ## 7. Deployment Pipeline (CI/CD)
 
-```
-GitHub Push (main)
-    │
-    ├─ GitHub Actions workflow
-    │
-    ├─ 1. Test
-    │      pytest (offline)
-    │      mypy type check
-    │
-    ├─ 2. Build
-    │      docker build -t marketer:{sha} .
-    │      docker tag marketer:{sha} {ecr_uri}:latest
-    │      docker tag marketer:{sha} {ecr_uri}:{sha}
-    │
-    ├─ 3. Push to ECR
-    │      aws ecr get-login-password | docker login
-    │      docker push {ecr_uri}:latest
-    │      docker push {ecr_uri}:{sha}
-    │
-    └─ 4. Deploy
-           aws ecs update-service
-             --cluster marketer-{env}
-             --service marketer
-             --force-new-deployment
+```mermaid
+flowchart LR
+  A[push / workflow_dispatch] --> B[ci.yml: ruff, mypy, pytest]
+  B --> C[build-and-push image]
+  C --> D[migrate: ecs run-task alembic]
+  D -->|exit 0| E[deploy ecs service]
+  D -->|exit != 0| F[abort deploy]
 ```
 
-**Deployment strategy:** Rolling update with minimum 50% healthy. With min=2 tasks, Fargate replaces one task at a time.
-
-**Rollback:** `aws ecs update-service --task-definition marketer:{prev_revision}` or via Terraform with pinned image tag.
+Workflows:
+- `ci.yml`: lint, typecheck, tests con Postgres y `alembic upgrade head`.
+- `deploy.yml`: agrega job `migrate` entre build y deploy.
+- `terraform.yml`: plan/apply infra.
 
 ---
 
-## 8. Cost Model
+## 8. Cost Model (updated)
 
-### 8.1 Dev Environment
+### 8.1 Incremental Prod
 
-| Service | Config | Monthly |
-|---------|--------|---------|
-| ECS Fargate | 0 tasks (scaled to 0 nights/weekends) | ~$5 |
-| ALB | 1 ALB, ~10k requests/day | ~$20 |
-| ECR | 1 repo, 200 MB | ~$0.02 |
-| CloudWatch | Logs 1 GB/month | ~$0.50 |
-| Secrets Manager | 4 secrets | ~$1.60 |
-| VPC Endpoints | 4 interface endpoints × $0.01/hr | ~$30 |
-| **Total** | | **~$57/month** |
+- RDS `db.t4g.small` Multi-AZ: ~$50/mes
+- gp3 20GB: ~$1.60/mes
+- Enhanced monitoring + PI (7d): ~$0.50/mes
+- Bastion `t4g.nano`: ~$3/mes
+- EBS bastion gp3 10GB: ~$0.80/mes
+- 2 CMKs: ~$2/mes
 
-> Optimize: Use NAT Gateway ($35 fixed) instead of VPC Endpoints if running few tasks. Break-even is at ~3.5 interface endpoints.
+**Incremental prod estimado:** `~$61/mes`  
+**Total prod estimado:** `~$157/mes` (sobre base previa ~$96)
 
-### 8.2 Production Environment
+### 8.2 Incremental Dev
 
-| Service | Config | Monthly |
-|---------|--------|---------|
-| ECS Fargate | 2 tasks × 0.25 vCPU × 512 MB (24/7) | ~$30 |
-| ALB | 1 ALB, ~100k requests/day | ~$25 |
-| ECR | 1 repo, 200 MB, 10 GB data transfer | ~$1 |
-| CloudWatch | Logs 10 GB/month + 5 alarms + 1 dashboard | ~$8 |
-| Secrets Manager | 4 secrets | ~$1.60 |
-| VPC Endpoints | 4 endpoints | ~$30 |
-| ACM | Free (public cert) | $0 |
-| Route53 | 1 hosted zone | ~$0.50 |
-| **Total** | | **~$96/month** |
+- RDS `db.t4g.micro` single-AZ: ~$12/mes
+- gp3 20GB: ~$1.60/mes
+- Bastion auto-stop: ~$1.50/mes
 
-### 8.3 High-Traffic Scaling
+**Incremental dev estimado:** `~$16/mes`  
+**Total dev estimado:** `~$73/mes`
 
-At 10 tasks (max scale), add ~$150/month in Fargate. Gemini costs dominate at volume:
+### 8.3 Optimization Note
 
-| Requests/day | Gemini cost/month | Fargate | Total |
-|--------------|------------------|---------|-------|
-| 1,000 | ~$3 | ~$30 | ~$130 |
-| 10,000 | ~$30 | ~$60 | ~$190 |
-| 100,000 | ~$300 | ~$200 | ~$600 |
+Post-estabilización: evaluar RI 1 año no-upfront en prod para bajar RDS de ~$50 a ~$33/mes (~34% ahorro).
 
 ---
 
 ## 9. DNS & TLS
 
-```
-Route53 Hosted Zone: plinng.io (or your domain)
-  A record: marketer.internal.plinng.io → ALB DNS name
-
-ACM Certificate: *.internal.plinng.io (wildcard)
-  Validation: DNS validation (automatic with Terraform)
-  Attached to: ALB HTTPS listener
-```
-
-For internal-only access (no public DNS needed), use ALB internal scheme with private hosted zone:
-
-```hcl
-resource "aws_lb" "marketer" {
-  internal           = true
-  load_balancer_type = "application"
-  ...
-}
-```
+Sin cambios estructurales: ALB + ACM + Route53 según ambiente.
 
 ---
 
 ## 10. Observability Stack
 
-### 10.1 CloudWatch Logs
+### 10.1 Logs
 
-```
-Log Group: /ecs/marketer
-Retention: 30 days (dev), 90 days (prod)
-Format: JSON (structured)
-```
+- `/ecs/marketer`
+- `/ecs/marketer-{env}-migrator`
+- `/aws/rds/instance/marketer-{env}/postgresql`
 
-**Key log queries (CloudWatch Insights):**
+### 10.2 Alarms (updated)
 
-```sql
--- Failed tasks in last 1h
-fields @timestamp, task_id, error_message
-| filter status = "FAILED"
-| sort @timestamp desc
-| limit 100
+RDS:
+1. `CPUUtilization > 80%`
+2. `FreeableMemory < 100MB`
+3. `FreeStorageSpace < 2GB`
+4. `DatabaseConnections > 80`
+5. `ReadLatency/WriteLatency > 50ms`
+6. `RDS event subscription` (`failover`, `failure`, `maintenance`, `deletion`, `low storage`)
 
--- p95 latency in last 24h
-fields latency_ms
-| filter ispresent(latency_ms)
-| stats pct(latency_ms, 95) as p95, avg(latency_ms) as avg by bin(1h)
+ECS:
+- `MemoryUtilization > 85%` (adicional a CPU y salud de ALB).
 
--- Warning distribution
-fields warnings.0.code
-| filter ispresent(warnings.0.code)
-| stats count(*) as n by warnings.0.code
-| sort n desc
-```
+### 10.3 Dashboard (updated)
 
-### 10.2 CloudWatch Metrics & Alarms
-
-| Alarm | Metric | Threshold | Action |
-|-------|--------|-----------|--------|
-| High error rate | `FAILED` callbacks / total | >5% over 5min | SNS → PagerDuty |
-| High latency | p95 latency_ms | >25000 ms | SNS → Slack |
-| Gemini timeout rate | `internal_error: TimeoutError` count | >3 in 5min | SNS → Slack |
-| Schema repair rate | `schema_repair_used` count | >10 in 15min | SNS → Slack |
-| Container health | ECS `UnhealthyTaskCount` | >0 | SNS → PagerDuty |
-| CPU high | ECS `CPUUtilization` | >80% | Auto-scale trigger |
-
-### 10.3 Dashboard
-
-CloudWatch Dashboard: `marketer-{env}`
-
-Widgets:
-1. Request rate (POST /tasks per minute)
-2. COMPLETED vs FAILED ratio
-3. p50/p95/p99 latency (from trace.latency_ms)
-4. Warning distribution (pie chart)
-5. ECS task count
-6. CPU and memory utilization
-7. ALB request count + 4xx/5xx rates
-8. Gemini API timeout count
+Widgets nuevos:
+- RDS CPU/Memoria/Conexiones/IOPS/Latencias.
+- Eventos de failover y mantenimiento.
+- ECS CPU, memoria, task count, request count ALB.
 
 ---
 
 ## 11. Backup & Recovery
 
-### 11.1 Stateless Service
+### 11.1 Stateless Layer
 
-Marketer is currently **fully stateless**. No backup strategy needed for the service itself.
+Servicio app sigue siendo stateless.
 
-- Configuration is in Secrets Manager (AWS-managed durability)
-- Container images are in ECR (replicated across AZs)
-- Logs are in CloudWatch (configurable retention)
+### 11.2 PostgreSQL
 
-### 11.2 PostgreSQL (When Enabled)
+Parámetros finales:
+- Prod: 14 días retención, Multi-AZ, final snapshot obligatorio, deletion protection.
+- Dev: 7 días retención, single-AZ.
+- PITR habilitado dentro de ventana de retención.
+- `skip_final_snapshot=false`.
 
-```hcl
-resource "aws_db_instance" "marketer" {
-  backup_retention_period = 7        # 7 days automated backups
-  backup_window           = "03:00-04:00"
-  multi_az                = false    # dev; true for prod
-  deletion_protection     = true     # prod
-  skip_final_snapshot     = false
-  final_snapshot_identifier = "marketer-final-${timestamp()}"
-}
+---
+
+## 12. Database Schema
+
+El esquema inicial de `alembic/versions/001_initial_schema.py` incluye:
+- `users`
+- `action_types`
+- `raw_briefs`
+- `strategies`
+- `jobs`
+
+Relaciones principales:
+- `strategies.user_id -> users.id`
+- `raw_briefs.user_id -> users.id`
+- `jobs.raw_brief_id -> raw_briefs.id`
+- `jobs.strategy_id -> strategies.id`
+- `jobs.action_type_id -> action_types.id`
+
+```mermaid
+erDiagram
+  users ||--o{ raw_briefs : has
+  users ||--o{ strategies : has
+  raw_briefs ||--o{ jobs : source
+  strategies ||--o{ jobs : chosen
+  action_types ||--o{ jobs : typed
 ```
 
-**RPO:** 5 minutes (with enabled_cloudwatch_logs_exports)  
-**RTO:** ~5 minutes (single-AZ restore) / ~1 minute (Multi-AZ failover)
+---
+
+## 13. Connecting to DB (SSM Runbook)
+
+```bash
+aws ssm start-session \
+  --target <bastion_instance_id> \
+  --document-name AWS-StartPortForwardingSessionToRemoteHost \
+  --parameters '{"host":["<rds_endpoint>"],"portNumber":["5432"],"localPortNumber":["15432"]}'
+
+aws secretsmanager get-secret-value \
+  --secret-id marketer/prod/database-url \
+  --query SecretString --output text | jq -r .url
+
+# Reescribir host para usar el tunel local
+psql "postgresql://...@localhost:15432/marketer?sslmode=require"
+```

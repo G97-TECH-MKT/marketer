@@ -4,8 +4,8 @@
 > Receives tasks from **ROUTER**, produces enrichment v2 for **CONTENT_FACTORY**.
 
 **Docs autoritativas:**
-- [`PRD.md`](./PRD.md) — qué hace y por qué (scope MVP, outputs, non-goals)
-- [`SPEC.md`](./SPEC.md) — cómo se integra (contratos, env vars, deploy, testing)
+- [`docs/PRD.md`](./docs/PRD.md) — qué hace y por qué (scope MVP, outputs, non-goals)
+- [`docs/SPEC.md`](./docs/SPEC.md) — cómo se integra (contratos, env vars, deploy, testing)
 - [`docs/ROUTER CONTRACT.md`](./docs/ROUTER%20CONTRACT.md) — contrato del orquestador (fuente externa)
 
 ---
@@ -47,7 +47,7 @@ cp .env.example .env
 # Editar .env y poner al menos GEMINI_API_KEY
 ```
 
-Variables (ver `SPEC.md §10` para la tabla completa):
+Variables (ver `docs/SPEC.md §10` para la tabla completa):
 
 - `GEMINI_API_KEY` — **requerida**
 - `GEMINI_MODEL` — default `gemini-3-flash-preview`
@@ -74,13 +74,13 @@ curl http://localhost:8000/ready    # {"status":"ready"} si GEMINI_API_KEY set
 ### 4. Probar un fixture
 
 ```bash
-PYTHONPATH=src python scripts/run_fixture.py casa_maruja_post.json
+PYTHONPATH=src python scripts/dev/run_fixture.py casa_maruja_post.json
 ```
 
 O smoke E2E completo (uvicorn + mock callback server):
 
 ```bash
-PYTHONPATH=src python scripts/smoke_async_roundtrip.py
+PYTHONPATH=src python scripts/ops/smoke_async_roundtrip.py
 ```
 
 ---
@@ -106,7 +106,7 @@ Corre el pipeline real contra Casa Maruja fixture. 26 tests: schema shape, cta c
 ### Batch cross-vertical (~100s, 9 llamadas Gemini)
 
 ```bash
-MARKETER_RUN_LIVE=1 PYTHONPATH=src python scripts/batch_test.py
+MARKETER_RUN_LIVE=1 PYTHONPATH=src python scripts/dev/batch_test.py
 ```
 
 3 fixtures × 3 runs → `reports/batch_test_<date>.md` con consistency de decisiones entre runs.
@@ -114,10 +114,10 @@ MARKETER_RUN_LIVE=1 PYTHONPATH=src python scripts/batch_test.py
 ### Demo visual multi-vertical
 
 ```bash
-MARKETER_RUN_LIVE=1 PYTHONPATH=src python scripts/build_multi_demo_html.py
+MARKETER_RUN_LIVE=1 PYTHONPATH=src python scripts/demo/build_multi_demo_html.py
 ```
 
-Corre 6 fixtures en paralelo, genera `samples/marketer_demo_v2.html` con tabla comparativa + tabs navegables.
+Corre 6 fixtures en paralelo, genera `docs/examples/runs/marketer_demo_v2.html` con tabla comparativa + tabs navegables.
 
 ---
 
@@ -133,24 +133,24 @@ src/marketer/           # Código del servicio
   schemas/              # Pydantic models (envelope, internal_context, enrichment)
 
 tests/                  # 62 tests (36 offline + 26 live)
-fixtures/envelopes/     # 10 fixtures de prueba (casa_maruja, saas, retail, dental, nubiex, etc.; post only)
-golden/posts/           # 3 baselines v2 para regression detection
-scripts/                # run_fixture, smoke_async, batch_test, build_demo_html
-samples/                # HTMLs demo generados (marketer_demo_v2.html)
+tests/fixtures/envelopes/  # 10 fixtures de prueba (casa_maruja, saas, retail, dental, nubiex, etc.; post only)
+tests/golden/posts/        # 3 baselines v2 para regression detection
+scripts/                   # ops/, dev/, demo/ (run_fixture, smoke_async, batch_test, demos)
+docs/examples/runs/        # JSON/HTMLs demo generados (marketer_demo_v2.html)
 docs/                   # golden_reference.md, ROUTER CONTRACT, PERSISTENCE (superseded), OpenSpec (infra/deploy)
 
-PRD.md                  # Producto
-SPEC.md                 # Técnico + operacional + integration runbook
+docs/PRD.md             # Producto
+docs/SPEC.md            # Técnico + operacional + integration runbook
 ```
 
 ---
 
 ## Integración
 
-**Para conectar a ROUTER real**, ver `SPEC.md §14 Integration runbook`. Resumen:
+**Para conectar a ROUTER real**, ver `docs/SPEC.md §14 Integration runbook`. Resumen:
 
-1. Infra team despliega container (ver `SPEC.md §13`).
-2. Router team registra marketer en `agents` + `action_catalog` + `agent_sequence` (SQL en `SPEC §14.2`).
+1. Infra team despliega container (ver `docs/SPEC.md §13`).
+2. Router team registra marketer en `agents` + `action_catalog` + `agent_sequence` (SQL en `docs/SPEC.md §14.2`).
 3. Smoke E2E: `POST /api/v1/jobs` al router → verificar PATCH llega a router desde marketer en ~15s.
 
 Variables a acordar con router team: `INBOUND_TOKEN` (mismo valor en `agents.auth_token` del router y en env de marketer) y `ORCH_CALLBACK_API_KEY` (per-agent API key que router asigna).

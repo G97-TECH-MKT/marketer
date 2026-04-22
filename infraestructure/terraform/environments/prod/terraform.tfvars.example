@@ -8,6 +8,7 @@ vpc_id             = "vpc-xxxxxxxxxxxxxxxxx"
 vpc_cidr           = "10.0.0.0/16"
 public_subnet_ids  = ["subnet-xxxxxxxxxxxxxxxxx", "subnet-yyyyyyyyyyyyyyyyy"]
 private_subnet_ids = ["subnet-xxxxxxxxxxxxxxxxx", "subnet-yyyyyyyyyyyyyyyyy"]
+db_subnet_ids      = []  # optional dedicated DB subnets
 
 # ─── TLS ─────────────────────────────────────────────────────────────────────
 certificate_arn   = "arn:aws:acm:us-east-1:ACCOUNT_ID:certificate/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
@@ -16,6 +17,7 @@ alb_allowed_cidrs = ["10.0.0.0/8"]
 
 # ─── IAM ─────────────────────────────────────────────────────────────────────
 permission_boundary_arn = "arn:aws:iam::ACCOUNT_ID:policy/MarketerPermissionBoundary"
+enable_bastion          = true
 
 # ─── Container Image ──────────────────────────────────────────────────────────
 image_tag = "latest"   # overridden by CI/CD with git SHA
@@ -34,4 +36,6 @@ max_capacity            = 10
 llm_timeout             = 30
 callback_retry_attempts = 2
 log_retention_days      = 90
+db_pool_size            = 10
+db_pool_max_overflow    = 5
 alert_email             = "alerts@orbidi.com"

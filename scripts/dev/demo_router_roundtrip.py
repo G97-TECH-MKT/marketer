@@ -1,6 +1,6 @@
 """Simulate a ROUTER -> MARKETER -> ROUTER round trip and dump a merged JSON.
 
-Posts the canonical Contrato B body (`fixtures/envelopes/casa_maruja_post.json`)
+Posts the canonical Contrato B body (`tests/fixtures/envelopes/casa_maruja_post.json`)
 to a running MARKETER and writes a single file with:
 
   - router_dispatch:  exactly what ROUTER sends MARKETER (Contrato B, §3)
@@ -12,7 +12,6 @@ to a running MARKETER and writes a single file with:
 from __future__ import annotations
 
 import argparse
-import copy
 import json
 import os
 from datetime import datetime, timezone
@@ -20,7 +19,7 @@ from pathlib import Path
 
 import httpx
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 
 
 def main() -> None:
@@ -30,7 +29,7 @@ def main() -> None:
     parser.add_argument("--out", default="tmp_merged_marketer_run.json")
     args = parser.parse_args()
 
-    fixture = ROOT / "fixtures" / "envelopes" / args.fixture
+    fixture = ROOT / "tests" / "fixtures" / "envelopes" / args.fixture
     dispatch = json.loads(fixture.read_text(encoding="utf-8"))
 
     headers = {

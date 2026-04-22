@@ -6,7 +6,7 @@ Report focuses on the new CF output fields: brand_dna (design-system format),
 cf_post_brief (assembled post instruction), and hashtag_strategy.tags.
 
 Usage:
-    MARKETER_RUN_LIVE=1 PYTHONPATH=src python scripts/multi_surface_test.py
+    MARKETER_RUN_LIVE=1 PYTHONPATH=src python scripts/dev/multi_surface_test.py
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
@@ -43,7 +43,7 @@ RED_FLAG_CODES = {
 RUNS: list[tuple[str, Path, str]] = [
     (
         "post | Verdea Studio (moda sostenible)",
-        ROOT / "fixtures" / "envelopes" / "retail_ecom_post.json",
+        ROOT / "tests" / "fixtures" / "envelopes" / "retail_ecom_post.json",
         (
             "Crea un post simple para el lanzamiento de la nueva colección cápsula de primavera, "
             "hecha con algodón reciclado. Transmite el valor sostenible y dirige tráfico "
@@ -52,7 +52,7 @@ RUNS: list[tuple[str, Path, str]] = [
     ),
     (
         "story | Casa Maruja (restaurante)",
-        ROOT / "fixtures" / "envelopes" / "casa_maruja_post.json",
+        ROOT / "tests" / "fixtures" / "envelopes" / "casa_maruja_post.json",
         (
             "Crea una story de Instagram para anunciar el plato del día de hoy: arròs al forn. "
             "Corta, directa, con ganas de que la gente venga a comer. Tono cercano."
@@ -60,7 +60,7 @@ RUNS: list[tuple[str, Path, str]] = [
     ),
     (
         "reel | Clínica Dental Eixample (salud)",
-        ROOT / "fixtures" / "envelopes" / "dentist_post.json",
+        ROOT / "tests" / "fixtures" / "envelopes" / "dentist_post.json",
         (
             "Crea un reel corto mostrando cómo es una revisión dental en nuestra clínica: "
             "tranquila, sin miedo y con trato cercano. Que la gente pierda el miedo al dentista."
@@ -68,7 +68,7 @@ RUNS: list[tuple[str, Path, str]] = [
     ),
     (
         "carousel | Pulsemetrics (SaaS B2B)",
-        ROOT / "fixtures" / "envelopes" / "saas_b2b_post.json",
+        ROOT / "tests" / "fixtures" / "envelopes" / "saas_b2b_post.json",
         (
             "Crea un carrusel con los 3 beneficios principales de las alertas predictivas "
             "de Pulsemetrics: menos ruido, más señal, y menos tiempo resolviendo incidentes. "
@@ -214,9 +214,6 @@ def _render_report(
     for label, r in results:
         tags_n = len(r.get("hashtag_tags") or [])
         warn_codes = r.get("warning_codes") or []
-        status = r.get("status", "?")
-        if r.get("exception"):
-            status = f"ERR"
         lines.append(
             "| {lbl} | {sf} | {pillar} | {ch} | {beat} | {rhet} | {tags}× | "
             "{lat}ms | {warns} | {rf} |".format(
@@ -236,7 +233,7 @@ def _render_report(
 
     # ── Per-run detail ─────────────────────────────────────────────────────────
     for label, r in results:
-        lines.append(f"---")
+        lines.append("---")
         lines.append(f"## {label}")
         lines.append("")
 
@@ -341,7 +338,7 @@ def main() -> None:
     if not os.environ.get("MARKETER_RUN_LIVE"):
         print(
             "Set MARKETER_RUN_LIVE=1 to run live LLM calls.\n"
-            "  MARKETER_RUN_LIVE=1 PYTHONPATH=src python scripts/multi_surface_test.py",
+            "  MARKETER_RUN_LIVE=1 PYTHONPATH=src python scripts/dev/multi_surface_test.py",
             file=sys.stderr,
         )
         sys.exit(2)

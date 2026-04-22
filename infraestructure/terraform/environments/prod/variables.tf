@@ -26,6 +26,12 @@ variable "private_subnet_ids" {
   type        = list(string)
 }
 
+variable "db_subnet_ids" {
+  description = "Optional dedicated DB subnet IDs. Empty means reuse private_subnet_ids."
+  type        = list(string)
+  default     = []
+}
+
 # ─── TLS / DNS ────────────────────────────────────────────────────────────────
 
 variable "certificate_arn" {
@@ -127,6 +133,24 @@ variable "alert_email" {
   description = "Email for CloudWatch alarm notifications"
   type        = string
   default     = ""
+}
+
+variable "enable_bastion" {
+  description = "Enable bastion host"
+  type        = bool
+  default     = true
+}
+
+variable "db_pool_size" {
+  description = "SQLAlchemy DB pool size"
+  type        = number
+  default     = 10
+}
+
+variable "db_pool_max_overflow" {
+  description = "SQLAlchemy DB pool max overflow"
+  type        = number
+  default     = 5
 }
 
 # ─── IAM ─────────────────────────────────────────────────────────────────────

@@ -5,7 +5,7 @@ Covers: post × 5, story × 2, reel × 2, carousel × 1.
 Checks: brand_dna quality, CONCEPT block, image selection, surface format accuracy.
 
 Usage (live):
-    MARKETER_RUN_LIVE=1 PYTHONPATH=src python scripts/nubiex_power_test.py
+    MARKETER_RUN_LIVE=1 PYTHONPATH=src python scripts/demo/nubiex_power_test.py
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
@@ -29,7 +29,7 @@ from marketer.config import load_settings  # noqa: E402
 from marketer.llm.gemini import GeminiClient  # noqa: E402
 from marketer.reasoner import reason  # noqa: E402
 
-FIXTURE_PATH = ROOT / "fixtures" / "envelopes" / "nubiex_post.json"
+FIXTURE_PATH = ROOT / "tests" / "fixtures" / "envelopes" / "nubiex_post.json"
 REPORT_DIR = ROOT / "reports"
 REPORT_DATE = "2026-04-21"
 

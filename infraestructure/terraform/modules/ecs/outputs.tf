@@ -27,3 +27,13 @@ output "log_group_name" {
   description = "CloudWatch log group name"
   value       = aws_cloudwatch_log_group.marketer.name
 }
+
+output "migrator_task_definition_arn" {
+  description = "Migrator task definition ARN"
+  value       = aws_ecs_task_definition.migrator.arn
+}
+
+output "migrator_log_group_name" {
+  description = "Migrator CloudWatch log group name"
+  value       = aws_cloudwatch_log_group.migrator.name
+}

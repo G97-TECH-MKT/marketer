@@ -25,6 +25,8 @@ RUN pip install --no-cache-dir --upgrade pip \
 
 # Code
 COPY src/ ./src/
+COPY alembic/ ./alembic/
+COPY alembic.ini ./alembic.ini
 
 # Env defaults (override at run time)
 ENV PYTHONPATH=/app/src \

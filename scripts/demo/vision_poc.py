@@ -8,7 +8,7 @@ inyecta como `Part` multimodal en la llamada a Gemini, y guarda el output
 para análisis cross-run y cross-client.
 
 Usage:
-  MARKETER_RUN_LIVE=1 PYTHONPATH=src python scripts/vision_poc.py
+  MARKETER_RUN_LIVE=1 PYTHONPATH=src python scripts/demo/vision_poc.py
 
 Requiere Pillow (pip install Pillow).
 """
@@ -20,12 +20,11 @@ import json
 import sys
 import time
 import urllib.request
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from PIL import Image
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
 from google import genai  # noqa: E402
@@ -591,7 +590,7 @@ def main() -> int:
     report_path = REPORTS_DIR / "vision_poc_summary.md"
     report_path.write_text(summarize_results(all_runs), encoding="utf-8")
 
-    print(f"\n[artifacts]")
+    print("\n[artifacts]")
     print(f"  {runs_path}")
     print(f"  {report_path}")
     return 0

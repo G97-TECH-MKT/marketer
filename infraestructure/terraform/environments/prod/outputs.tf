@@ -27,3 +27,23 @@ output "cloudwatch_dashboard" {
   description = "CloudWatch dashboard name"
   value       = module.monitoring.dashboard_name
 }
+
+output "rds_endpoint" {
+  description = "RDS endpoint"
+  value       = module.rds.endpoint
+}
+
+output "database_url_secret_arn" {
+  description = "Database URL secret ARN"
+  value       = module.rds.database_url_secret_arn
+}
+
+output "bastion_instance_id" {
+  description = "Bastion instance ID"
+  value       = module.bastion.instance_id
+}
+
+output "migrator_task_definition_arn" {
+  description = "Migrator task definition ARN"
+  value       = module.ecs.migrator_task_definition_arn
+}

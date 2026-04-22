@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """End-to-end smoke: golden envelope → real Gemini → Postgres.
 
-POSTs fixtures/envelopes/nubiex_golden_input.json (with fresh random IDs) through the
+POSTs tests/fixtures/envelopes/nubiex_golden_input.json (with fresh random IDs) through the
 running app via TestClient. `reason()` runs for real — Gemini is hit, the
 enrichment is produced, persistence writes all five rows. The outbound PATCH
 to callback_url is stubbed so we don't hang on a fake URL.
 
 Run with DATABASE_URL + GEMINI_API_KEY set in .env. Costs one LLM call.
 
-    python scripts/db_e2e_smoke.py
+    python scripts/ops/db_e2e_smoke.py
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ from uuid import uuid4
 
 os.environ.setdefault("DB_USE_NULL_POOL", "true")
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
 from fastapi.testclient import TestClient  # noqa: E402
@@ -52,7 +52,7 @@ def main() -> int:
     parser.add_argument(
         "--fixture",
         default="nubiex_golden_input.json",
-        help="Filename under fixtures/envelopes/ to use as the base envelope.",
+        help="Filename under tests/fixtures/envelopes/ to use as the base envelope.",
     )
     args = parser.parse_args()
 
@@ -64,7 +64,7 @@ def main() -> int:
         print("GEMINI_API_KEY not set; aborting.", file=sys.stderr)
         return 1
 
-    fixture_path = ROOT / "fixtures" / "envelopes" / args.fixture
+    fixture_path = ROOT / "tests" / "fixtures" / "envelopes" / args.fixture
     envelope = json.loads(fixture_path.read_text(encoding="utf-8"))
     account_uuid = uuid4()
     task_uuid = uuid4()

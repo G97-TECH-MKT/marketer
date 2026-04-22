@@ -1,11 +1,11 @@
-"""Generate samples/marketer_demo.html from samples/<run>.json (PostEnrichment v2).
+"""Generate docs/examples/runs/marketer_demo.html from docs/examples/runs/<run>.json (PostEnrichment v2).
 
 Embeds the JSON so the HTML works opened directly from disk (no fetch / CORS).
 
 Usage:
-  python scripts/build_demo_html.py                       # uses samples/casa_maruja_run.json
-  python scripts/build_demo_html.py --in samples/x.json
-  python scripts/build_demo_html.py --out samples/demo.html
+  python scripts/demo/build_demo_html.py                       # uses docs/examples/runs/casa_maruja_run.json
+  python scripts/demo/build_demo_html.py --in docs/examples/runs/x.json
+  python scripts/demo/build_demo_html.py --out docs/examples/runs/demo.html
 """
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ import argparse
 import json
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 
 
 HTML_TEMPLATE = r"""<!doctype html>
@@ -432,7 +432,7 @@ HTML_TEMPLATE = r"""<!doctype html>
   </section>
 
   <footer>
-    Generated from <code>samples/__SOURCE_FILENAME__</code> ·
+    Generated from <code>docs/examples/runs/__SOURCE_FILENAME__</code> ·
     <a href="__SOURCE_FILENAME__">open raw JSON</a>
   </footer>
 </div>
@@ -739,8 +739,8 @@ def render(merged: dict, source_filename: str) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--in", dest="input", default="samples/casa_maruja_run.json")
-    parser.add_argument("--out", dest="output", default="samples/marketer_demo.html")
+    parser.add_argument("--in", dest="input", default="docs/examples/runs/casa_maruja_run.json")
+    parser.add_argument("--out", dest="output", default="docs/examples/runs/marketer_demo.html")
     args = parser.parse_args()
     src = (ROOT / args.input).resolve()
     dst = (ROOT / args.output).resolve()

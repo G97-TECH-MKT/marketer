@@ -44,6 +44,11 @@ resource "aws_iam_role_policy" "task_execution_extras" {
         Resource = [
           "arn:aws:ssm:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:parameter/marketer/${var.environment}/*"
         ]
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["kms:Decrypt"]
+        Resource = ["arn:aws:kms:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:key/*"]
       }
     ]
   })

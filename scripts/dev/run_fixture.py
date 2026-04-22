@@ -2,7 +2,7 @@
 """POST a fixture envelope to a local MARKETER instance and print the response.
 
 Usage:
-  python scripts/run_fixture.py fixtures/envelopes/casa_maruja_post.json
+  python scripts/dev/run_fixture.py tests/fixtures/envelopes/casa_maruja_post.json
   python scripts/run_fixture.py casa_maruja_post.json
   $env:MARKETER_URL = "http://127.0.0.1:8080"; python scripts/run_fixture.py minimal_post.json
 """
@@ -17,7 +17,7 @@ from pathlib import Path
 
 import httpx
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_BASE = os.environ.get("MARKETER_URL", "http://127.0.0.1:8000")
 
 
@@ -25,7 +25,7 @@ def _resolve_fixture_path(raw: str) -> Path:
     p = Path(raw)
     if p.is_file():
         return p.resolve()
-    candidate = ROOT / "fixtures" / "envelopes" / raw
+    candidate = ROOT / "tests" / "fixtures" / "envelopes" / raw
     if candidate.is_file():
         return candidate.resolve()
     raise SystemExit(f"Fixture not found: {raw}")
@@ -33,7 +33,7 @@ def _resolve_fixture_path(raw: str) -> Path:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="POST fixture JSON to POST /tasks")
-    parser.add_argument("fixture", help="Path to JSON or filename under fixtures/envelopes/")
+    parser.add_argument("fixture", help="Path to JSON or filename under tests/fixtures/envelopes/")
     parser.add_argument(
         "--url",
         default=DEFAULT_BASE,

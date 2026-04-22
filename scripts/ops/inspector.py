@@ -6,11 +6,11 @@ dark-theme dashboard at reports/inspector.html. Always overwrites the same file
 so there's no legacy clutter — just refresh the browser tab after every run.
 
 Usage:
-    python scripts/inspector.py                    # last 5 runs
-    python scripts/inspector.py --limit 10
-    python scripts/inspector.py --output path.html
+    python scripts/ops/inspector.py                    # last 5 runs
+    python scripts/ops/inspector.py --limit 10
+    python scripts/ops/inspector.py --output path.html
 
-Wire into smoke runs: scripts/db_e2e_smoke.py calls this at the end.
+Wire into smoke runs: scripts/ops/db_e2e_smoke.py calls this at the end.
 
 Layout per run (top → bottom):
   1. Header (status, action, latency, strategy version)
@@ -35,7 +35,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
 os.environ.setdefault("DB_USE_NULL_POOL", "true")
@@ -485,7 +485,7 @@ def render_run(idx: int, row: dict[str, Any]) -> str:
 def render_html(runs: list[dict[str, Any]]) -> str:
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     if not runs:
-        body = '<div class="empty">No runs yet. Run scripts/db_e2e_smoke.py to generate one.</div>'
+        body = '<div class="empty">No runs yet. Run scripts/ops/db_e2e_smoke.py to generate one.</div>'
     else:
         body = "".join(render_run(i + 1, r) for i, r in enumerate(runs))
 

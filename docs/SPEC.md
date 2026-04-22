@@ -66,13 +66,13 @@ tests/
   test_validator.py          # 10 offline
   test_main_async.py         # 12 offline (TestClient + mocks)
   test_golden_casa_maruja.py # 26 live (MARKETER_RUN_LIVE=1)
-fixtures/envelopes/          # 10 fixtures cubriendo briefs ricos/pobres/ausentes (post only; web en legacy/)
-golden/posts/                # 3 baselines v2 (casa_maruja, minimal, missing_brief)
+tests/fixtures/envelopes/    # 10 fixtures cubriendo briefs ricos/pobres/ausentes (post only; web en docs/archive/legacy/)
+tests/golden/posts/          # 3 baselines v2 (casa_maruja, minimal, missing_brief)
 scripts/
-  smoke_async_roundtrip.py   # E2E real con uvicorn + mock callback
-  batch_test.py              # 3 verticales × 3 runs → reporte markdown
-  build_multi_demo_html.py   # genera samples/marketer_demo_v2.html
-  run_fixture.py             # dispara un fixture a /tasks/sync
+  ops/smoke_async_roundtrip.py   # E2E real con uvicorn + mock callback
+  dev/batch_test.py              # 3 verticales × 3 runs → reporte markdown
+  demo/build_multi_demo_html.py  # genera docs/examples/runs/marketer_demo_v2.html
+  dev/run_fixture.py             # dispara un fixture a /tasks/sync
 ```
 
 ---

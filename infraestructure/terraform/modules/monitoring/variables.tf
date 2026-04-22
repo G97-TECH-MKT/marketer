@@ -23,3 +23,15 @@ variable "target_group_arn_suffix" {
   description = "Target group ARN suffix (for CloudWatch metric dimensions)"
   type        = string
 }
+
+variable "rds_instance_id" {
+  description = "RDS instance identifier"
+  type        = string
+  default     = ""
+}
+
+variable "rds_enabled" {
+  description = "Enable RDS alarms/widgets"
+  type        = bool
+  default     = false
+}
