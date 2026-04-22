@@ -207,7 +207,9 @@ def test_post_tasks_accepts_string_attachments_contract(client, patched_pipeline
     resp = client.post("/tasks", json=env)
     assert resp.status_code == 202
     assert (
-        patched_pipeline["reason_called_with"]["payload"]["client_request"]["attachments"]
+        patched_pipeline["reason_called_with"]["payload"]["client_request"][
+            "attachments"
+        ]
         == env["payload"]["client_request"]["attachments"]
     )
 
