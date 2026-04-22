@@ -104,7 +104,10 @@ Nota: se responde **202 Accepted** porque el job va primero a cola SQS. El traba
   },
   "client_request": {
     "description": "Crea un post destacando el plato estrella de esta semana",
-    "attachments": []
+    "attachments": [
+      "https://cdn.example.com/attachments/casa-maruja/photo-1.jpg",
+      "https://cdn.example.com/attachments/casa-maruja/photo-2.jpg"
+    ]
   },
   "idempotency_key": "ig-20260420-007",
   "correlation_id": "ig-20260420-007",

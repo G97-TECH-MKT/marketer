@@ -119,10 +119,10 @@ def patched_pipeline(monkeypatch):
     async def fake_patch(callback_url, body, correlation_id, task_id):
         calls["patch_calls"].append(
             {
-            "callback_url": callback_url,
-            "body": body,
-            "correlation_id": correlation_id,
-            "task_id": task_id,
+                "callback_url": callback_url,
+                "body": body,
+                "correlation_id": correlation_id,
+                "task_id": task_id,
             }
         )
 
@@ -196,6 +196,20 @@ def test_post_tasks_reason_receives_full_envelope(client, patched_pipeline):
     env = _valid_envelope()
     client.post("/tasks", json=env)
     assert patched_pipeline["reason_called_with"] == env
+
+
+def test_post_tasks_accepts_string_attachments_contract(client, patched_pipeline):
+    env = _valid_envelope()
+    env["payload"]["client_request"]["attachments"] = [
+        "https://cdn.example.com/attachments/photo-1.jpg",
+        "https://cdn.example.com/attachments/photo-2.png",
+    ]
+    resp = client.post("/tasks", json=env)
+    assert resp.status_code == 202
+    assert (
+        patched_pipeline["reason_called_with"]["payload"]["client_request"]["attachments"]
+        == env["payload"]["client_request"]["attachments"]
+    )
 
 
 def test_post_tasks_rejects_missing_task_id(client):

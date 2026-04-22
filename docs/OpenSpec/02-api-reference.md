@@ -47,7 +47,10 @@ Authorization: Bearer {INBOUND_TOKEN}
   "payload": {
     "client_request": {
       "description": "Crea un post para el menú del domingo",
-      "attachments": []
+      "attachments": [
+        "https://cdn.example.com/attachments/f14bbec5/photo-1.jpg",
+        "https://cdn.example.com/attachments/f14bbec5/photo-2.jpg"
+      ]
     },
     "context": {
       "account_uuid": "acct-uuid",
@@ -115,6 +118,7 @@ Authorization: Bearer {INBOUND_TOKEN}
 | `action_id` | Logged; identifies action record |
 | `correlation_id` | Logged; passed through in trace |
 | `payload.context` | Account/client metadata; if missing, enrichment is degraded |
+| `payload.client_request.attachments` | Optional list of image URLs (`list[str]`) |
 | `payload.action_execution_gates.brief` | Brand brief; if missing, `brief_missing` warning, degraded=true |
 | `payload.action_execution_gates.image_catalog` | Gallery; if missing, `gallery_empty` warning, degraded=true |
 | `payload.context.prior_post` | Required for `edit_post`; missing triggers FAILED |

@@ -16,6 +16,10 @@ on:
         type: choice
         options: [dev, prod]
 
+concurrency:
+  group: marketer-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   id-token: write   # Required for OIDC token generation
   contents: read
@@ -71,6 +75,9 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Compute image tag and URI
         id: meta
         run: |
@@ -81,18 +88,16 @@ jobs:
           echo "uri=${ECR_URI}:${TAG}" >> "$GITHUB_OUTPUT"
           echo "registry=${ECR_URI}" >> "$GITHUB_OUTPUT"
 
-      - name: Build Docker image
-        run: |
-          docker build \
-            --cache-from "${{ steps.meta.outputs.registry }}:latest" \
-            --tag "${{ steps.meta.outputs.uri }}" \
-            --tag "${{ steps.meta.outputs.registry }}:latest" \
-            .
-
-      - name: Push to ECR
-        run: |
-          docker push "${{ steps.meta.outputs.uri }}"
-          docker push "${{ steps.meta.outputs.registry }}:latest"
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ steps.meta.outputs.uri }}
+            ${{ steps.meta.outputs.registry }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   migrate:
     name: DB Migrations (${{ github.event.inputs.environment || 'prod' }})

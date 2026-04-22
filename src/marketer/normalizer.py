@@ -67,6 +67,22 @@ def _clean_list(value: Any) -> list[str]:
     return out
 
 
+def _normalize_attachment_urls(value: Any) -> list[str]:
+    """Accept new contract (list[str]) and tolerate legacy list[dict{url}]."""
+    if not isinstance(value, list):
+        return []
+    urls: list[str] = []
+    for item in value:
+        candidate: str | None = None
+        if isinstance(item, str):
+            candidate = _clean_string(item)
+        elif isinstance(item, dict):
+            candidate = _clean_string(item.get("url"))
+        if candidate:
+            urls.append(candidate)
+    return urls
+
+
 def _first_non_empty(*values: Any) -> str | None:
     for v in values:
         cleaned = _clean_string(v)
@@ -172,11 +188,10 @@ def _collect_raw_images(
             for raw in items:
                 collected.append((raw, "content"))
 
-    # 2. attachments
+    # 2. attachments (new contract is list[str])
     client_request = payload.get("client_request") or {}
-    for raw in client_request.get("attachments") or []:
-        if isinstance(raw, dict) and raw.get("url"):
-            collected.append((raw, "unknown"))
+    for attachment_url in _normalize_attachment_urls(client_request.get("attachments")):
+        collected.append(({"url": attachment_url}, "unknown"))
 
     # 3. FIELD_BRAND_MATERIAL from brief gate
     brief_gate = (gates.get("brief") or {}).get("response") or {}
@@ -783,7 +798,7 @@ def normalize(envelope_data: dict[str, Any]) -> tuple[InternalContext, list[Warn
         surface=surface,
         mode=mode,
         user_request=user_request,
-        attachments=list(client_request.get("attachments") or []),
+        attachments=_normalize_attachment_urls(client_request.get("attachments")),
         account_uuid=_clean_string(context.get("account_uuid")),
         client_name=_clean_string(context.get("client_name")),
         platform=_clean_string(context.get("platform")),

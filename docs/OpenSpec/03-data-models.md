@@ -40,7 +40,7 @@ class RouterEnvelope(BaseModel):
 | Path | Consumed by |
 |------|-------------|
 | `payload.client_request.description` | User request text |
-| `payload.client_request.attachments[]` | Additional gallery images |
+| `payload.client_request.attachments[]` | Additional gallery images as URL strings (`list[str]`) |
 | `payload.context.account_uuid` | Brand identity |
 | `payload.context.client_name` | Brand name |
 | `payload.context.platform` | Target social platform |
@@ -75,6 +75,7 @@ class InternalContext(BaseModel):
 
     # User request
     user_request: str          # cleaned description text
+    attachments: list[str]     # normalized client_request attachment URLs
 
     # Brand data
     brief: Optional[FlatBrief]

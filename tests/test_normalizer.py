@@ -177,3 +177,34 @@ def test_gallery_filters_bad_extension_and_keeps_order():
     assert "https://cdn.example/good.png" in urls
     assert "https://cdn.example/bad.bmp" not in urls
     assert any(w.code == "gallery_partially_filtered" for w in warnings)
+
+
+def test_attachments_string_list_maps_to_context_and_gallery():
+    base = _load("minimal_post.json")
+    base["payload"]["client_request"]["attachments"] = [
+        "https://cdn.example/a-photo.jpg",
+        "https://cdn.example/b-photo.png",
+    ]
+    ctx, warnings = normalize(base)
+
+    assert ctx.attachments == [
+        "https://cdn.example/a-photo.jpg",
+        "https://cdn.example/b-photo.png",
+    ]
+    gallery_urls = [g.url for g in ctx.gallery]
+    assert "https://cdn.example/a-photo.jpg" in gallery_urls
+    assert "https://cdn.example/b-photo.png" in gallery_urls
+    assert not any(w.code == "gallery_empty" for w in warnings)
+
+
+def test_attachments_legacy_object_list_is_tolerated():
+    base = _load("minimal_post.json")
+    base["payload"]["client_request"]["attachments"] = [
+        {"url": "https://cdn.example/legacy-1.jpg", "name": "legacy-1"},
+        {"url": "https://cdn.example/legacy-2.webp"},
+    ]
+    ctx, _warnings = normalize(base)
+    assert ctx.attachments == [
+        "https://cdn.example/legacy-1.jpg",
+        "https://cdn.example/legacy-2.webp",
+    ]

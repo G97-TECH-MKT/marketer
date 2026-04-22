@@ -123,7 +123,7 @@ class InternalContext(BaseModel):
     mode: Mode
 
     user_request: str
-    attachments: list[dict[str, Any]] = Field(default_factory=list)
+    attachments: list[str] = Field(default_factory=list)
 
     account_uuid: str | None = None
     client_name: str | None = None

@@ -18,6 +18,10 @@ on:
       - "requirements*.txt"
       - "scripts/check_alembic_lineage.py"
 
+concurrency:
+  group: marketer-ci-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
