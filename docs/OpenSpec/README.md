@@ -1,7 +1,7 @@
 # Marketer — OpenSpec Documentation Index
 
 **Version:** 2.0  
-**Last Updated:** 2026-04-21  
+**Last Updated:** 2026-04-22  
 **Status:** Production-Ready MVP  
 **Maintainer:** Orbidi Platform Team
 
@@ -37,6 +37,8 @@ This OpenSpec directory contains the authoritative technical reference for:
 | [07](./07-security.md) | **Security Architecture** | Threat model, controls, secrets management |
 | [08](./08-integration-guide.md) | **Integration Guide** | ROUTER contract, CONTENT_FACTORY contract, testing |
 | [09](./09-operations.md) | **Operations Runbook** | Monitoring, alerting, incident response, maintenance |
+| [10](./10-user-profile-integration.md) | **User Profile Integration** | USP Memory Gateway GraphQL client, data mapping, precedence rules |
+| [11](./11-gallery-image-pool.md) | **Gallery Image Pool** | Brand media fetch, locking semantics, LLM vision-guided selection, downstream image delivery |
 
 ---
 

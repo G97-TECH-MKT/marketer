@@ -246,3 +246,112 @@ def test_do_not_truncates_to_five():
     out, warnings, _ = validate_and_correct(e, ctx)
     assert len(out.do_not) == 5
     assert any(w.code == "do_not_truncated" for w in warnings)
+
+
+# ---------------------------------------------------------------------------
+# _validate_cta — correction paths (lines 225-298)
+# ---------------------------------------------------------------------------
+
+def test_cta_channel_not_in_available_corrected_to_none():
+    # LLM picked a channel that isn't in available_channels → corrected to "none"
+    ctx = _ctx(channels=[("dm", None)])
+    e = _base(cta=CallToAction(channel="website", url_or_handle="https://x.com", label="Web"))
+    out, warnings, _ = validate_and_correct(e, ctx)
+    assert out.cta.channel == "none"
+    assert out.cta.url_or_handle is None
+    assert any(w.code == "cta_channel_invalid" for w in warnings)
+
+
+def test_cta_phone_mismatching_number_corrected_to_none():
+    ctx = _ctx(channels=[("phone", "+34 600 000 001"), ("dm", None)])
+    e = _base(
+        cta=CallToAction(channel="phone", url_or_handle="+34 699 999 999", label="Llámanos")
+    )
+    out, warnings, _ = validate_and_correct(e, ctx)
+    assert out.cta.channel == "none"
+    assert out.cta.url_or_handle is None
+    assert any(w.code == "cta_channel_invalid" for w in warnings)
+
+
+def test_cta_website_null_url_corrected_to_none():
+    # channel=website requires url_or_handle; if missing → corrected to "none"
+    ctx = _ctx(channels=[("website", "https://example.com"), ("dm", None)])
+    e = _base(cta=CallToAction(channel="website", url_or_handle=None, label="Web"))
+    out, warnings, _ = validate_and_correct(e, ctx)
+    assert out.cta.channel == "none"
+    assert any(w.code == "cta_channel_invalid" for w in warnings)
+
+
+def test_cta_website_malformed_url_corrected_to_none():
+    # website CTA with a non-HTTP URL → corrected to "none"
+    ctx = _ctx(channels=[("website", "not-a-url"), ("dm", None)])
+    e = _base(cta=CallToAction(channel="website", url_or_handle="not-a-url", label="Web"))
+    out, warnings, _ = validate_and_correct(e, ctx)
+    assert out.cta.channel == "none"
+    assert out.cta.url_or_handle is None
+    assert any(w.code == "cta_url_invalid" for w in warnings)
+
+
+def test_cta_link_sticker_clears_url_or_handle():
+    ctx = _ctx(channels=[("link_sticker", None)])
+    e = _base(
+        cta=CallToAction(channel="link_sticker", url_or_handle="https://leftover.com", label="Sticker")
+    )
+    out, _warnings, _ = validate_and_correct(e, ctx)
+    assert out.cta.channel == "link_sticker"
+    assert out.cta.url_or_handle is None
+
+
+# ---------------------------------------------------------------------------
+# _check_cta_caption_coherence — lines 167-211
+# ---------------------------------------------------------------------------
+
+def test_cta_none_with_actionable_cta_line_warns():
+    # cta.channel="none" but cta_line mentions "web" → mismatch warning
+    ctx = _ctx(channels=[("dm", None)])
+    e = _base(
+        cta=CallToAction(channel="none", url_or_handle=None, label=""),
+        caption=CaptionParts(
+            hook="Hook.",
+            body="Body.",
+            cta_line="Visítanos en nuestra web para más info.",
+        ),
+    )
+    _out, warnings, _ = validate_and_correct(e, ctx)
+    assert any(w.code == "cta_caption_channel_mismatch" for w in warnings)
+
+
+def test_cta_dm_but_cta_line_references_website_warns():
+    ctx = _ctx(channels=[("dm", None), ("website", "https://example.com")])
+    e = _base(
+        cta=CallToAction(channel="dm", url_or_handle=None, label="DM"),
+        caption=CaptionParts(
+            hook="Hook.",
+            body="Body.",
+            cta_line="Reserva en nuestra web o tienda online.",
+        ),
+    )
+    _out, warnings, _ = validate_and_correct(e, ctx)
+    assert any(w.code == "cta_caption_channel_mismatch" for w in warnings)
+
+
+def test_cta_dm_with_dm_cta_line_no_mismatch_warning():
+    ctx = _ctx(channels=[("dm", None)])
+    e = _base(
+        cta=CallToAction(channel="dm", url_or_handle=None, label="DM"),
+        caption=CaptionParts(
+            hook="Hook.", body="Body.", cta_line="Mándanos un mensaje directo."
+        ),
+    )
+    _out, warnings, _ = validate_and_correct(e, ctx)
+    assert not any(w.code == "cta_caption_channel_mismatch" for w in warnings)
+
+
+def test_cta_none_with_non_actionable_cta_line_no_warning():
+    ctx = _ctx(channels=[("dm", None)])
+    e = _base(
+        cta=CallToAction(channel="none", url_or_handle=None, label=""),
+        caption=CaptionParts(hook="Hook.", body="Body.", cta_line="Gracias por estar ahí."),
+    )
+    _out, warnings, _ = validate_and_correct(e, ctx)
+    assert not any(w.code == "cta_caption_channel_mismatch" for w in warnings)

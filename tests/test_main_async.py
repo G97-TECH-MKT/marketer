@@ -112,7 +112,7 @@ def patched_pipeline(monkeypatch):
         "reason_called_with": None,
     }
 
-    def fake_reason(envelope, gemini, extras_truncation=10):
+    def fake_reason(envelope, gemini, extras_truncation=10, **kwargs):
         calls["reason_called_with"] = envelope
         return _fake_callback()
 

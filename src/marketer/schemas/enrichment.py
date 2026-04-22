@@ -131,6 +131,18 @@ class VisualSelection(BaseModel):
     avoid_asset_urls: list[str] = Field(default_factory=list)
 
 
+SelectedImageRole = Literal["hero", "supporting", "background", "reference_only"]
+
+
+class SelectedImage(BaseModel):
+    """A gallery image selected by the LLM during Stage 2 vision confirmation."""
+
+    uuid: str = Field(description="UUID from the gallery shortlist. Must reference an item passed to the LLM.")
+    content_url: str = Field(description="Public S3 URL of the image (same as GalleryPoolItem.content_url).")
+    role: SelectedImageRole = Field(description="Creative role in the final post.")
+    usage_note: str = Field(description="One-sentence rationale for this selection.")
+
+
 FunnelStage = Literal[
     "awareness",
     "consideration",
@@ -244,6 +256,13 @@ class PostEnrichment(BaseModel):
     do_not: list[str] = Field(
         default_factory=list,
         description="Anti-patterns for downstream agents (max 5 short items).",
+    )
+    selected_images: list[SelectedImage] = Field(
+        default_factory=list,
+        description=(
+            "Gallery images selected by Stage 2 LLM vision. UUIDs reference items "
+            "from the gallery shortlist. Empty list is valid — text-only enrichment."
+        ),
     )
     visual_selection: VisualSelection = Field(default_factory=VisualSelection)
     confidence: Confidence = Field(default_factory=Confidence)

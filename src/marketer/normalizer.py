@@ -20,6 +20,7 @@ from marketer.schemas.internal_context import (
     ChannelKind,
     FlatBrief,
     GalleryItem,
+    GalleryPool,
     ImageRole,
     InternalContext,
     Mode,
@@ -27,6 +28,7 @@ from marketer.schemas.internal_context import (
     Surface,
     SurfaceFormat,
 )
+from marketer.user_profile import UserProfile
 
 logger = logging.getLogger(__name__)
 
@@ -457,6 +459,31 @@ def _flatten_brief(
 
 
 _HEX_RE = re.compile(r"#[0-9a-fA-F]{3,8}\b")
+_HEX_EXTRACT_RE = re.compile(r"(#[0-9a-fA-F]{3,8})\b")
+
+
+def _extract_hex(value: str) -> str | None:
+    """Return the first hex color found in value, e.g. 'primary:#E31A1A' -> '#e31a1a'."""
+    m = _HEX_EXTRACT_RE.search(value)
+    return m.group(1).lower() if m else None
+
+
+def _parse_keywords(raw: Any) -> list[str]:
+    """Accept a list or a JSON-encoded string of keywords."""
+    if isinstance(raw, list):
+        return [k.strip() for k in raw if isinstance(k, str) and k.strip()]
+    if isinstance(raw, str):
+        stripped = raw.strip()
+        if stripped.startswith("["):
+            try:
+                import json as _json
+                parsed = _json.loads(stripped)
+                if isinstance(parsed, list):
+                    return [k.strip() for k in parsed if isinstance(k, str) and k.strip()]
+            except Exception:
+                pass
+        return [k.strip() for k in stripped.split(",") if k.strip()]
+    return []
 _URL_RE = re.compile(r"https?://[^\s<>'\"]+")
 _EMAIL_RE = re.compile(r"\b[\w.+-]+@[\w-]+(?:\.[\w-]+)+\b")
 _PHONE_RE = re.compile(r"(?<!\w)\+?\d[\d\s\-().]{6,}\d(?!\w)")
@@ -648,7 +675,139 @@ def _reconcile_request(live: str, background: str | None) -> bool:
     return False
 
 
-def normalize(envelope_data: dict[str, Any]) -> tuple[InternalContext, list[Warning]]:
+def _apply_user_profile(
+    flat_brief: FlatBrief | None,
+    brand_tokens: BrandTokens,
+    available_channels: list[AvailableChannel],
+    user_profile: UserProfile,
+) -> tuple[FlatBrief, BrandTokens, list[AvailableChannel]]:
+    """Apply UP overrides to FlatBrief, BrandTokens, and AvailableChannels.
+
+    UP wins over brief gate on every non-empty field (§3.1–3.3).
+    If flat_brief is None (brief gate absent), a minimal FlatBrief is built
+    from UP data alone.
+    """
+    if flat_brief is None:
+        flat_brief = FlatBrief()
+
+    identity = user_profile.identity
+    if identity is None:
+        return flat_brief, brand_tokens, available_channels
+
+    company = identity.company
+    brand = identity.brand
+    social = identity.social_media
+
+    # §3.1 — FlatBrief field overrides
+    if _clean_string(company.get("name")):
+        flat_brief.business_name = _clean_string(company.get("name"))
+    if _clean_string(company.get("category")):
+        flat_brief.category = _clean_string(company.get("category"))
+    if _clean_string(company.get("country")):
+        flat_brief.country = _clean_string(company.get("country"))
+    if _clean_string(company.get("historyAndFounder")):
+        flat_brief.business_description = _clean_string(company.get("historyAndFounder"))
+    if _clean_string(company.get("targetCustomer")):
+        flat_brief.target_customer = _clean_string(company.get("targetCustomer"))
+    if _clean_string(company.get("websiteUrl")):
+        flat_brief.website_url = _clean_string(company.get("websiteUrl"))
+    if _clean_string(brand.get("communicationStyle")):
+        flat_brief.tone = _clean_string(brand.get("communicationStyle"))
+    if _clean_string(brand.get("communicationLang")):
+        flat_brief.communication_language = _clean_string(brand.get("communicationLang"))
+    up_colors = [
+        _extract_hex(c) for c in (brand.get("colors") or []) if isinstance(c, str)
+    ]
+    up_colors = [c for c in up_colors if c]
+    if up_colors:
+        flat_brief.colors = up_colors
+    kw_raw = brand.get("keywords")
+    if kw_raw:
+        up_keywords = _parse_keywords(kw_raw)
+        if up_keywords:
+            flat_brief.keywords = up_keywords
+    if brand.get("hasMaterial") is not None:
+        flat_brief.has_brand_material = bool(brand.get("hasMaterial"))
+
+    # UP-only fields → extras
+    for up_val, extras_key in [
+        (company.get("subcategory"), "subcategory"),
+        (company.get("productServices"), "product_services"),
+        (company.get("storeType"), "store_type"),
+        (company.get("location"), "location"),
+        (brand.get("logoUrl"), "logo_url"),
+    ]:
+        val = _clean_string(up_val)
+        if val:
+            flat_brief.extras[extras_key] = val
+
+    # §3.2 — BrandTokens overrides
+    up_palette: list[str] = []
+    for c in brand.get("colors") or []:
+        if isinstance(c, str):
+            hex_val = _extract_hex(c)
+            if hex_val:
+                up_palette.append(hex_val)
+    brand_tokens.palette = up_palette if up_palette else brand_tokens.palette
+    if _clean_string(brand.get("font")):
+        brand_tokens.font_style = _clean_string(brand.get("font"))
+    if _clean_string(brand.get("designStyle")):
+        brand_tokens.design_style = _clean_string(brand.get("designStyle"))
+    if _clean_string(brand.get("postContentStyle")):
+        brand_tokens.post_content_style = _clean_string(brand.get("postContentStyle"))
+    if _clean_string(brand.get("communicationStyle")):
+        brand_tokens.communication_style = _clean_string(brand.get("communicationStyle"))
+
+    # §3.3 — AvailableChannels overrides
+    up_channel_map: dict[str, str | None] = {
+        "website": _clean_string(company.get("websiteUrl")),
+        "instagram_profile": _clean_string(social.get("instagramUrl")),
+        "facebook": _clean_string(social.get("facebookUrl")),
+        "tiktok": _clean_string(social.get("tiktokUrl")),
+        "linkedin": _clean_string(social.get("linkedinUrl")),
+        "phone": _clean_string(company.get("businessPhone")),
+        "email": _clean_string(company.get("email")),
+    }
+    merged: list[AvailableChannel] = []
+    seen_kinds: set[str] = set()
+    for ch in available_channels:
+        up_val_ch = up_channel_map.get(ch.channel)
+        merged.append(
+            AvailableChannel(
+                channel=ch.channel,
+                url_or_handle=up_val_ch if up_val_ch else ch.url_or_handle,
+                label_hint=ch.label_hint,
+            )
+        )
+        seen_kinds.add(ch.channel)
+    for kind, up_url in up_channel_map.items():
+        if up_url and kind not in seen_kinds:
+            merged.append(
+                AvailableChannel(channel=kind, url_or_handle=up_url)  # type: ignore[arg-type]
+            )
+            seen_kinds.add(kind)
+    for always in ("dm", "link_sticker"):
+        if always not in seen_kinds:
+            hints = {"dm": "Escríbenos por DM", "link_sticker": "Toca el sticker"}
+            merged.append(
+                AvailableChannel(channel=always, label_hint=hints[always])  # type: ignore[arg-type]
+            )
+    available_channels = [
+        c
+        for c in merged
+        if c.channel in ("dm", "link_sticker") or c.url_or_handle
+    ]
+
+    return flat_brief, brand_tokens, available_channels
+
+
+def normalize(
+    envelope_data: dict[str, Any],
+    user_profile: UserProfile | None = None,
+    usp_warning: str | None = None,
+    gallery_pool: GalleryPool | None = None,
+    gallery_warning: str | None = None,
+) -> tuple[InternalContext, list[Warning]]:
     """Parse a raw ROUTER envelope dict into InternalContext + warnings.
 
     Raises ValueError on unsupported_action_code. Missing required fields raise
@@ -780,6 +939,56 @@ def normalize(envelope_data: dict[str, Any]) -> tuple[InternalContext, list[Warn
         available_channels = []
         brief_facts = BriefFacts()
 
+    # USP Memory Gateway integration
+    user_insights: list[dict[str, Any]] = []
+    if usp_warning:
+        warnings.append(
+            Warning(code=usp_warning, message=f"USP: {usp_warning.replace('_', ' ')}")
+        )
+    if user_profile is not None:
+        flat_brief, brand_tokens, available_channels = _apply_user_profile(
+            flat_brief, brand_tokens, available_channels, user_profile
+        )
+        # Rebuild BriefFacts from the post-merge data (§3.5)
+        if flat_brief is not None:
+            brief_facts = _extract_brief_facts(
+                flat_brief, available_channels, form_values_for_tokens
+            )
+        user_insights = [
+            {
+                "key": i.key,
+                "insight": i.insight,
+                "confidence": i.confidence,
+                "sourceIdentifier": i.source_identifier,
+                "updatedAt": i.updated_at,
+            }
+            for i in user_profile.insights
+        ]
+
+    # Gallery Image Pool integration (§10.2 of spec 11)
+    if gallery_warning:
+        warnings.append(
+            Warning(
+                code=gallery_warning,
+                message=f"Gallery: {gallery_warning.replace('_', ' ')}",
+            )
+        )
+    if gallery_pool is not None:
+        if gallery_pool.truncated:
+            warnings.append(
+                Warning(
+                    code="gallery_pool_truncated",
+                    message="Gallery page 1 may not cover all account images (size limit reached)",
+                )
+            )
+        if len(gallery_pool.shortlist) == 0 and not gallery_warning:
+            warnings.append(
+                Warning(
+                    code="gallery_vision_shortlist_empty",
+                    message="Gallery eligible pool produced 0 vision candidates",
+                )
+            )
+
     requested_surface_format = (
         _detect_requested_surface(user_request) if surface == "post" else None
     )
@@ -813,6 +1022,8 @@ def normalize(envelope_data: dict[str, Any]) -> tuple[InternalContext, list[Warn
         prior_post=prior_post,
         requested_surface_format=requested_surface_format,
         prior_step_outputs=prior_step_outputs,
+        user_insights=user_insights,
+        gallery_pool=gallery_pool,
         gallery_raw_count=raw_count,
         gallery_rejected_count=rejected,
         gallery_truncated=truncated,

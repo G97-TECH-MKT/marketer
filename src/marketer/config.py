@@ -32,6 +32,18 @@ class Settings(BaseSettings):
     # prod leaves it False to keep the real pool.
     db_use_null_pool: bool = False
 
+    # USP Memory Gateway. Empty key or URL → fetch skipped entirely.
+    usp_graphql_url: str = ""
+    usp_api_key: str = ""
+    usp_timeout_seconds: float = 5.0
+
+    # Gallery Image Pool. Both URL and key must be non-empty to activate.
+    gallery_api_url: str = ""
+    gallery_api_key: str = ""
+    gallery_timeout_seconds: float = 5.0
+    gallery_page_size: int = 50
+    gallery_vision_candidates: int = 5
+
 
 def load_settings() -> Settings:
     return Settings()

@@ -99,6 +99,7 @@ class RawBrief(Base):
         Text, ForeignKey("action_types.code"), nullable=False
     )
     envelope: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    user_profile: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     status: Mapped[str] = mapped_column(
         Text, nullable=False, server_default="'received'"
     )

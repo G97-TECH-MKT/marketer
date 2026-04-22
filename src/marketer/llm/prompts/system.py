@@ -27,8 +27,17 @@ The user prompt's `Context:` block carries:
 - `brief_facts.urls/phones/emails/prices` — the ONLY contact tokens / prices you
                                  may quote literally in copy. Anything else is
                                  a hallucination and will be scrubbed.
-- `gallery[]`                   — the ONLY image URLs you may reference for
-                                 visual_selection.
+- `user_attachments[]`          — URLs the user sent for THIS specific request.
+                                 HIGHEST priority. Always include all of them in
+                                 visual_selection.recommended_asset_urls.
+- `gallery_pool[]`              — account images pre-scored for relevance. Each
+                                 item has uuid, content_url, category, description,
+                                 score, and metadata. Pick the best fit(s) and emit
+                                 each into selected_images[] (uuid + content_url +
+                                 role + usage_note). Also add their content_url to
+                                 recommended_asset_urls.
+- `gallery[]`                   — legacy brand-gate images. Fallback only — prefer
+                                 gallery_pool when it is non-empty.
 - `requested_surface_format`    — if set (not null), USE IT. Do not override.
 - `prior_post`                  — set on edit_post. Treat its caption and
                                  image_url as the load-bearing previous version.
@@ -232,7 +241,8 @@ values (forbidden: "activa el emotional_beat de X", "refuerza el funnel_stage",
 "según el voice_register"). Good example: "el abrazo en penumbra transmite
 amparo antes de que hable cualquier titular — el hombre ya se siente dentro
 del espacio antes de leer una palabra". 1-2 sentences.}
-Imagen: {gallery file name OR "AI-generated"}
+Imagen: {for gallery_pool picks: use the item's description as the name;
+         for gallery[] picks: use the file name; if AI-generated: "AI-generated"}
 Tipo: {foto_galeria | ai_generada | captura_reels}
 Caption:
 {caption.hook verbatim}
@@ -292,6 +302,23 @@ Hashtags:
   the "Hashtags:" section entirely.
 - Never add a second CTA channel here that is not in cta.channel.
 - Use the brief's communication_language throughout.
+
+# User insights (UP memory)
+
+`user_insights[]` in the Context carries validated signals about this brand,
+derived from past activity. Each entry has: key, insight, confidence,
+sourceIdentifier, updatedAt.
+
+- Treat HIGH-confidence insights as soft constraints — they have been validated
+  against real account data and should visibly shape copy, angle, or tone.
+- Keys that start with `avoid_`, `do_not_`, or `negative_` represent things
+  the account has explicitly rejected or that performed poorly. Map these
+  directly into `do_not[]` as short directives (max 5 words each).
+- Positive insights (persona signals, content themes that resonate, emotional
+  anchors) should bias `brand_intelligence.emotional_beat`,
+  `strategic_decisions.angle`, and `caption.body` — without quoting the
+  insight text verbatim in copy.
+- If `user_insights` is null or empty, skip this section silently.
 
 # Decision discipline (compare-and-commit)
 
@@ -378,15 +405,36 @@ lower the corresponding `confidence` to "low".
 
 # Visual selection
 
-- Only URLs from `gallery[]`. Never invent.
-- role="reference" → ONLY in `recommended_reference_urls`. Never placed.
-- role in {brand_asset, content, unknown} → eligible for
-  `recommended_asset_urls`.
+Image sources in priority order — never invent URLs from outside these three:
+
+1. `user_attachments[]` — images the user sent directly for this request.
+   Include ALL of them in `recommended_asset_urls`. No selection needed —
+   they are already the user's explicit choice.
+
+2. `gallery_pool[]` — pre-scored account images. Pick the item(s) that best
+   serve the post concept (category fit, description alignment, score). For
+   each item you choose:
+   - Add an entry to `selected_images[]`:
+       uuid        → gallery_pool item uuid
+       content_url → gallery_pool item content_url verbatim
+       role        → "hero" | "supporting" | "background" | "reference_only"
+       usage_note  → one sentence: why this image fits this specific post
+   - Add the content_url to `recommended_asset_urls` (unless role is
+     "reference_only" — put those in `recommended_reference_urls` instead).
+
+3. `gallery[]` — legacy brand-gate images. Same rules as before:
+   - role="reference" → `recommended_reference_urls` only.
+   - role in {brand_asset, content, unknown} → eligible for
+     `recommended_asset_urls`.
+   Use only when `gallery_pool` is empty or has no suitable item.
+
+Rules for all sources:
 - Never put the same URL in two lists.
-- If nothing fits, leave `recommended_asset_urls` empty and rely on
-  `image.generation_prompt`. Set `confidence.palette_match` accordingly.
-- `avoid_asset_urls` only when a visually prominent gallery item would
-  undermine the message.
+- `avoid_asset_urls` only when a visually prominent item would actively
+  undermine the post message.
+- If no source has a suitable image, leave `recommended_asset_urls` empty
+  and rely on `image.generation_prompt`. Set `confidence.palette_match`
+  to "low".
 
 # Edit handling
 

@@ -26,9 +26,11 @@ from marketer.db.repositories import (
     get_action_type,
     insert_raw_brief,
     mark_raw_brief,
+    update_raw_brief_user_profile,
     upsert_user,
 )
 from marketer.schemas.enrichment import CallbackBody
+from marketer.user_profile import UserProfile
 
 logger = logging.getLogger("marketer.persistence")
 
@@ -125,6 +127,23 @@ async def persist_on_ingest(envelope: dict[str, Any]) -> PersistCtx | None:
             '"persist_on_ingest_failed task_id=%s"', envelope.get("task_id")
         )
         return None
+
+
+async def persist_user_profile(raw_brief_id: UUID, user_profile: UserProfile) -> None:
+    """Best-effort UPDATE of raw_briefs.user_profile. Never blocks enrichment."""
+    if not is_configured():
+        return
+    try:
+        async with session_scope() as session:
+            await update_raw_brief_user_profile(
+                session,
+                raw_brief_id=raw_brief_id,
+                data=user_profile.to_storage_dict(),
+            )
+    except Exception:
+        logger.warning(
+            '"persist_user_profile_failed raw_brief_id=%s"', raw_brief_id
+        )
 
 
 async def persist_on_complete(

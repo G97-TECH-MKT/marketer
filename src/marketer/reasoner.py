@@ -25,7 +25,8 @@ from marketer.schemas.enrichment import (
     TraceInfo,
     Warning,
 )
-from marketer.schemas.internal_context import InternalContext
+from marketer.schemas.internal_context import GalleryPool, InternalContext
+from marketer.user_profile import UserProfile
 from marketer.validator import validate_and_correct
 
 logger = logging.getLogger(__name__)
@@ -45,6 +46,20 @@ def _build_prompt_context(ctx: InternalContext, extras_truncation: int) -> str:
     Includes the v2 anchors (brand_tokens, available_channels, brief_facts,
     requested_surface_format, prior_post) so the LLM can compose against them.
     """
+    gallery_pool_shortlist = None
+    if ctx.gallery_pool and ctx.gallery_pool.shortlist:
+        gallery_pool_shortlist = [
+            {
+                "uuid": item.uuid,
+                "content_url": item.content_url,
+                "category": item.category,
+                "description": item.description,
+                "score": round(item.score, 2),
+                "metadata": item.metadata,
+            }
+            for item in ctx.gallery_pool.shortlist
+        ]
+
     payload: dict[str, Any] = {
         "action_code": ctx.action_code,
         "surface": ctx.surface,
@@ -64,8 +79,11 @@ def _build_prompt_context(ctx: InternalContext, extras_truncation: int) -> str:
         "available_channels": [c.model_dump() for c in ctx.available_channels],
         "brief_facts": ctx.brief_facts.model_dump(),
         "prior_post": ctx.prior_post.model_dump() if ctx.prior_post else None,
+        "user_attachments": ctx.attachments if ctx.attachments else None,
+        "gallery_pool": gallery_pool_shortlist,
         "gallery": [item.model_dump() for item in ctx.gallery],
         "prior_step_outputs": ctx.prior_step_outputs or None,
+        "user_insights": ctx.user_insights or None,
     }
     return serialize_for_prompt(payload, truncate_lists=extras_truncation)
 
@@ -81,13 +99,23 @@ def reason(
     gemini: GeminiClient,
     extras_truncation: int = 10,
     max_output_tokens: int = 16384,
+    user_profile: UserProfile | None = None,
+    usp_warning: str | None = None,
+    gallery_pool: GalleryPool | None = None,
+    gallery_warning: str | None = None,
 ) -> CallbackBody:
     started = time.time()
     warnings: list[Warning] = []
 
     # --- Normalize ---
     try:
-        ctx, normalizer_warnings = normalize(envelope_data)
+        ctx, normalizer_warnings = normalize(
+            envelope_data,
+            user_profile=user_profile,
+            usp_warning=usp_warning,
+            gallery_pool=gallery_pool,
+            gallery_warning=gallery_warning,
+        )
     except ValueError as exc:
         # Unsupported action_code or missing required field → FAIL the task
         return CallbackBody(status="FAILED", error_message=str(exc))
@@ -216,7 +244,14 @@ def reason(
         output_tokens=usage.get("output_tokens", 0),
         thoughts_tokens=usage.get("thoughts_tokens", 0),
     )
-    resources = enrichment.visual_selection.recommended_asset_urls or []
+    # Build resources in priority order — deduped, first-seen wins.
+    # 1. user_attachments: always forwarded to CF unconditionally (user explicitly chose them)
+    # 2. gallery_pool picks: LLM-selected items from the pre-scored shortlist
+    # 3. legacy visual_selection: ROUTER-gate images (fallback)
+    attachment_urls: list[str] = list(ctx.attachments or [])
+    gallery_picks: list[str] = [img.content_url for img in (enrichment.selected_images or [])]
+    legacy_urls: list[str] = enrichment.visual_selection.recommended_asset_urls or []
+    resources = list(dict.fromkeys(attachment_urls + gallery_picks + legacy_urls))
     total_items = (
         len(resources) if enrichment.surface_format == "carousel" and resources else 1
     )

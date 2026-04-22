@@ -156,3 +156,14 @@ async def mark_raw_brief(
         .where(RawBrief.id == raw_brief_id)
         .values(status=status, processed_at=datetime.now(timezone.utc))
     )
+
+
+async def update_raw_brief_user_profile(
+    session: AsyncSession,
+    *,
+    raw_brief_id: UUID,
+    data: dict[str, Any],
+) -> None:
+    await session.execute(
+        update(RawBrief).where(RawBrief.id == raw_brief_id).values(user_profile=data)
+    )

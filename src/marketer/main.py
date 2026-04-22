@@ -24,7 +24,9 @@ from marketer.config import load_settings
 from marketer.db import actions_cache
 from marketer.db.engine import is_configured as _db_configured
 from marketer.llm.gemini import GeminiClient
-from marketer.persistence import PersistCtx, persist_on_complete, persist_on_ingest
+from marketer.gallery import fetch_gallery_pool
+from marketer.persistence import PersistCtx, persist_on_complete, persist_on_ingest, persist_user_profile
+from marketer.user_profile import fetch_user_profile
 from marketer.reasoner import OVERLAYS as _CODE_OVERLAYS
 from marketer.reasoner import reason
 from marketer.schemas.enrichment import CallbackBody
@@ -150,6 +152,34 @@ async def _patch_callback(
     )
 
 
+def _build_gallery_task_context(envelope: dict[str, Any]) -> dict[str, Any]:
+    """Extract brief snippets from the raw envelope for Stage 1 gallery scoring."""
+    payload = envelope.get("payload") or {}
+    client_request = payload.get("client_request") or {}
+    gates = payload.get("action_execution_gates") or {}
+    brief_gate = (gates.get("brief") or {}).get("response") or {}
+    brief_data = brief_gate.get("data") if isinstance(brief_gate, dict) else {}
+    brief_obj = (brief_data or {}).get("brief") or {}
+    form_values = (brief_obj if isinstance(brief_obj, dict) else {}).get("form_values") or {}
+
+    keywords_raw = form_values.get("FIELD_KEYWORDS_TAGS_INPUT") or []
+    keywords = [k for k in keywords_raw if isinstance(k, str)]
+
+    tone_raw = form_values.get("FIELD_COMMUNICATION_STYLE")
+    if isinstance(tone_raw, list):
+        tone = " ".join(s for s in tone_raw if isinstance(s, str))
+    else:
+        tone = tone_raw if isinstance(tone_raw, str) else ""
+
+    return {
+        "user_request": client_request.get("description") or "",
+        "brief_keywords": keywords,
+        "brief_tone": tone,
+        "action_code": envelope.get("action_code") or "",
+        "brief_design_style": form_values.get("FIELD_DESIGN_STYLE") or "",
+    }
+
+
 async def _run_and_callback(
     envelope: dict[str, Any], pctx: PersistCtx | None = None
 ) -> None:
@@ -173,6 +203,70 @@ async def _run_and_callback(
             task_id=str(task_id),
         )
 
+    account_uuid = (envelope.get("payload") or {}).get("context", {}).get("account_uuid")
+    usp_configured = bool(settings.usp_api_key and settings.usp_graphql_url)
+    gallery_configured = bool(settings.gallery_api_url and settings.gallery_api_key)
+
+    # Parallel fetch: USP Memory Gateway + Gallery Image Pool (§6.2)
+    async def _usp_fetch():
+        if not usp_configured or not account_uuid:
+            return None
+        return await fetch_user_profile(
+            account_uuid=account_uuid,
+            endpoint=settings.usp_graphql_url,
+            api_key=settings.usp_api_key,
+            timeout=settings.usp_timeout_seconds,
+        )
+
+    async def _gallery_fetch():
+        if not gallery_configured or not account_uuid:
+            return None, "gallery_api_skipped"
+        task_context = _build_gallery_task_context(envelope)
+        return await fetch_gallery_pool(
+            account_uuid=account_uuid,
+            base_url=settings.gallery_api_url,
+            api_key=settings.gallery_api_key,
+            task_context=task_context,
+            vision_candidates=settings.gallery_vision_candidates,
+            page_size=settings.gallery_page_size,
+            timeout=settings.gallery_timeout_seconds,
+        )
+
+    usp_result, gallery_result = await asyncio.gather(
+        _usp_fetch(), _gallery_fetch(), return_exceptions=True
+    )
+
+    # Resolve USP result
+    if isinstance(usp_result, BaseException):
+        worker.warning('"task_id=%s usp_gather_exception"', task_id)
+        user_profile = None
+        usp_warning: str | None = "user_profile_unavailable"
+    elif not usp_configured or not account_uuid:
+        user_profile = None
+        usp_warning = "user_profile_skipped"
+    else:
+        user_profile = usp_result
+        if user_profile is None:
+            usp_warning = "user_profile_unavailable"
+        elif user_profile.identity is None:
+            usp_warning = "user_profile_not_found"
+        else:
+            usp_warning = None
+
+    # Resolve Gallery result
+    if isinstance(gallery_result, BaseException):
+        worker.warning('"task_id=%s gallery_gather_exception"', task_id)
+        gallery_pool = None
+        gallery_warning: str | None = "gallery_api_unavailable"
+    elif gallery_result is None:
+        gallery_pool = None
+        gallery_warning = "gallery_api_skipped"
+    else:
+        gallery_pool, gallery_warning = gallery_result
+
+    if pctx is not None and user_profile is not None:
+        await persist_user_profile(pctx.raw_brief_id, user_profile)
+
     def _sync_work() -> CallbackBody:
         client = GeminiClient(
             api_key=settings.gemini_api_key,
@@ -183,6 +277,10 @@ async def _run_and_callback(
             envelope,
             gemini=client,
             extras_truncation=settings.extras_list_truncation,
+            user_profile=user_profile,
+            usp_warning=usp_warning,
+            gallery_pool=gallery_pool,
+            gallery_warning=gallery_warning,
         )
 
     started = time.time()

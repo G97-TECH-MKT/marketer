@@ -19,6 +19,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field
 
 Surface = Literal["post", "web"]
+GalleryPoolSource = Literal["gallery_api", "router_gate", "empty"]
 Mode = Literal["create", "edit"]
 ActionCode = Literal["create_post", "edit_post", "create_web", "edit_web"]
 ImageRole = Literal["brand_asset", "content", "reference", "unknown"]
@@ -36,6 +37,28 @@ ChannelKind = Literal[
     "link_sticker",
     "none",
 ]
+
+
+class GalleryPoolItem(BaseModel):
+    """A single gallery image after eligibility filter + Stage 1 metadata scoring."""
+
+    uuid: str
+    content_url: str
+    category: str
+    description: str | None = None
+    used_at: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    score: float = 0.0
+
+
+class GalleryPool(BaseModel):
+    """Result of the Gallery API fetch + filter + Stage 1 scoring."""
+
+    shortlist: list[GalleryPoolItem] = Field(default_factory=list)
+    total_fetched: int = 0
+    total_eligible: int = 0
+    truncated: bool = False  # True when total_fetched >= page_size (more pages may exist)
+    source: GalleryPoolSource = "gallery_api"
 
 
 class GalleryItem(BaseModel):
@@ -143,6 +166,10 @@ class InternalContext(BaseModel):
     requested_surface_format: SurfaceFormat | None = None
 
     prior_step_outputs: dict[str, dict[str, Any]] = Field(default_factory=dict)
+
+    user_insights: list[dict[str, Any]] = Field(default_factory=list)
+
+    gallery_pool: GalleryPool | None = None
 
     gallery_raw_count: int = 0
     gallery_rejected_count: int = 0
