@@ -18,12 +18,13 @@ logger = logging.getLogger(__name__)
 
 class GeminiClient:
     def __init__(self, api_key: str, model: str, timeout_seconds: int = 30):
+        timeout_ms = max(1, int(timeout_seconds)) * 1000
         self._client = genai.Client(
             api_key=api_key,
-            http_options=types.HttpOptions(timeout=timeout_seconds * 1000),
+            http_options=types.HttpOptions(timeout=timeout_ms),
         )
         self._model = model
-        self._timeout = timeout_seconds
+        self._timeout_ms = timeout_ms
 
     @property
     def model_name(self) -> str:
@@ -50,6 +51,7 @@ class GeminiClient:
             response_mime_type="application/json",
             temperature=temperature,
             max_output_tokens=max_output_tokens,
+            http_options=types.HttpOptions(timeout=self._timeout_ms),
         )
         try:
             response = self._client.models.generate_content(
@@ -108,6 +110,26 @@ class GeminiClient:
             temperature=temperature,
             max_output_tokens=max_output_tokens,
         )
+
+
+def is_timeout_exception(exc: Exception | None) -> bool:
+    if exc is None:
+        return False
+    if isinstance(exc, TimeoutError):
+        return True
+    name = type(exc).__name__.lower()
+    message = str(exc).lower()
+    if "timeout" in name or "deadline" in name:
+        return True
+    timeout_markers: tuple[str, ...] = (
+        "deadline_exceeded",
+        "deadline exceeded",
+        "deadline expired",
+        "timed out",
+        "timeout",
+        "504",
+    )
+    return any(marker in message for marker in timeout_markers)
 
 
 def serialize_for_prompt(ctx_json: dict, truncate_lists: int) -> str:

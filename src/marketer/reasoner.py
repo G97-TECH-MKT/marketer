@@ -9,7 +9,7 @@ import logging
 import time
 from typing import Any
 
-from marketer.llm.gemini import GeminiClient, serialize_for_prompt
+from marketer.llm.gemini import GeminiClient, is_timeout_exception, serialize_for_prompt
 from marketer.llm.prompts.create_post import CREATE_POST_OVERLAY
 from marketer.llm.prompts.create_web import CREATE_WEB_OVERLAY
 from marketer.llm.prompts.edit_post import EDIT_POST_OVERLAY
@@ -37,6 +37,12 @@ OVERLAYS = {
     "create_web": CREATE_WEB_OVERLAY,
     "edit_web": EDIT_WEB_OVERLAY,
 }
+
+
+def _format_reasoning_error(prefix: str, err: Any) -> str:
+    if is_timeout_exception(err if isinstance(err, Exception) else None):
+        return f"llm_timeout: {err}"
+    return f"{prefix}: {err}"
 
 
 def _build_prompt_context(ctx: InternalContext, extras_truncation: int) -> str:
@@ -149,6 +155,11 @@ def reason(
 
     repair_attempted = False
     if enrichment is None:
+        if is_timeout_exception(err):
+            return CallbackBody(
+                status="FAILED",
+                error_message=f"llm_timeout: {err}",
+            )
         logger.warning(
             "Initial LLM output invalid; attempting one repair", exc_info=err
         )
@@ -167,7 +178,9 @@ def reason(
         if enrichment is None:
             return CallbackBody(
                 status="FAILED",
-                error_message=f"schema_validation_failed: {err2 or err}",
+                error_message=_format_reasoning_error(
+                    "schema_validation_failed", err2 or err
+                ),
             )
         warnings.append(
             Warning(
@@ -195,7 +208,9 @@ def reason(
         if enrichment_new is None:
             return CallbackBody(
                 status="FAILED",
-                error_message=f"schema_validation_failed: {err2 or blocking}",
+                error_message=_format_reasoning_error(
+                    "schema_validation_failed", err2 or blocking
+                ),
             )
         enrichment = enrichment_new
         enrichment, more_warnings, still_blocking = validate_and_correct(

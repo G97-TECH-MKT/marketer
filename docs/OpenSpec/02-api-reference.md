@@ -333,8 +333,8 @@ Content-Type: application/json
 | `unsupported_action_code: <code>` | `action_code` not in supported set |
 | `create_web_not_supported_in_this_iteration` | `create_web` or `edit_web` received |
 | `prior_post_missing: <detail>` | `edit_post` without `prior_post` in context |
+| `llm_timeout: <error>` | Gemini request exceeded timeout or returned deadline exceeded |
 | `schema_validation_failed: <error>` | Gemini output not parseable after repair |
-| `internal_error: asyncio.TimeoutError: ...` | Gemini call exceeded `LLM_TIMEOUT_SECONDS` |
 | `internal_error: <ExceptionType>: <msg>` | Unhandled pipeline exception |
 
 ### Warning Codes (in `CallbackBody.output_data.warnings[].code`)
