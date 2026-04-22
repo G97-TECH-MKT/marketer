@@ -319,6 +319,6 @@ class CallbackOutputData(BaseModel):
 
 
 class CallbackBody(BaseModel):
-    status: Literal["COMPLETED", "FAILED"]
+    status: Literal["IN_PROGRESS", "COMPLETED", "FAILED"]
     output_data: CallbackOutputData | None = None
     error_message: str | None = None

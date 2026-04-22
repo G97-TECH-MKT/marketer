@@ -108,8 +108,7 @@ def _fake_callback() -> CallbackBody:
 def patched_pipeline(monkeypatch):
     """Intercept reason() + callback PATCH so no network or LLM is used."""
     calls: dict[str, Any] = {
-        "patch_called": False,
-        "patch_args": None,
+        "patch_calls": [],
         "reason_called_with": None,
     }
 
@@ -118,13 +117,14 @@ def patched_pipeline(monkeypatch):
         return _fake_callback()
 
     async def fake_patch(callback_url, body, correlation_id, task_id):
-        calls["patch_called"] = True
-        calls["patch_args"] = {
+        calls["patch_calls"].append(
+            {
             "callback_url": callback_url,
             "body": body,
             "correlation_id": correlation_id,
             "task_id": task_id,
-        }
+            }
+        )
 
     # Ensure the code path does not need a real Gemini client either.
     class _FakeClient:
@@ -170,13 +170,24 @@ def test_post_tasks_returns_202_ack(client, patched_pipeline):
 def test_post_tasks_schedules_callback_patch(client, patched_pipeline):
     client.post("/tasks", json=_valid_envelope())
     # TestClient runs background tasks after the response returns
-    assert patched_pipeline["patch_called"] is True
-    args = patched_pipeline["patch_args"]
-    assert args["callback_url"] == "https://example.com/cb/t-123"
-    assert args["correlation_id"] == "corr-1"
-    assert args["task_id"] == "t-123"
-    # Callback body shape
-    body = args["body"]
+    calls = patched_pipeline["patch_calls"]
+    assert len(calls) == 2
+
+    in_progress = calls[0]
+    assert in_progress["callback_url"] == "https://example.com/cb/t-123"
+    assert in_progress["correlation_id"] == "corr-1"
+    assert in_progress["task_id"] == "t-123"
+    assert in_progress["body"] == {
+        "status": "IN_PROGRESS",
+        "output_data": None,
+        "error_message": None,
+    }
+
+    completed = calls[1]
+    assert completed["callback_url"] == "https://example.com/cb/t-123"
+    assert completed["correlation_id"] == "corr-1"
+    assert completed["task_id"] == "t-123"
+    body = completed["body"]
     assert body["status"] == "COMPLETED"
     assert body["output_data"]["enrichment"]["schema_version"] == "2.0"
 
@@ -254,3 +265,34 @@ def test_health_and_ready(patched_pipeline):
     c = TestClient(main_module.app)
     assert c.get("/health").json() == {"status": "healthy"}
     assert c.get("/ready").json() == {"status": "ready"}
+
+
+def test_post_tasks_emits_failed_callback_when_reason_crashes(monkeypatch):
+    calls: list[dict[str, Any]] = []
+
+    def boom_reason(*args, **kwargs):  # noqa: ARG001
+        raise RuntimeError("boom")
+
+    async def fake_patch(callback_url, body, correlation_id, task_id):
+        calls.append(
+            {
+                "callback_url": callback_url,
+                "body": body,
+                "correlation_id": correlation_id,
+                "task_id": task_id,
+            }
+        )
+
+    monkeypatch.setattr(main_module, "reason", boom_reason)
+    monkeypatch.setattr(main_module, "_patch_callback", fake_patch)
+    monkeypatch.setattr(main_module.settings, "gemini_api_key", "test-key")
+    monkeypatch.setattr(main_module.settings, "inbound_token", "")
+
+    c = TestClient(main_module.app)
+    resp = c.post("/tasks", json=_valid_envelope())
+    assert resp.status_code == 202
+
+    assert len(calls) == 2
+    assert calls[0]["body"]["status"] == "IN_PROGRESS"
+    assert calls[1]["body"]["status"] == "FAILED"
+    assert "internal_error" in (calls[1]["body"]["error_message"] or "")

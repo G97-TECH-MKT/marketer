@@ -164,6 +164,15 @@ async def _run_and_callback(
     callback_url = envelope.get("callback_url") or ""
     correlation_id = envelope.get("correlation_id")
 
+    if callback_url:
+        # Let the orchestrator move DISPATCHED -> IN_PROGRESS immediately.
+        await _patch_callback(
+            callback_url=callback_url,
+            body=CallbackBody(status="IN_PROGRESS").model_dump(mode="json"),
+            correlation_id=correlation_id,
+            task_id=str(task_id),
+        )
+
     def _sync_work() -> CallbackBody:
         client = GeminiClient(
             api_key=settings.gemini_api_key,
