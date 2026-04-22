@@ -249,7 +249,9 @@ def reason(
     # 2. gallery_pool picks: LLM-selected items from the pre-scored shortlist
     # 3. legacy visual_selection: ROUTER-gate images (fallback)
     attachment_urls: list[str] = list(ctx.attachments or [])
-    gallery_picks: list[str] = [img.content_url for img in (enrichment.selected_images or [])]
+    gallery_picks: list[str] = [
+        img.content_url for img in (enrichment.selected_images or [])
+    ]
     legacy_urls: list[str] = enrichment.visual_selection.recommended_asset_urls or []
     resources = list(dict.fromkeys(attachment_urls + gallery_picks + legacy_urls))
     total_items = (

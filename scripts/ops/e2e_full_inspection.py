@@ -100,6 +100,7 @@ def _jblock(obj: Any, label: str = "", indent: int = 2, max_chars: int = 2000) -
 # Section printers
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 def _print_input(envelope: dict[str, Any]) -> None:
     _sep("1. INPUT ENVELOPE")
     payload = envelope.get("payload") or {}
@@ -122,14 +123,22 @@ def _print_input(envelope: dict[str, Any]) -> None:
     if brief_gate.get("passed"):
         bd = (brief_gate.get("response") or {}).get("data") or {}
         profile = bd.get("profile") or {}
-        brief_obj = (bd.get("brief") or {})
+        brief_obj = bd.get("brief") or {}
         fv = (brief_obj.get("form_values") or {}) if isinstance(brief_obj, dict) else {}
         print()
         print("  Brief gate [passed]:")
-        _h("business_name", fv.get("FIELD_COMPANY_NAME") or profile.get("business_name"), 4)
+        _h(
+            "business_name",
+            fv.get("FIELD_COMPANY_NAME") or profile.get("business_name"),
+            4,
+        )
         _h("category", fv.get("FIELD_COMPANY_CATEGORY"), 4)
         _h("country", fv.get("FIELD_COUNTRY"), 4)
-        _h("tone / comm style", profile.get("tone") or fv.get("FIELD_COMMUNICATION_STYLE"), 4)
+        _h(
+            "tone / comm style",
+            profile.get("tone") or fv.get("FIELD_COMMUNICATION_STYLE"),
+            4,
+        )
         _h("value_proposition", fv.get("FIELD_VALUE_PROPOSITION"), 4)
         _h("keywords", fv.get("FIELD_KEYWORDS_TAGS_INPUT"), 4)
         _h("colors", fv.get("FIELD_COLOR_LIST_PICKER"), 4)
@@ -149,7 +158,9 @@ def _print_input(envelope: dict[str, Any]) -> None:
             _h("      url", img.get("url"), 4)
 
 
-def _print_usp(user_profile: Any, usp_warning: str | None, account_uuid: str | None) -> None:
+def _print_usp(
+    user_profile: Any, usp_warning: str | None, account_uuid: str | None
+) -> None:
     _sep("2. USP MEMORY GATEWAY")
     _h("account_uuid queried", account_uuid)
     _h("usp_warning", usp_warning or "(none — fetch succeeded)")
@@ -210,8 +221,20 @@ def _print_context(ctx: Any, warnings: list[Any]) -> None:
         _h("tone", brief.tone, 4)
         _h("communication_language", brief.communication_language, 4)
         _h("value_proposition", brief.value_proposition, 4)
-        _h("business_description", (brief.business_description or "")[:120] + "…" if brief.business_description and len(brief.business_description) > 120 else brief.business_description, 4)
-        _h("target_customer", (brief.target_customer or "")[:120] + "…" if brief.target_customer and len(brief.target_customer) > 120 else brief.target_customer, 4)
+        _h(
+            "business_description",
+            (brief.business_description or "")[:120] + "…"
+            if brief.business_description and len(brief.business_description) > 120
+            else brief.business_description,
+            4,
+        )
+        _h(
+            "target_customer",
+            (brief.target_customer or "")[:120] + "…"
+            if brief.target_customer and len(brief.target_customer) > 120
+            else brief.target_customer,
+            4,
+        )
         _h("colors", brief.colors, 4)
         _h("keywords", brief.keywords, 4)
         _h("website_url", brief.website_url, 4)
@@ -244,7 +267,9 @@ def _print_context(ctx: Any, warnings: list[Any]) -> None:
     _h("hex_colors", bf.hex_colors, 4)
 
     print()
-    print(f"  Gallery ({len(ctx.gallery)} images, raw={ctx.gallery_raw_count}, rejected={ctx.gallery_rejected_count}):")
+    print(
+        f"  Gallery ({len(ctx.gallery)} images, raw={ctx.gallery_raw_count}, rejected={ctx.gallery_rejected_count}):"
+    )
     for i, img in enumerate(ctx.gallery, 1):
         _h(f"  [{i}] {img.name or img.url[:50]}", img.description, 4)
         _h("      role", img.role, 4)
@@ -355,8 +380,20 @@ def _print_enrichment(callback: Any) -> None:
     _h("voice_register", bi.voice_register, 4)
     _h("emotional_beat", bi.emotional_beat, 4)
     _h("rhetorical_device", bi.rhetorical_device, 4)
-    _h("audience_persona", (bi.audience_persona or "")[:120] + "…" if bi.audience_persona and len(bi.audience_persona) > 120 else bi.audience_persona, 4)
-    _h("unfair_advantage", (bi.unfair_advantage or "")[:120] + "…" if bi.unfair_advantage and len(bi.unfair_advantage) > 120 else bi.unfair_advantage, 4)
+    _h(
+        "audience_persona",
+        (bi.audience_persona or "")[:120] + "…"
+        if bi.audience_persona and len(bi.audience_persona) > 120
+        else bi.audience_persona,
+        4,
+    )
+    _h(
+        "unfair_advantage",
+        (bi.unfair_advantage or "")[:120] + "…"
+        if bi.unfair_advantage and len(bi.unfair_advantage) > 120
+        else bi.unfair_advantage,
+        4,
+    )
     _h("risk_flags", bi.risk_flags, 4)
 
     print()
@@ -382,7 +419,11 @@ def _print_enrichment(callback: Any) -> None:
     if od.warnings:
         print(f"  Output warnings ({len(od.warnings)}):")
         for w in od.warnings:
-            _h(w.get("code", "?") if isinstance(w, dict) else w.code, w.get("message", "") if isinstance(w, dict) else w.message, 4)
+            _h(
+                w.get("code", "?") if isinstance(w, dict) else w.code,
+                w.get("message", "") if isinstance(w, dict) else w.message,
+                4,
+            )
 
     print()
     conf = enr.confidence
@@ -398,13 +439,14 @@ def _print_db(task_uuid: Any, account_uuid: Any, db_url: str) -> None:
 
     def _sync_url(url: str) -> str:
         if url.startswith("postgresql+asyncpg://"):
-            return "postgresql+psycopg://" + url[len("postgresql+asyncpg://"):]
+            return "postgresql+psycopg://" + url[len("postgresql+asyncpg://") :]
         if url.startswith("postgresql://"):
-            return "postgresql+psycopg://" + url[len("postgresql://"):]
+            return "postgresql+psycopg://" + url[len("postgresql://") :]
         return url
 
     try:
         from uuid import UUID
+
         engine = create_engine(_sync_url(db_url))
         with Session(engine) as session:
             raw_brief = session.execute(
@@ -412,7 +454,9 @@ def _print_db(task_uuid: Any, account_uuid: Any, db_url: str) -> None:
             ).scalar_one_or_none()
 
             if raw_brief is None:
-                print("  raw_briefs: NO ROW FOUND (DB persistence may have been skipped)")
+                print(
+                    "  raw_briefs: NO ROW FOUND (DB persistence may have been skipped)"
+                )
                 return
 
             print("  raw_briefs:")
@@ -428,8 +472,16 @@ def _print_db(task_uuid: Any, account_uuid: Any, db_url: str) -> None:
                 identity_stored = up.get("identity") or {}
                 insights_stored = up.get("insights") or []
                 _h("user_profile.fetched_at", up.get("fetched_at"), 4)
-                _h("user_profile.identity.company.name", (identity_stored.get("company") or {}).get("name"), 4)
-                _h("user_profile.identity.brand.colors", (identity_stored.get("brand") or {}).get("colors"), 4)
+                _h(
+                    "user_profile.identity.company.name",
+                    (identity_stored.get("company") or {}).get("name"),
+                    4,
+                )
+                _h(
+                    "user_profile.identity.brand.colors",
+                    (identity_stored.get("brand") or {}).get("colors"),
+                    4,
+                )
                 _h("user_profile.insights count", len(insights_stored), 4)
                 if insights_stored:
                     _h("user_profile.insights[0].key", insights_stored[0].get("key"), 4)
@@ -446,7 +498,9 @@ def _print_db(task_uuid: Any, account_uuid: Any, db_url: str) -> None:
                 ).scalar_one_or_none()
 
             if strategy is None:
-                print("  strategies: NO ACTIVE STRATEGY (first run may skip if action unknown)")
+                print(
+                    "  strategies: NO ACTIVE STRATEGY (first run may skip if action unknown)"
+                )
             else:
                 print("  strategies:")
                 _h("id", strategy.id, 4)
@@ -455,8 +509,14 @@ def _print_db(task_uuid: Any, account_uuid: Any, db_url: str) -> None:
                 _h("created_at", strategy.created_at, 4)
                 bi = strategy.brand_intelligence or {}
                 print("    brand_intelligence:")
-                for k in ("business_taxonomy", "voice_register", "emotional_beat",
-                          "audience_persona", "unfair_advantage", "rhetorical_device"):
+                for k in (
+                    "business_taxonomy",
+                    "voice_register",
+                    "emotional_beat",
+                    "audience_persona",
+                    "unfair_advantage",
+                    "rhetorical_device",
+                ):
                     v = bi.get(k)
                     if isinstance(v, str) and len(v) > 100:
                         v = v[:97] + "…"
@@ -476,24 +536,30 @@ def _print_db(task_uuid: Any, account_uuid: Any, db_url: str) -> None:
                 _h("latency_ms", job.latency_ms, 4)
                 out = job.output or {}
                 _h("output.status", out.get("status"), 4)
-                od = (out.get("output_data") or {})
+                od = out.get("output_data") or {}
                 enr = od.get("enrichment") or {}
                 cap = enr.get("caption") or {}
                 _h("output.caption.hook", cap.get("hook"), 4)
                 cf = od.get("data") or {}
                 cr = cf.get("client_request") or ""
-                _h("output.cf.client_request (preview)", cr[:120] if cr else "(none)", 4)
+                _h(
+                    "output.cf.client_request (preview)",
+                    cr[:120] if cr else "(none)",
+                    4,
+                )
 
         engine.dispose()
     except Exception as exc:
         print(f"  DB read error: {exc}")
         import traceback
+
         traceback.print_exc()
 
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Main async pipeline
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 async def _run(args: argparse.Namespace) -> int:
     settings = load_settings()
@@ -507,7 +573,9 @@ async def _run(args: argparse.Namespace) -> int:
         print("WARNING: DATABASE_URL not configured — DB steps will be skipped.")
 
     # ── Load golden envelope ──────────────────────────────────────────────────
-    fixture_path = ROOT / "tests" / "fixtures" / "envelopes" / "nubiex_golden_input.json"
+    fixture_path = (
+        ROOT / "tests" / "fixtures" / "envelopes" / "nubiex_golden_input.json"
+    )
     envelope = json.loads(fixture_path.read_text(encoding="utf-8"))
 
     task_uuid = uuid4()
@@ -559,7 +627,9 @@ async def _run(args: argparse.Namespace) -> int:
     if use_db:
         pctx = await persist_on_ingest(envelope)
         if pctx is None:
-            print("\n[DB] persist_on_ingest returned None — check action_types catalog or DB conn")
+            print(
+                "\n[DB] persist_on_ingest returned None — check action_types catalog or DB conn"
+            )
         else:
             print(f"\n[DB] raw_brief created: id={pctx.raw_brief_id}")
 
@@ -591,6 +661,7 @@ async def _run(args: argparse.Namespace) -> int:
         )
     except Exception as exc:
         import traceback
+
         print(f"\nERROR in reason(): {exc}", file=sys.stderr)
         traceback.print_exc()
         return 2
@@ -608,7 +679,12 @@ async def _run(args: argparse.Namespace) -> int:
     # ── 6. DB read-back ───────────────────────────────────────────────────────
     if use_db:
         from uuid import UUID
-        _print_db(task_uuid, UUID(account_uuid_str) if account_uuid_str else None, settings.database_url)
+
+        _print_db(
+            task_uuid,
+            UUID(account_uuid_str) if account_uuid_str else None,
+            settings.database_url,
+        )
 
     _sep("DONE", "═")
     print(f"\n  task_id   : {task_uuid}")
@@ -626,6 +702,7 @@ async def _run(args: argparse.Namespace) -> int:
             if inspector_script.exists():
                 sys.path.insert(0, str(Path(__file__).resolve().parent))
                 from inspector import fetch_runs, render_html  # type: ignore
+
                 out = ROOT / "reports" / "inspector.html"
                 out.parent.mkdir(parents=True, exist_ok=True)
                 out.write_text(render_html(fetch_runs(5)), encoding="utf-8")
@@ -640,7 +717,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--account-uuid", help="Real account UUID to query USP with")
     parser.add_argument("--description", help="Override client_request.description")
-    parser.add_argument("--no-db", action="store_true", help="Skip DB persistence steps")
+    parser.add_argument(
+        "--no-db", action="store_true", help="Skip DB persistence steps"
+    )
     args = parser.parse_args()
     return asyncio.run(_run(args))
 

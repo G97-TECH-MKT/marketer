@@ -258,7 +258,9 @@ async def fetch_gallery_pool(
             account_uuid,
         )
 
-    shortlist, total_eligible = _build_shortlist(raw_items, task_context, vision_candidates)
+    shortlist, total_eligible = _build_shortlist(
+        raw_items, task_context, vision_candidates
+    )
 
     warning_code: str | None = None
     if truncated:

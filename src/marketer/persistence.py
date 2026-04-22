@@ -141,9 +141,7 @@ async def persist_user_profile(raw_brief_id: UUID, user_profile: UserProfile) ->
                 data=user_profile.to_storage_dict(),
             )
     except Exception:
-        logger.warning(
-            '"persist_user_profile_failed raw_brief_id=%s"', raw_brief_id
-        )
+        logger.warning('"persist_user_profile_failed raw_brief_id=%s"', raw_brief_id)
 
 
 async def persist_on_complete(

@@ -18,7 +18,12 @@ from unittest.mock import MagicMock, patch
 import httpx
 import pytest
 
-from marketer.gallery import _build_shortlist, fetch_gallery_pool, is_eligible, score_image
+from marketer.gallery import (
+    _build_shortlist,
+    fetch_gallery_pool,
+    is_eligible,
+    score_image,
+)
 from marketer.normalizer import normalize
 from marketer.schemas.enrichment import PostEnrichment, SelectedImage
 from marketer.schemas.internal_context import GalleryPool, GalleryPoolItem
@@ -34,6 +39,7 @@ def _load(name: str) -> dict:
 # ---------------------------------------------------------------------------
 # Fixtures helpers
 # ---------------------------------------------------------------------------
+
 
 def _now_utc() -> datetime:
     return datetime.now(timezone.utc)
@@ -96,8 +102,8 @@ def _make_pool_item(uuid: str = "img-001", score: float = 5.0) -> GalleryPoolIte
 # Eligibility filter (§3.1)
 # ===========================================================================
 
-class TestEligibilityFilter:
 
+class TestEligibilityFilter:
     def test_passes_eligible_item(self):
         item = _make_item(used_at=None, locked_until=None)
         assert is_eligible(item, _now_utc()) is True
@@ -133,8 +139,8 @@ class TestEligibilityFilter:
 # Stage 1 scoring (§3.2)
 # ===========================================================================
 
-class TestScoreImage:
 
+class TestScoreImage:
     def test_empty_metadata_returns_zero(self):
         item = _make_item(metadata={})
         assert score_image(item, _task_context()) == 0.0
@@ -145,8 +151,12 @@ class TestScoreImage:
         assert score_image(item, _task_context()) == 0.0
 
     def test_tag_overlap_scores_higher_than_no_overlap(self):
-        matching = _make_item(uuid="match", metadata={"tags": ["bienestar", "relax", "masaje"]})
-        non_matching = _make_item(uuid="nomatch", metadata={"tags": ["producto", "precio", "oferta"]})
+        matching = _make_item(
+            uuid="match", metadata={"tags": ["bienestar", "relax", "masaje"]}
+        )
+        non_matching = _make_item(
+            uuid="nomatch", metadata={"tags": ["producto", "precio", "oferta"]}
+        )
 
         ctx = _task_context(brief_keywords=["bienestar", "masaje", "relax"])
         score_match = score_image(matching, ctx)
@@ -167,7 +177,10 @@ class TestScoreImage:
 
     def test_subject_relevance_adds_score(self):
         with_subject = _make_item(
-            metadata={"tags": [], "subject": "A person relaxing during a massage session"}
+            metadata={
+                "tags": [],
+                "subject": "A person relaxing during a massage session",
+            }
         )
         without = _make_item(metadata={"tags": []})
 
@@ -186,7 +199,9 @@ class TestScoreImage:
     def test_empty_task_context_returns_zero_for_metadata(self):
         # No context tokens → no match possible (but metadata exists → not forced 0.0)
         item = _make_item(metadata={"tags": ["relax"], "mood": "warm"})
-        ctx = _task_context(user_request="", brief_keywords=[], brief_tone="", brief_design_style="")
+        ctx = _task_context(
+            user_request="", brief_keywords=[], brief_tone="", brief_design_style=""
+        )
         # Score may be 0 since there's nothing to match against
         s = score_image(item, ctx)
         assert s >= 0.0  # Always non-negative
@@ -196,8 +211,8 @@ class TestScoreImage:
 # Shortlist building (§3.3)
 # ===========================================================================
 
-class TestShortlistBuilding:
 
+class TestShortlistBuilding:
     def _make_eligible_items(self, n: int) -> list[dict]:
         items = []
         for i in range(n):
@@ -220,7 +235,9 @@ class TestShortlistBuilding:
 
     def test_shortlist_not_capped_when_fewer_than_candidates(self):
         items = self._make_eligible_items(3)
-        shortlist, total_eligible = _build_shortlist(items, _task_context(), vision_candidates=5)
+        shortlist, total_eligible = _build_shortlist(
+            items, _task_context(), vision_candidates=5
+        )
 
         assert total_eligible == 3
         assert len(shortlist) == 3
@@ -247,7 +264,9 @@ class TestShortlistBuilding:
     def test_empty_eligible_pool_returns_empty_shortlist(self):
         # All items are non-img type → no eligible items
         items = [_make_item(type_="video") for _ in range(5)]
-        shortlist, total_eligible = _build_shortlist(items, _task_context(), vision_candidates=5)
+        shortlist, total_eligible = _build_shortlist(
+            items, _task_context(), vision_candidates=5
+        )
 
         assert total_eligible == 0
         assert shortlist == []
@@ -288,8 +307,8 @@ class TestShortlistBuilding:
 # Normalizer integration (§10.2)
 # ===========================================================================
 
-class TestNormalizerGalleryIntegration:
 
+class TestNormalizerGalleryIntegration:
     def test_normalize_with_gallery_pool(self):
         data = _load("nubiex_golden_input.json")
         pool = GalleryPool(
@@ -369,21 +388,27 @@ class TestNormalizerGalleryIntegration:
     def test_gallery_fetch_warning_threads_through_normalize(self):
         data = _load("nubiex_golden_input.json")
         # Simulate: gallery API returned 404 (pool=None, warning set)
-        _, warnings = normalize(data, gallery_pool=None, gallery_warning="gallery_api_not_found")
+        _, warnings = normalize(
+            data, gallery_pool=None, gallery_warning="gallery_api_not_found"
+        )
 
         codes = {w.code for w in warnings}
         assert "gallery_api_not_found" in codes
 
     def test_gallery_api_unavailable_warning_threads_through(self):
         data = _load("nubiex_golden_input.json")
-        _, warnings = normalize(data, gallery_pool=None, gallery_warning="gallery_api_unavailable")
+        _, warnings = normalize(
+            data, gallery_pool=None, gallery_warning="gallery_api_unavailable"
+        )
 
         codes = {w.code for w in warnings}
         assert "gallery_api_unavailable" in codes
 
     def test_gallery_api_skipped_warning_threads_through(self):
         data = _load("nubiex_golden_input.json")
-        _, warnings = normalize(data, gallery_pool=None, gallery_warning="gallery_api_skipped")
+        _, warnings = normalize(
+            data, gallery_pool=None, gallery_warning="gallery_api_skipped"
+        )
 
         codes = {w.code for w in warnings}
         assert "gallery_api_skipped" in codes
@@ -398,7 +423,9 @@ class TestNormalizerGalleryIntegration:
             truncated=True,
             source="gallery_api",
         )
-        _, warnings = normalize(data, gallery_pool=pool, gallery_warning="gallery_pool_truncated")
+        _, warnings = normalize(
+            data, gallery_pool=pool, gallery_warning="gallery_pool_truncated"
+        )
 
         truncated_warnings = [w for w in warnings if w.code == "gallery_pool_truncated"]
         # Should not produce duplicates — one from gallery_warning, one from truncated=True
@@ -410,8 +437,8 @@ class TestNormalizerGalleryIntegration:
 # PostEnrichment model — SelectedImage (§4.3, §11.1)
 # ===========================================================================
 
-class TestSelectedImages:
 
+class TestSelectedImages:
     def _make_enrichment_kwargs(self) -> dict:
         """Minimal kwargs for a valid PostEnrichment."""
         from marketer.schemas.enrichment import (
@@ -423,6 +450,7 @@ class TestSelectedImages:
             StrategicChoice,
             StrategicDecisions,
         )
+
         return {
             "schema_version": "2.0",
             "surface_format": "post",
@@ -431,16 +459,29 @@ class TestSelectedImages:
             "objective": "Test objective.",
             "brand_dna": "CLIENT DNA — Test Brand\nColors: #FF0000",
             "strategic_decisions": StrategicDecisions(
-                surface_format=StrategicChoice(chosen="post", alternatives_considered=[], rationale="test"),
-                angle=StrategicChoice(chosen="producto", alternatives_considered=[], rationale="test"),
-                voice=StrategicChoice(chosen="cercano", alternatives_considered=[], rationale="test"),
+                surface_format=StrategicChoice(
+                    chosen="post", alternatives_considered=[], rationale="test"
+                ),
+                angle=StrategicChoice(
+                    chosen="producto", alternatives_considered=[], rationale="test"
+                ),
+                voice=StrategicChoice(
+                    chosen="cercano", alternatives_considered=[], rationale="test"
+                ),
             ),
             "visual_style_notes": "Clean minimal style.",
-            "image": ImageBrief(concept="Hero image", generation_prompt="Prompt.", alt_text="Alt."),
-            "caption": CaptionParts(hook="Hook line.", body="Body copy.", cta_line="CTA."),
+            "image": ImageBrief(
+                concept="Hero image", generation_prompt="Prompt.", alt_text="Alt."
+            ),
+            "caption": CaptionParts(
+                hook="Hook line.", body="Body copy.", cta_line="CTA."
+            ),
             "cta": CallToAction(channel="dm", label="Escríbenos"),
             "hashtag_strategy": HashtagStrategy(
-                intent="brand_awareness", suggested_volume=5, themes=["wellness"], tags=["#relax"]
+                intent="brand_awareness",
+                suggested_volume=5,
+                themes=["wellness"],
+                tags=["#relax"],
             ),
             "brand_intelligence": BrandIntelligence(
                 business_taxonomy="wellness_spa",
@@ -455,7 +496,9 @@ class TestSelectedImages:
         }
 
     def test_selected_images_empty_is_valid(self):
-        enrichment = PostEnrichment(**self._make_enrichment_kwargs(), selected_images=[])
+        enrichment = PostEnrichment(
+            **self._make_enrichment_kwargs(), selected_images=[]
+        )
         assert enrichment.selected_images == []
 
     def test_selected_images_defaults_to_empty(self):
@@ -477,7 +520,9 @@ class TestSelectedImages:
                 usage_note="Supporting image for carousel slot.",
             ),
         ]
-        enrichment = PostEnrichment(**self._make_enrichment_kwargs(), selected_images=images)
+        enrichment = PostEnrichment(
+            **self._make_enrichment_kwargs(), selected_images=images
+        )
 
         assert len(enrichment.selected_images) == 2
         assert enrichment.selected_images[0].role == "hero"
@@ -514,7 +559,9 @@ class TestSelectedImages:
             )
             for uuid in shortlist_uuids
         ]
-        enrichment = PostEnrichment(**self._make_enrichment_kwargs(), selected_images=images)
+        enrichment = PostEnrichment(
+            **self._make_enrichment_kwargs(), selected_images=images
+        )
 
         returned_uuids = {img.uuid for img in enrichment.selected_images}
         assert returned_uuids == shortlist_uuids
@@ -528,7 +575,9 @@ class TestSelectedImages:
                 usage_note="Background layer.",
             )
         ]
-        enrichment = PostEnrichment(**self._make_enrichment_kwargs(), selected_images=images)
+        enrichment = PostEnrichment(
+            **self._make_enrichment_kwargs(), selected_images=images
+        )
         dumped = enrichment.model_dump(mode="json")
 
         assert "selected_images" in dumped
@@ -540,8 +589,8 @@ class TestSelectedImages:
 # GalleryPool model
 # ===========================================================================
 
-class TestGalleryPoolModel:
 
+class TestGalleryPoolModel:
     def test_gallery_pool_default_shortlist_is_empty(self):
         pool = GalleryPool()
         assert pool.shortlist == []
@@ -582,7 +631,9 @@ def _run(coro):
 class _FakeAsyncClient:
     """Minimal async context manager that fakes httpx.AsyncClient.get()."""
 
-    def __init__(self, *, raise_: Exception | None = None, status: int = 200, body=None):
+    def __init__(
+        self, *, raise_: Exception | None = None, status: int = 200, body=None
+    ):
         self._raise = raise_
         self._status = status
         self._body = body
@@ -623,7 +674,6 @@ _IMG_ITEM = {
 
 
 class TestFetchGalleryPool:
-
     def _patch(self, **kwargs):
         return patch(
             "marketer.gallery.httpx.AsyncClient",
@@ -638,6 +688,7 @@ class TestFetchGalleryPool:
                 )
             assert pool is None
             assert warning == "gallery_api_unavailable"
+
         _run(run())
 
     def test_generic_exception_returns_unavailable(self):
@@ -648,6 +699,7 @@ class TestFetchGalleryPool:
                 )
             assert pool is None
             assert warning == "gallery_api_unavailable"
+
         _run(run())
 
     def test_404_returns_not_found_warning(self):
@@ -658,6 +710,7 @@ class TestFetchGalleryPool:
                 )
             assert pool is None
             assert warning == "gallery_api_not_found"
+
         _run(run())
 
     def test_500_returns_unavailable_warning(self):
@@ -668,6 +721,7 @@ class TestFetchGalleryPool:
                 )
             assert pool is None
             assert warning == "gallery_api_unavailable"
+
         _run(run())
 
     def test_json_parse_error_returns_unavailable(self):
@@ -678,6 +732,7 @@ class TestFetchGalleryPool:
                 )
             assert pool is None
             assert warning == "gallery_api_unavailable"
+
         _run(run())
 
     def test_success_with_list_body_returns_pool(self):
@@ -690,6 +745,7 @@ class TestFetchGalleryPool:
             assert pool.total_fetched == 1
             assert pool.source == "gallery_api"
             assert warning is None
+
         _run(run())
 
     def test_success_with_paginated_dict_body_returns_pool(self):
@@ -703,6 +759,7 @@ class TestFetchGalleryPool:
             assert pool.total_fetched == 1
             assert len(pool.shortlist) == 1
             assert pool.shortlist[0].uuid == "img-aaa"
+
         _run(run())
 
     def test_truncation_detected_via_api_total_items(self):
@@ -716,6 +773,7 @@ class TestFetchGalleryPool:
             assert pool is not None
             assert pool.truncated is True
             assert warning == "gallery_pool_truncated"
+
         _run(run())
 
     def test_truncation_detected_when_fetched_equals_page_size(self):
@@ -728,6 +786,7 @@ class TestFetchGalleryPool:
                 )
             assert pool is not None
             assert pool.truncated is True
+
         _run(run())
 
     def test_no_truncation_when_fewer_than_page_size(self):
@@ -738,6 +797,7 @@ class TestFetchGalleryPool:
                 )
             assert pool is not None
             assert pool.truncated is False
+
         _run(run())
 
     def test_empty_eligible_pool_returns_warning(self):
@@ -752,6 +812,7 @@ class TestFetchGalleryPool:
             assert pool.total_eligible == 0
             assert len(pool.shortlist) == 0
             assert warning == "gallery_pool_empty"
+
         _run(run())
 
     def test_shortlist_capped_at_vision_candidates(self):
@@ -763,4 +824,5 @@ class TestFetchGalleryPool:
                 )
             assert pool is not None
             assert len(pool.shortlist) <= 3
+
         _run(run())

@@ -20,7 +20,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-os.environ["DATABASE_URL"] = ""   # no DB
+os.environ["DATABASE_URL"] = ""  # no DB
 
 from marketer.config import load_settings  # noqa: E402
 from marketer.normalizer import normalize  # noqa: E402
@@ -29,6 +29,7 @@ from marketer.user_profile import fetch_user_profile  # noqa: E402
 
 async def main() -> None:
     import argparse
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--account-uuid", default=None, help="Override account_uuid")
     args = parser.parse_args()
@@ -67,9 +68,9 @@ async def main() -> None:
             usp_warning = None
 
     # ── Print USP result ──────────────────────────────────────────────────────
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("USP RESULT")
-    print('='*60)
+    print("=" * 60)
     print(f"usp_warning  : {usp_warning or '(none — success)'}")
 
     if user_profile is None:
@@ -100,10 +101,12 @@ async def main() -> None:
             print(f"  [{ins.confidence}] {ins.key}: {ins.insight[:80]}")
 
     # ── Normalize ─────────────────────────────────────────────────────────────
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("NORMALIZED CONTEXT")
-    print('='*60)
-    ctx, warnings = normalize(envelope, user_profile=user_profile, usp_warning=usp_warning)
+    print("=" * 60)
+    ctx, warnings = normalize(
+        envelope, user_profile=user_profile, usp_warning=usp_warning
+    )
 
     brief = ctx.brief
     if brief:
@@ -127,7 +130,9 @@ async def main() -> None:
     if ctx.user_insights:
         print(f"\nUserInsights fed to LLM: {len(ctx.user_insights)}")
         for ins in ctx.user_insights:
-            print(f"  [{ins.get('confidence')}] {ins.get('key')}: {str(ins.get('insight', ''))[:80]}")
+            print(
+                f"  [{ins.get('confidence')}] {ins.get('key')}: {str(ins.get('insight', ''))[:80]}"
+            )
     else:
         print("\nUserInsights: (none)")
 

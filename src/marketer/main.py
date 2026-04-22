@@ -25,7 +25,12 @@ from marketer.db import actions_cache
 from marketer.db.engine import is_configured as _db_configured
 from marketer.llm.gemini import GeminiClient
 from marketer.gallery import fetch_gallery_pool
-from marketer.persistence import PersistCtx, persist_on_complete, persist_on_ingest, persist_user_profile
+from marketer.persistence import (
+    PersistCtx,
+    persist_on_complete,
+    persist_on_ingest,
+    persist_user_profile,
+)
 from marketer.schemas.internal_context import GalleryPool
 from marketer.user_profile import UserProfile, fetch_user_profile
 from marketer.reasoner import OVERLAYS as _CODE_OVERLAYS
@@ -161,7 +166,9 @@ def _build_gallery_task_context(envelope: dict[str, Any]) -> dict[str, Any]:
     brief_gate = (gates.get("brief") or {}).get("response") or {}
     brief_data = brief_gate.get("data") if isinstance(brief_gate, dict) else {}
     brief_obj = (brief_data or {}).get("brief") or {}
-    form_values = (brief_obj if isinstance(brief_obj, dict) else {}).get("form_values") or {}
+    form_values = (brief_obj if isinstance(brief_obj, dict) else {}).get(
+        "form_values"
+    ) or {}
 
     keywords_raw = form_values.get("FIELD_KEYWORDS_TAGS_INPUT") or []
     keywords = [k for k in keywords_raw if isinstance(k, str)]
@@ -204,7 +211,9 @@ async def _run_and_callback(
             task_id=str(task_id),
         )
 
-    account_uuid = (envelope.get("payload") or {}).get("context", {}).get("account_uuid")
+    account_uuid = (
+        (envelope.get("payload") or {}).get("context", {}).get("account_uuid")
+    )
     usp_configured = bool(settings.usp_api_key and settings.usp_graphql_url)
     gallery_configured = bool(settings.gallery_api_url and settings.gallery_api_key)
 

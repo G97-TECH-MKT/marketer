@@ -77,16 +77,25 @@ def _base_enrichment(**overrides: Any) -> PostEnrichment:
         objective="Test objective.",
         brand_dna="CLIENT DNA — Test",
         strategic_decisions=StrategicDecisions(
-            surface_format=StrategicChoice(chosen="post", alternatives_considered=[], rationale="r"),
-            angle=StrategicChoice(chosen="bienestar", alternatives_considered=[], rationale="r"),
-            voice=StrategicChoice(chosen="cercano", alternatives_considered=[], rationale="r"),
+            surface_format=StrategicChoice(
+                chosen="post", alternatives_considered=[], rationale="r"
+            ),
+            angle=StrategicChoice(
+                chosen="bienestar", alternatives_considered=[], rationale="r"
+            ),
+            voice=StrategicChoice(
+                chosen="cercano", alternatives_considered=[], rationale="r"
+            ),
         ),
         visual_style_notes="Clean.",
         image=ImageBrief(concept="Hero.", generation_prompt="Photo.", alt_text="Alt."),
         caption=CaptionParts(hook="Hook.", body="Body.", cta_line=""),
         cta=CallToAction(channel="dm", label="DM"),
         hashtag_strategy=HashtagStrategy(
-            intent="brand_awareness", suggested_volume=5, themes=["wellness"], tags=["#relax"]
+            intent="brand_awareness",
+            suggested_volume=5,
+            themes=["wellness"],
+            tags=["#relax"],
         ),
         brand_intelligence=BrandIntelligence(
             business_taxonomy="local_pro_service",
@@ -134,7 +143,6 @@ class _FakeGemini:
 
 
 class TestBuildPromptContextGalleryPool:
-
     def test_gallery_pool_key_present_when_pool_set(self):
         pool = GalleryPool(shortlist=[_pool_item()], total_fetched=5, total_eligible=1)
         ctx = _minimal_ctx(gallery_pool=pool)
@@ -144,7 +152,9 @@ class TestBuildPromptContextGalleryPool:
         assert len(parsed["gallery_pool"]) == 1
 
     def test_gallery_pool_item_fields_serialized(self):
-        item = _pool_item(uuid="img-abc", url="https://s3.example.com/img-abc.png", score=7.5)
+        item = _pool_item(
+            uuid="img-abc", url="https://s3.example.com/img-abc.png", score=7.5
+        )
         pool = GalleryPool(shortlist=[item])
         ctx = _minimal_ctx(gallery_pool=pool)
         output = _build_prompt_context(ctx, extras_truncation=10)
@@ -171,7 +181,10 @@ class TestBuildPromptContextGalleryPool:
         assert parsed["gallery_pool"] is None
 
     def test_multiple_pool_items_all_serialized(self):
-        items = [_pool_item(f"img-{i:02d}", f"https://s3.example.com/img-{i:02d}.png") for i in range(3)]
+        items = [
+            _pool_item(f"img-{i:02d}", f"https://s3.example.com/img-{i:02d}.png")
+            for i in range(3)
+        ]
         pool = GalleryPool(shortlist=items)
         ctx = _minimal_ctx(gallery_pool=pool)
         output = _build_prompt_context(ctx, extras_truncation=10)
@@ -187,7 +200,6 @@ class TestBuildPromptContextGalleryPool:
 
 
 class TestBuildPromptContextAttachments:
-
     def test_user_attachments_present_when_set(self):
         ctx = _minimal_ctx(attachments=["https://s3.example.com/user-img.jpg"])
         output = _build_prompt_context(ctx, extras_truncation=10)
@@ -282,11 +294,18 @@ class TestResourcesAssembly:
         pool = GalleryPool(shortlist=[_pool_item(url=gallery_url)])
         enrichment = _base_enrichment(
             selected_images=[
-                SelectedImage(uuid="img-001", content_url=gallery_url, role="hero", usage_note="fit")
+                SelectedImage(
+                    uuid="img-001",
+                    content_url=gallery_url,
+                    role="hero",
+                    usage_note="fit",
+                )
             ],
             visual_selection=VisualSelection(recommended_asset_urls=[]),
         )
-        cb = self._call_reason(enrichment, attachments=[attachment_url], gallery_pool=pool)
+        cb = self._call_reason(
+            enrichment, attachments=[attachment_url], gallery_pool=pool
+        )
         assert cb.status == "COMPLETED"
         resources = cb.output_data.data.resources
         assert resources.index(attachment_url) < resources.index(gallery_url)
@@ -297,7 +316,12 @@ class TestResourcesAssembly:
         pool = GalleryPool(shortlist=[_pool_item(url=shared_url)])
         enrichment = _base_enrichment(
             selected_images=[
-                SelectedImage(uuid="img-001", content_url=shared_url, role="hero", usage_note="fit")
+                SelectedImage(
+                    uuid="img-001",
+                    content_url=shared_url,
+                    role="hero",
+                    usage_note="fit",
+                )
             ],
             visual_selection=VisualSelection(recommended_asset_urls=[]),
         )

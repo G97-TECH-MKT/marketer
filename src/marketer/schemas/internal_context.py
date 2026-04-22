@@ -57,7 +57,9 @@ class GalleryPool(BaseModel):
     shortlist: list[GalleryPoolItem] = Field(default_factory=list)
     total_fetched: int = 0
     total_eligible: int = 0
-    truncated: bool = False  # True when total_fetched >= page_size (more pages may exist)
+    truncated: bool = (
+        False  # True when total_fetched >= page_size (more pages may exist)
+    )
     source: GalleryPoolSource = "gallery_api"
 
 

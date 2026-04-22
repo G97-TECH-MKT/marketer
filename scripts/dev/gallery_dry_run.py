@@ -74,11 +74,16 @@ async def main() -> None:
     print(f"\nFetching {raw_url} …")
 
     try:
-        async with httpx.AsyncClient(timeout=settings.gallery_timeout_seconds) as client:
+        async with httpx.AsyncClient(
+            timeout=settings.gallery_timeout_seconds
+        ) as client:
             resp = await client.get(
                 raw_url,
                 params={"page": 1, "size": settings.gallery_page_size},
-                headers={"X-API-KEY": settings.gallery_api_key, "Accept": "application/json"},
+                headers={
+                    "X-API-KEY": settings.gallery_api_key,
+                    "Accept": "application/json",
+                },
             )
     except Exception as exc:
         print(f"\nHTTP error: {exc}")
@@ -100,11 +105,15 @@ async def main() -> None:
     if isinstance(body, dict):
         print(f"Raw response keys : {list(body.keys())}")
         # Pretty print first 500 chars to see structure
-        print(f"Raw response peek :\n{json.dumps(body, indent=2, ensure_ascii=False)[:800]}")
+        print(
+            f"Raw response peek :\n{json.dumps(body, indent=2, ensure_ascii=False)[:800]}"
+        )
     elif isinstance(body, list):
         print(f"Raw response      : list of {len(body)} items")
         if body:
-            print(f"First item keys   : {list(body[0].keys()) if isinstance(body[0], dict) else body[0]}")
+            print(
+                f"First item keys   : {list(body[0].keys()) if isinstance(body[0], dict) else body[0]}"
+            )
 
     # Resolve to list regardless of shape
     if isinstance(body, list):
@@ -124,7 +133,7 @@ async def main() -> None:
     print(f"→ Received {len(raw_items)} raw items")
 
     # ── Raw items overview ────────────────────────────────────────────────────
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("RAW ITEMS")
     print("=" * 60)
     for i, item in enumerate(raw_items):
@@ -135,7 +144,7 @@ async def main() -> None:
         locked = item.get("locked_until")
         tags = (item.get("metadata") or {}).get("tags") or []
         print(
-            f"  [{i+1:2d}] {uuid}… | type={type_:<5} | cat={category[:20]:<20} "
+            f"  [{i + 1:2d}] {uuid}… | type={type_:<5} | cat={category[:20]:<20} "
             f"| used={'yes' if used_at else 'no '} | locked={'yes' if locked else 'no '} "
             f"| tags={tags[:3]}"
         )
@@ -145,7 +154,7 @@ async def main() -> None:
     eligible = [item for item in raw_items if is_eligible(item, now)]
     ineligible = len(raw_items) - len(eligible)
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("ELIGIBILITY FILTER")
     print("=" * 60)
     print(f"  Total fetched : {len(raw_items)}")
@@ -153,7 +162,7 @@ async def main() -> None:
     print(f"  Rejected      : {ineligible}")
 
     # ── Stage 1 scoring ───────────────────────────────────────────────────────
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("STAGE 1 SCORES (eligible items, sorted)")
     print("=" * 60)
     if not eligible:
@@ -169,12 +178,14 @@ async def main() -> None:
             category = (item.get("category") or "?")[:20]
             tags = (item.get("metadata") or {}).get("tags") or []
             desc = (item.get("description") or "")[:50]
-            print(f"  #{rank:2d} score={sc:5.1f} | {uuid}… | {category:<20} | tags={tags[:3]}")
+            print(
+                f"  #{rank:2d} score={sc:5.1f} | {uuid}… | {category:<20} | tags={tags[:3]}"
+            )
             if desc:
                 print(f"           desc: {desc}")
 
     # ── Vision shortlist ──────────────────────────────────────────────────────
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"VISION SHORTLIST (top {settings.gallery_vision_candidates})")
     print("=" * 60)
 

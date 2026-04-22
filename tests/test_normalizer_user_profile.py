@@ -81,7 +81,9 @@ def _make_identity(
     )
 
 
-def _make_profile(identity: IdentityData | None = None, insights: list[UserInsight] | None = None) -> UserProfile:
+def _make_profile(
+    identity: IdentityData | None = None, insights: list[UserInsight] | None = None
+) -> UserProfile:
     return UserProfile(
         identity=identity or _make_identity(),
         insights=insights or [],
@@ -107,6 +109,7 @@ def _make_insight(
 # ---------------------------------------------------------------------------
 # test_up_overrides_brief_field_by_field
 # ---------------------------------------------------------------------------
+
 
 def test_up_overrides_brief_name():
     data = _load("nubiex_golden_input.json")
@@ -155,12 +158,15 @@ def test_up_overrides_brief_colors():
     data = _load("nubiex_golden_input.json")
     profile = _make_profile(_make_identity(colors=["#FF0000", "#00FF00"]))
     ctx, _ = normalize(data, user_profile=profile)
-    assert "#FF0000" in ctx.brief.colors or "#ff0000" in [c.lower() for c in ctx.brief.colors]
+    assert "#FF0000" in ctx.brief.colors or "#ff0000" in [
+        c.lower() for c in ctx.brief.colors
+    ]
 
 
 # ---------------------------------------------------------------------------
 # test_up_empty_field_does_not_wipe_brief
 # ---------------------------------------------------------------------------
+
 
 def test_up_empty_name_does_not_wipe_brief():
     data = _load("nubiex_golden_input.json")
@@ -194,6 +200,7 @@ def test_up_empty_colors_does_not_wipe_palette():
 # test_up_colors_override_palette_and_brief_facts
 # ---------------------------------------------------------------------------
 
+
 def test_up_colors_override_palette_and_brief_facts():
     data = _load("nubiex_golden_input.json")
     profile = _make_profile(_make_identity(colors=["#5E204D", "#9C7945"]))
@@ -210,6 +217,7 @@ def test_up_colors_override_palette_and_brief_facts():
 # ---------------------------------------------------------------------------
 # test_up_insights_added_to_context
 # ---------------------------------------------------------------------------
+
 
 def test_up_insights_added_to_context_active_only():
     data = _load("nubiex_golden_input.json")
@@ -240,6 +248,7 @@ def test_up_insights_sorted_by_confidence_desc():
 # test_up_none_normalize_unchanged
 # ---------------------------------------------------------------------------
 
+
 def test_up_none_normalize_unchanged():
     data = _load("nubiex_golden_input.json")
     ctx_without, warnings_without = normalize(data)
@@ -255,6 +264,7 @@ def test_up_none_normalize_unchanged():
 # ---------------------------------------------------------------------------
 # test_up_brief_absent_up_present
 # ---------------------------------------------------------------------------
+
 
 def test_up_brief_absent_up_present():
     data = _load("missing_brief_post.json")
@@ -273,9 +283,12 @@ def test_up_brief_absent_up_present():
 # test_user_profile_unavailable_warning
 # ---------------------------------------------------------------------------
 
+
 def test_user_profile_unavailable_warning():
     data = _load("nubiex_golden_input.json")
-    ctx, warnings = normalize(data, user_profile=None, usp_warning="user_profile_unavailable")
+    ctx, warnings = normalize(
+        data, user_profile=None, usp_warning="user_profile_unavailable"
+    )
     codes = {w.code for w in warnings}
     assert "user_profile_unavailable" in codes
 
@@ -284,9 +297,12 @@ def test_user_profile_unavailable_warning():
 # test_user_profile_skipped_warning
 # ---------------------------------------------------------------------------
 
+
 def test_user_profile_skipped_warning_no_key():
     data = _load("nubiex_golden_input.json")
-    ctx, warnings = normalize(data, user_profile=None, usp_warning="user_profile_skipped")
+    ctx, warnings = normalize(
+        data, user_profile=None, usp_warning="user_profile_skipped"
+    )
     codes = {w.code for w in warnings}
     assert "user_profile_skipped" in codes
 
@@ -294,7 +310,9 @@ def test_user_profile_skipped_warning_no_key():
 def test_user_profile_not_found_warning():
     data = _load("nubiex_golden_input.json")
     profile = UserProfile(identity=None, insights=[], fetched_at="2026-04-22T00:00:00Z")
-    ctx, warnings = normalize(data, user_profile=profile, usp_warning="user_profile_not_found")
+    ctx, warnings = normalize(
+        data, user_profile=profile, usp_warning="user_profile_not_found"
+    )
     codes = {w.code for w in warnings}
     assert "user_profile_not_found" in codes
 
@@ -302,6 +320,7 @@ def test_user_profile_not_found_warning():
 # ---------------------------------------------------------------------------
 # extras — UP-only fields stored in FlatBrief.extras
 # ---------------------------------------------------------------------------
+
 
 def test_up_extras_populated():
     data = _load("nubiex_golden_input.json")
@@ -325,6 +344,7 @@ def test_up_extras_populated():
 # channels — UP social URLs override available_channels
 # ---------------------------------------------------------------------------
 
+
 def test_up_instagram_url_overrides_channel():
     data = _load("nubiex_golden_input.json")
     profile = _make_profile(
@@ -340,7 +360,9 @@ def test_up_instagram_url_overrides_channel():
 
 def test_up_brand_tokens_font_and_design_style():
     data = _load("nubiex_golden_input.json")
-    profile = _make_profile(_make_identity(font="Playfair Display", design_style="luxury"))
+    profile = _make_profile(
+        _make_identity(font="Playfair Display", design_style="luxury")
+    )
     ctx, _ = normalize(data, user_profile=profile)
     assert ctx.brand_tokens.font_style == "Playfair Display"
     assert ctx.brand_tokens.design_style == "luxury"

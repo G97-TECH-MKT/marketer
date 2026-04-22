@@ -477,13 +477,18 @@ def _parse_keywords(raw: Any) -> list[str]:
         if stripped.startswith("["):
             try:
                 import json as _json
+
                 parsed = _json.loads(stripped)
                 if isinstance(parsed, list):
-                    return [k.strip() for k in parsed if isinstance(k, str) and k.strip()]
+                    return [
+                        k.strip() for k in parsed if isinstance(k, str) and k.strip()
+                    ]
             except Exception:
                 pass
         return [k.strip() for k in stripped.split(",") if k.strip()]
     return []
+
+
 _URL_RE = re.compile(r"https?://[^\s<>'\"]+")
 _EMAIL_RE = re.compile(r"\b[\w.+-]+@[\w-]+(?:\.[\w-]+)+\b")
 _PHONE_RE = re.compile(r"(?<!\w)\+?\d[\d\s\-().]{6,}\d(?!\w)")
@@ -706,7 +711,9 @@ def _apply_user_profile(
     if _clean_string(company.get("country")):
         flat_brief.country = _clean_string(company.get("country"))
     if _clean_string(company.get("historyAndFounder")):
-        flat_brief.business_description = _clean_string(company.get("historyAndFounder"))
+        flat_brief.business_description = _clean_string(
+            company.get("historyAndFounder")
+        )
     if _clean_string(company.get("targetCustomer")):
         flat_brief.target_customer = _clean_string(company.get("targetCustomer"))
     if _clean_string(company.get("websiteUrl")):
@@ -714,7 +721,9 @@ def _apply_user_profile(
     if _clean_string(brand.get("communicationStyle")):
         flat_brief.tone = _clean_string(brand.get("communicationStyle"))
     if _clean_string(brand.get("communicationLang")):
-        flat_brief.communication_language = _clean_string(brand.get("communicationLang"))
+        flat_brief.communication_language = _clean_string(
+            brand.get("communicationLang")
+        )
     up_colors: list[str] = [
         c
         for c in (
@@ -759,7 +768,9 @@ def _apply_user_profile(
     if _clean_string(brand.get("postContentStyle")):
         brand_tokens.post_content_style = _clean_string(brand.get("postContentStyle"))
     if _clean_string(brand.get("communicationStyle")):
-        brand_tokens.communication_style = _clean_string(brand.get("communicationStyle"))
+        brand_tokens.communication_style = _clean_string(
+            brand.get("communicationStyle")
+        )
 
     # §3.3 — AvailableChannels overrides
     up_channel_map: dict[str, str | None] = {
@@ -796,9 +807,7 @@ def _apply_user_profile(
                 AvailableChannel(channel=always, label_hint=hints[always])  # type: ignore[arg-type]
             )
     available_channels = [
-        c
-        for c in merged
-        if c.channel in ("dm", "link_sticker") or c.url_or_handle
+        c for c in merged if c.channel in ("dm", "link_sticker") or c.url_or_handle
     ]
 
     return flat_brief, brand_tokens, available_channels
