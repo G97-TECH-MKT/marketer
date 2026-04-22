@@ -17,7 +17,7 @@ import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
 
-revision: str = "002_add_user_profile_to_raw_briefs"
+revision: str = "002_add_user_profile"
 down_revision: Union[str, None] = "001_initial_schema"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None

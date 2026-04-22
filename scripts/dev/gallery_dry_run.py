@@ -53,7 +53,7 @@ async def main() -> None:
     print(f"vision_candidates: {settings.gallery_vision_candidates}")
     print(f"page_size        : {settings.gallery_page_size}")
 
-    print(f"\ntask_context for Stage 1 scoring:")
+    print("\ntask_context for Stage 1 scoring:")
     print(f"  user_request  : {task_context['user_request'][:80]}")
     print(f"  keywords      : {task_context['brief_keywords']}")
     print(f"  tone          : {task_context['brief_tone']}")

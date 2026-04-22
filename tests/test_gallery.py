@@ -9,13 +9,16 @@ Spec ref: docs/OpenSpec/11-gallery-image-pool.md §11.1
 
 from __future__ import annotations
 
+import asyncio
 import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
+import httpx
 import pytest
 
-from marketer.gallery import _build_shortlist, is_eligible, score_image
+from marketer.gallery import _build_shortlist, fetch_gallery_pool, is_eligible, score_image
 from marketer.normalizer import normalize
 from marketer.schemas.enrichment import PostEnrichment, SelectedImage
 from marketer.schemas.internal_context import GalleryPool, GalleryPoolItem
@@ -415,12 +418,10 @@ class TestSelectedImages:
             BrandIntelligence,
             CaptionParts,
             CallToAction,
-            Confidence,
             HashtagStrategy,
             ImageBrief,
             StrategicChoice,
             StrategicDecisions,
-            VisualSelection,
         )
         return {
             "schema_version": "2.0",
@@ -572,13 +573,6 @@ class TestGalleryPoolModel:
 # ===========================================================================
 # fetch_gallery_pool — HTTP layer (lines 191-275)
 # ===========================================================================
-
-import asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
-
-import httpx
-
-from marketer.gallery import fetch_gallery_pool
 
 
 def _run(coro):

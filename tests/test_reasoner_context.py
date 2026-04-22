@@ -14,14 +14,11 @@ import json
 from pathlib import Path
 from typing import Any
 
-import pytest
-
 from marketer.reasoner import _build_prompt_context, reason
 from marketer.schemas.enrichment import (
     BrandIntelligence,
     CallToAction,
     CaptionParts,
-    Confidence,
     HashtagStrategy,
     ImageBrief,
     PostEnrichment,
@@ -31,7 +28,6 @@ from marketer.schemas.enrichment import (
     VisualSelection,
 )
 from marketer.schemas.internal_context import (
-    BrandTokens,
     GalleryPool,
     GalleryPoolItem,
     InternalContext,
@@ -245,7 +241,7 @@ class TestResourcesAssembly:
         gemini = _FakeGemini(enrichment)
         return reason(
             envelope,
-            gemini,
+            gemini,  # type: ignore[arg-type]
             extras_truncation=10,
             gallery_pool=gallery_pool,
         )

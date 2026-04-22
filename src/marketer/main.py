@@ -26,7 +26,8 @@ from marketer.db.engine import is_configured as _db_configured
 from marketer.llm.gemini import GeminiClient
 from marketer.gallery import fetch_gallery_pool
 from marketer.persistence import PersistCtx, persist_on_complete, persist_on_ingest, persist_user_profile
-from marketer.user_profile import fetch_user_profile
+from marketer.schemas.internal_context import GalleryPool
+from marketer.user_profile import UserProfile, fetch_user_profile
 from marketer.reasoner import OVERLAYS as _CODE_OVERLAYS
 from marketer.reasoner import reason
 from marketer.schemas.enrichment import CallbackBody
@@ -232,7 +233,9 @@ async def _run_and_callback(
             timeout=settings.gallery_timeout_seconds,
         )
 
-    usp_result, gallery_result = await asyncio.gather(
+    usp_result: UserProfile | None | BaseException
+    gallery_result: tuple[GalleryPool | None, str | None] | None | BaseException
+    usp_result, gallery_result = await asyncio.gather(  # type: ignore[assignment]
         _usp_fetch(), _gallery_fetch(), return_exceptions=True
     )
 

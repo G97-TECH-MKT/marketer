@@ -715,10 +715,13 @@ def _apply_user_profile(
         flat_brief.tone = _clean_string(brand.get("communicationStyle"))
     if _clean_string(brand.get("communicationLang")):
         flat_brief.communication_language = _clean_string(brand.get("communicationLang"))
-    up_colors = [
-        _extract_hex(c) for c in (brand.get("colors") or []) if isinstance(c, str)
+    up_colors: list[str] = [
+        c
+        for c in (
+            _extract_hex(x) for x in (brand.get("colors") or []) if isinstance(x, str)
+        )
+        if c is not None
     ]
-    up_colors = [c for c in up_colors if c]
     if up_colors:
         flat_brief.colors = up_colors
     kw_raw = brand.get("keywords")

@@ -77,7 +77,6 @@ def _h(label: str, value: Any, indent: int = 2) -> None:
     if len(prefix) + len(text) <= W:
         print(f"{prefix}{text}")
     else:
-        first_line_width = W - len(prefix)
         lines = textwrap.wrap(text, width=W - indent - 2)
         print(f"{prefix}{lines[0]}")
         for line in lines[1:]:
@@ -200,7 +199,6 @@ def _print_usp(user_profile: Any, usp_warning: str | None, account_uuid: str | N
 
 
 def _print_context(ctx: Any, warnings: list[Any]) -> None:
-    from marketer.schemas.internal_context import InternalContext  # local import
     _sep("3. NORMALIZED InternalContext")
 
     brief = ctx.brief
@@ -567,13 +565,13 @@ async def _run(args: argparse.Namespace) -> int:
 
         if pctx is not None and user_profile is not None:
             await persist_user_profile(pctx.raw_brief_id, user_profile)
-            print(f"[DB] user_profile persisted to raw_briefs.user_profile")
+            print("[DB] user_profile persisted to raw_briefs.user_profile")
 
     # ── 5. Gemini call ────────────────────────────────────────────────────────
     _sep("Calling Gemini LLM…")
     print(f"  model={settings.gemini_model}")
     print(f"  timeout={settings.llm_timeout_seconds}s")
-    print(f"  This makes one real API call (~10-15 s).")
+    print("  This makes one real API call (~10-15 s).")
     t0 = time.time()
 
     try:
@@ -605,7 +603,7 @@ async def _run(args: argparse.Namespace) -> int:
     # ── DB: completion persistence ─────────────────────────────────────────────
     if use_db and pctx is not None:
         await persist_on_complete(pctx, envelope, callback, elapsed_ms)
-        print(f"\n[DB] persist_on_complete done (strategy upserted, job row created)")
+        print("\n[DB] persist_on_complete done (strategy upserted, job row created)")
 
     # ── 6. DB read-back ───────────────────────────────────────────────────────
     if use_db:
