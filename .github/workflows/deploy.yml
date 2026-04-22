@@ -114,6 +114,33 @@ jobs:
           SERVICE="marketer"
           TASK_DEF="marketer-${ENV}-migrator"
 
+          # Create a new task definition revision for migrator
+          # using the image built in this workflow.
+          TASK_DEF_JSON=$(aws ecs describe-task-definition \
+            --task-definition "$TASK_DEF" \
+            --query 'taskDefinition' \
+            --output json | \
+            jq --arg IMAGE "${{ needs.build-and-push.outputs.image_uri }}" '
+              del(
+                .taskDefinitionArn,
+                .revision,
+                .status,
+                .registeredAt,
+                .registeredBy,
+                .requiresAttributes,
+                .compatibilities
+              )
+              | .containerDefinitions = (
+                  .containerDefinitions
+                  | map(if .name == "migrator" then .image = $IMAGE else . end)
+                )
+            ')
+
+          NEW_TASK_DEF_ARN=$(aws ecs register-task-definition \
+            --cli-input-json "$TASK_DEF_JSON" \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text)
+
           SUBNETS=$(aws ecs describe-services \
             --cluster "$CLUSTER" \
             --services "$SERVICE" \
@@ -128,10 +155,9 @@ jobs:
 
           TASK_ARN=$(aws ecs run-task \
             --cluster "$CLUSTER" \
-            --task-definition "$TASK_DEF" \
+            --task-definition "$NEW_TASK_DEF_ARN" \
             --launch-type FARGATE \
             --network-configuration "awsvpcConfiguration={subnets=[${SUBNETS}],securityGroups=[${SGS}],assignPublicIp=DISABLED}" \
-            --overrides "{\"containerOverrides\":[{\"name\":\"migrator\",\"image\":\"${{ needs.build-and-push.outputs.image_uri }}\"}]}" \
             --query 'tasks[0].taskArn' \
             --output text)
 
