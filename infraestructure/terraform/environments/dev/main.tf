@@ -92,7 +92,7 @@ module "ecs" {
   task_memory             = 512
   min_capacity            = 0
   max_capacity            = 2
-  llm_timeout             = 30
+  llm_timeout             = 60
   callback_retry_attempts = 2
   log_retention_days      = 7
   db_pool_size            = var.db_pool_size

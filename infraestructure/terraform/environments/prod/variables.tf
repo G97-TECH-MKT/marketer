@@ -114,7 +114,7 @@ variable "max_capacity" {
 variable "llm_timeout" {
   description = "LLM call timeout in seconds"
   type        = number
-  default     = 30
+  default     = 60
 }
 
 variable "callback_retry_attempts" {
