@@ -14,14 +14,18 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
+from contextlib import asynccontextmanager
 from typing import Any
 
 import httpx
 from fastapi import BackgroundTasks, FastAPI, Header, HTTPException, Request
 
 from marketer.config import load_settings
+from marketer.db import actions_cache
+from marketer.db.engine import is_configured as _db_configured
 from marketer.llm.gemini import GeminiClient
 from marketer.persistence import PersistCtx, persist_on_complete, persist_on_ingest
+from marketer.reasoner import OVERLAYS as _CODE_OVERLAYS
 from marketer.reasoner import reason
 from marketer.schemas.enrichment import CallbackBody
 
@@ -32,7 +36,43 @@ logging.basicConfig(
 )
 logger = logging.getLogger("marketer")
 
-app = FastAPI(title="MARKETER", version="0.2.0")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):  # noqa: ARG001
+    """Startup: warm action_types cache and verify DB↔code alignment.
+
+    Hard-fails the boot if an enabled action in the catalog has no matching
+    OVERLAYS entry — that means a row was INSERTed without the prompt module
+    being deployed, and accepting traffic for it would just produce runtime
+    failures. Better to refuse to start.
+
+    Tolerates DB outages on boot (logs + continues in degraded mode); the
+    catalog will lazy-refresh on first traffic.
+    """
+    if _db_configured():
+        try:
+            await actions_cache.refresh()
+            enabled = await actions_cache.enabled_codes()
+            missing = enabled - set(_CODE_OVERLAYS.keys())
+            if missing:
+                raise RuntimeError(
+                    "action_types is_enabled=true but no OVERLAYS entry: "
+                    f"{sorted(missing)}. Either deploy the prompt module + "
+                    "OVERLAYS entry, or set is_enabled=false on these rows."
+                )
+            logger.info(
+                '"startup_actions_aligned enabled=%d overlays=%d"',
+                len(enabled),
+                len(_CODE_OVERLAYS),
+            )
+        except RuntimeError:
+            raise
+        except Exception:
+            logger.exception('"startup_actions_cache_failed degraded=true"')
+    yield
+
+
+app = FastAPI(title="MARKETER", version="0.2.0", lifespan=lifespan)
 
 
 def _get_gemini_client() -> GeminiClient:
@@ -194,6 +234,22 @@ async def run_task(
         raise HTTPException(status_code=400, detail="callback_url is required")
     if not settings.gemini_api_key:
         raise HTTPException(status_code=503, detail="GEMINI_API_KEY not configured")
+
+    # Validate action_code against the DB catalog (cached). Skipped silently
+    # when persistence is not configured — in that mode the existing
+    # hardcoded check inside normalizer is the only line of defense.
+    if _db_configured():
+        action = await actions_cache.get(envelope.get("action_code", ""))
+        if action is None:
+            raise HTTPException(
+                status_code=422,
+                detail=f"action_unknown: '{envelope.get('action_code')}' is not in action_types catalog",
+            )
+        if not action.is_enabled:
+            raise HTTPException(
+                status_code=422,
+                detail=f"action_not_enabled: '{action.code}' is gated off (action_types.is_enabled=false)",
+            )
 
     # Persistence pre-flight. Never blocks the 202 — on any failure
     # pctx is None and the background path runs without DB writes.

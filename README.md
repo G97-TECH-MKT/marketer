@@ -20,7 +20,7 @@ ROUTER ─POST /tasks─► marketer ─202 ACK─► ROUTER
                         └── PATCH callback_url ─► ROUTER ─► CONTENT_FACTORY
 ```
 
-**Stack:** Python 3.11+, FastAPI, Pydantic v2, `google-genai` SDK. Async I/O. Sin persistencia.
+**Stack:** Python 3.11+, FastAPI, Pydantic v2, `google-genai` SDK. Async I/O. PostgreSQL via asyncpg + SQLAlchemy 2 (schema: `alembic/versions/001_initial_schema.py`).
 
 **Scope MVP (2026-04-21):** solo `create_post` / `edit_post`. Web bloqueado por candado en `reasoner.py`.
 
@@ -133,11 +133,11 @@ src/marketer/           # Código del servicio
   schemas/              # Pydantic models (envelope, internal_context, enrichment)
 
 tests/                  # 62 tests (36 offline + 26 live)
-fixtures/envelopes/     # 9 fixtures de prueba (casa_maruja, saas, retail, dental, etc.)
+fixtures/envelopes/     # 10 fixtures de prueba (casa_maruja, saas, retail, dental, nubiex, etc.; post only)
 golden/posts/           # 3 baselines v2 para regression detection
 scripts/                # run_fixture, smoke_async, batch_test, build_demo_html
 samples/                # HTMLs demo generados (marketer_demo_v2.html)
-docs/                   # Docs del router (externas al repo, referencia)
+docs/                   # golden_reference.md, ROUTER CONTRACT, PERSISTENCE (superseded), OpenSpec (infra/deploy)
 
 PRD.md                  # Producto
 SPEC.md                 # Técnico + operacional + integration runbook

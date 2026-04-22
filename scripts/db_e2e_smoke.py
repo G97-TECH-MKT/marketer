@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """End-to-end smoke: golden envelope → real Gemini → Postgres.
 
-POSTs fixtures/envelopes/golden_post.json (with fresh random IDs) through the
+POSTs fixtures/envelopes/nubiex_golden_input.json (with fresh random IDs) through the
 running app via TestClient. `reason()` runs for real — Gemini is hit, the
 enrichment is produced, persistence writes all five rows. The outbound PATCH
 to callback_url is stubbed so we don't hang on a fake URL.
@@ -42,6 +42,20 @@ def _sync_url(url: str) -> str:
 
 
 def main() -> int:
+    import argparse
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--description",
+        help="Override client_request.description (useful to force a surface_format like carousel/reel/story).",
+    )
+    parser.add_argument(
+        "--fixture",
+        default="nubiex_golden_input.json",
+        help="Filename under fixtures/envelopes/ to use as the base envelope.",
+    )
+    args = parser.parse_args()
+
     settings = load_settings()
     if not settings.database_url:
         print("DATABASE_URL not set; aborting.", file=sys.stderr)
@@ -50,13 +64,15 @@ def main() -> int:
         print("GEMINI_API_KEY not set; aborting.", file=sys.stderr)
         return 1
 
-    golden_path = ROOT / "fixtures" / "envelopes" / "golden_post.json"
-    envelope = json.loads(golden_path.read_text(encoding="utf-8"))
+    fixture_path = ROOT / "fixtures" / "envelopes" / args.fixture
+    envelope = json.loads(fixture_path.read_text(encoding="utf-8"))
     account_uuid = uuid4()
     task_uuid = uuid4()
     envelope["task_id"] = str(task_uuid)
     envelope["callback_url"] = f"https://example.test/cb/{task_uuid}"
     envelope["payload"]["context"]["account_uuid"] = str(account_uuid)
+    if args.description:
+        envelope["payload"]["client_request"]["description"] = args.description
 
     async def _no_op_callback(*args, **kwargs):  # noqa: ANN001
         return None
@@ -132,6 +148,21 @@ def main() -> int:
 
     print()
     print("OK — real Gemini output persisted across all 5 tables.")
+
+    # Refresh the inspector HTML so the human can review the run in a browser.
+    try:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from inspector import fetch_runs as _fetch, render_html as _render  # type: ignore
+
+        out = ROOT / "reports" / "inspector.html"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(_render(_fetch(5)), encoding="utf-8")
+        print(f"Inspector refreshed: {out}")
+    except Exception:  # noqa: BLE001
+        # Inspector is a convenience; don't fail the smoke if it errors.
+        import traceback
+        traceback.print_exc()
+        print("(inspector refresh failed — see traceback above; smoke itself succeeded)")
     return 0
 
 

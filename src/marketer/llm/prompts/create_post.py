@@ -24,10 +24,13 @@ Required behavior:
 - Set `confidence.*` based on how strongly the brief supported each choice.
 - Fill `hashtag_strategy.tags` with 5-10 actual hashtag strings (# prefix)
   aligned to intent and platform. These land verbatim in cf_post_brief.
-- Compose `cf_post_brief` LAST: editorial image note ("El hook es…") +
-  Caption block (hook/body/cta_line verbatim) + Hashtags block (tags verbatim).
-  The editorial note must explain WHY this visual activates the brand's
-  emotional_beat — not just describe the image.
+- Compose `cf_post_brief` LAST. Choose the format from §cf_post_brief based on
+  surface_format:
+    post / story / reel → use the "post/story/reel" format (CONCEPT block +
+      Caption block + Hashtags block).
+    carousel → use the "carousel" format (strategic overview + Slide N entries
+      with image + copy per slide + Caption + Hashtags). Each Slide entry must
+      name a specific gallery file OR "AI-generated" for that slide's image.
 
 SURFACE-SPECIFIC CHARACTER LIMITS — these are HARD CAPS, not suggestions:
 

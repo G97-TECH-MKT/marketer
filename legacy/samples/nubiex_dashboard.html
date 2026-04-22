@@ -1,0 +1,576 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Nubiex Dashboard</title>
+<style>
+:root {
+  --bg:#0b0f17; --panel:#121826; --panel-2:#0f1422;
+  --text:#e6ecf5; --muted:#8b97ad; --line:#1f2738;
+  --accent:#7c5cff; --a2:#00d4ff;
+  --good:#2bd07b; --warn:#f5a524; --bad:#ff5d6c;
+  --np:#5e204d; --ns:#9c7945; --na:#edd494; --nv:#8d3db4;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+html,body { background:var(--bg); color:var(--text);
+  font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif; font-size:14px; }
+.wrap { max-width:1600px; margin:0 auto; padding:20px 18px 60px; }
+
+header { display:flex; align-items:center; justify-content:space-between;
+  padding-bottom:14px; border-bottom:2px solid var(--np); margin-bottom:18px; }
+header h1 { font-size:20px; }
+header h1 .brand { background:linear-gradient(90deg,var(--nv),var(--na));
+  -webkit-background-clip:text; background-clip:text; color:transparent; }
+.hdr-meta { font-size:12px; color:var(--muted); text-align:right; line-height:1.6; }
+.hdr-meta b { color:var(--text); }
+
+.section-h { font-size:13px; letter-spacing:.04em; text-transform:uppercase;
+  color:var(--muted); margin:18px 0 10px; font-weight:600; }
+.run-count { font-weight:400; }
+.section-lbl { font-size:10.5px; letter-spacing:.07em; text-transform:uppercase;
+  color:var(--muted); margin-bottom:7px; font-weight:600; }
+.cf-lbl { color:var(--good); }
+
+/* Compare grid — 2 run cards side by side */
+.compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:20px; }
+.solo-grid { margin-bottom:20px; }
+@media(max-width:1100px){ .compare-grid { grid-template-columns:1fr; } }
+
+/* Run card */
+.run-card { background:var(--panel); border:1px solid var(--line);
+  border-radius:14px; padding:16px 18px; }
+.run-label { display:inline-block; font-size:10px; font-weight:700; letter-spacing:.08em;
+  text-transform:uppercase; padding:2px 8px; border-radius:999px;
+  background:rgba(124,92,255,.18); color:var(--accent); border:1px solid rgba(124,92,255,.4); }
+.lc-head { display:flex; align-items:center; justify-content:space-between;
+  flex-wrap:wrap; gap:8px; margin-bottom:5px; }
+.lc-left { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.ts-lbl { font-size:11px; color:var(--muted); font-family:ui-monospace,monospace; }
+.angle-line { font-size:12px; color:var(--muted); margin-bottom:12px; }
+
+.status-ok  { color:var(--good); font-weight:700; }
+.status-bad { color:var(--bad);  font-weight:700; }
+
+.sf-pill,.pil-pill,.muted-pill,.lat-pill {
+  display:inline-block; font-size:11px; padding:2px 8px; border-radius:999px;
+  letter-spacing:.06em; text-transform:uppercase; }
+.sf-pill  { color:var(--nv); background:rgba(141,61,180,.14); border:1px solid rgba(141,61,180,.35); font-weight:700; }
+.pil-pill { color:var(--a2); background:rgba(0,212,255,.10); border:1px solid rgba(0,212,255,.25); }
+.muted-pill,.lat-pill { color:var(--muted); background:var(--panel-2); border:1px solid var(--line); }
+.lat-pill { font-family:ui-monospace,monospace; text-transform:none; }
+.tok-pill { display:inline-block; font-size:11px; padding:2px 8px; border-radius:999px;
+  color:#6ee7b7; background:rgba(110,231,183,.10); border:1px solid rgba(110,231,183,.3);
+  font-family:ui-monospace,monospace; cursor:default; }
+.chip { display:inline-flex; padding:2px 7px; border-radius:999px;
+  border:1px solid var(--line); font-size:11px; }
+.chip.warn { color:var(--warn); border-color:rgba(245,165,36,.4); }
+
+.lc-grid { display:grid; grid-template-columns:1.15fr 1fr; gap:12px; }
+@media(max-width:800px){ .lc-grid { grid-template-columns:1fr; } }
+.lc-left-col,.lc-right-col { display:flex; flex-direction:column; gap:8px; }
+
+.concept-card { background:linear-gradient(135deg,rgba(43,208,123,.06),rgba(0,212,255,.03));
+  border:1.5px solid rgba(43,208,123,.35); border-radius:10px; padding:11px 13px;
+  display:flex; flex-direction:column; gap:4px; }
+.ct { font-size:13.5px; font-weight:700;
+  background:linear-gradient(90deg,var(--nv),var(--na));
+  -webkit-background-clip:text; background-clip:text; color:transparent; }
+.cb { font-size:12.5px; line-height:1.5; color:var(--text); }
+.cm { display:flex; align-items:center; gap:7px; margin-top:2px; }
+.ck { font-size:10px; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--muted); background:var(--panel-2); padding:2px 6px;
+  border-radius:6px; border:1px solid var(--line); white-space:nowrap; }
+.cv { font-size:12px; font-family:ui-monospace,monospace; color:var(--a2); font-weight:600; }
+.cv.tp { color:var(--na) !important; }
+
+.cap-card { background:var(--panel-2); border:1px solid var(--line);
+  border-radius:9px; padding:8px 11px; }
+.cap-lbl { font-size:10px; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--muted); margin-bottom:4px; display:flex; justify-content:space-between; }
+.char-n { font-weight:400; }
+.cap-txt { white-space:pre-wrap; line-height:1.5; font-size:13px; }
+.cf-raw-txt { font-size:12px; }
+.hook-cap { border-color:rgba(237,212,148,.25); }
+.hook-txt { font-weight:700; font-size:13.5px; }
+.cta-cap .cta-txt { color:var(--na); font-weight:600; }
+.carousel-raw { border-color:rgba(0,212,255,.2); }
+.tags-row { line-height:2.2; }
+code.tag { background:var(--panel-2); border:1px solid rgba(141,61,180,.3);
+  padding:2px 7px; border-radius:999px; font-size:11.5px; color:var(--na);
+  margin-right:3px; font-family:inherit; }
+
+.img-strip { display:grid; grid-template-columns:repeat(2,1fr); gap:7px; }
+.ti { margin:0; background:var(--panel-2); border:2px solid var(--line);
+  border-radius:9px; overflow:hidden; position:relative; }
+.ti.use { border-color:var(--good); box-shadow:0 0 0 3px rgba(43,208,123,.15); }
+.ti img { width:100%; height:90px; object-fit:cover; display:block; }
+.ti figcaption { padding:3px 5px; font-size:10px; color:var(--muted); }
+.bd { position:absolute; top:4px; left:4px; font-size:10px; font-weight:700;
+  padding:1px 6px; border-radius:999px; letter-spacing:.06em; text-transform:uppercase; }
+.bd-use { background:var(--good); color:#0b3b22; }
+.bd-no  { background:rgba(139,151,173,.5); color:var(--text); }
+
+.genprompt { background:var(--panel-2); border:1px solid var(--line); border-radius:9px;
+  padding:9px 11px; font-size:11px; font-family:ui-monospace,monospace;
+  color:var(--a2); line-height:1.5; white-space:pre-wrap; }
+
+/* Brand DNA collapsible */
+.dna-details { margin-top:10px; }
+.dna-summary { font-size:11px; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--muted); cursor:pointer; padding:6px 0; user-select:none; }
+.dna-summary:hover { color:var(--text); }
+.dna-body { margin-top:6px; }
+.dna-pre { background:var(--panel-2); border:1px solid var(--line); border-radius:9px;
+  padding:10px 13px; font-size:11.5px; font-family:ui-monospace,monospace;
+  color:var(--muted); line-height:1.6; white-space:pre-wrap; overflow-x:auto; }
+
+/* CF JSON copy panel */
+.cf-details { margin-top:8px; }
+.cf-summary { font-size:11px; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--muted); cursor:pointer; padding:6px 0; user-select:none;
+  display:flex; align-items:center; gap:10px; }
+.cf-summary:hover { color:var(--text); }
+.copy-btn { font-size:11px; padding:3px 10px; border-radius:6px; cursor:pointer;
+  background:rgba(43,208,123,.15); border:1px solid rgba(43,208,123,.4);
+  color:var(--good); font-family:inherit; transition:background .15s; }
+.copy-btn:hover { background:rgba(43,208,123,.28); }
+.cf-json-wrap { margin-top:6px; }
+.cf-json-ta { width:100%; height:160px; background:var(--panel-2);
+  border:1px solid var(--line); border-radius:9px; padding:10px 13px;
+  font-size:11.5px; font-family:ui-monospace,monospace; color:var(--a2);
+  line-height:1.5; resize:vertical; }
+
+.table-wrap { overflow-x:auto; }
+table.hist { width:100%; border-collapse:collapse; font-size:12px;
+  background:var(--panel); border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+table.hist th, table.hist td { padding:7px 10px; text-align:left;
+  border-bottom:1px solid var(--line); vertical-align:top; }
+table.hist thead th { background:var(--panel-2); color:var(--muted);
+  font-size:11px; letter-spacing:.05em; text-transform:uppercase; font-weight:600; }
+table.hist tr:last-child td { border-bottom:none; }
+.hook-cell { max-width:260px; color:var(--text); }
+.img-cell  { max-width:150px; color:var(--a2); font-size:11px; word-break:break-all; }
+.warn-cell { max-width:130px; color:var(--warn); font-size:11px; }
+.mono { font-family:ui-monospace,monospace; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1><span class="brand">Nubiex</span> Quick Runs</h1>
+  <div class="hdr-meta">
+    <b>19 runs</b> · nubiex_post.json<br>
+    Reload to refresh
+  </div>
+</header>
+
+<h2 class="section-h">Ultimos 2 runs</h2>
+<div class="compare-grid">
+<div class="run-card" id="card-4965078282316325133">
+  <div class="lc-head">
+    <div class="lc-left">
+      <span class="run-label">Run #1</span>
+      <span class="status-ok">COMPLETED</span>
+      <span class="sf-pill">post</span>
+      <span class="pil-pill">product</span>
+      <span class="muted-pill">tranquilidad</span>
+      <span class="lat-pill">18.6s</span>
+      <span class="tok-pill" title="est. Flash pricing">8709in / 1976out +945th &nbsp;~$0.0031</span>
+      
+    </div>
+    <span class="ts-lbl">2026-04-22 00:42:03</span>
+  </div>
+  <p class="angle-line">espacio seguro y transformación energética</p>
+
+  <div class="lc-grid">
+    <div class="lc-left-col">
+      <div class="section-lbl cf-lbl">Para Content Factory</div>
+      <div class="concept-card"><div class="ct">CONCEPT — Abrazo consciente de reconexión</div>
+<div class="cb">El abrazo en penumbra transmite amparo antes de que hable cualquier titular — el hombre se siente en un espacio seguro antes de leer una palabra. El uso de la luz cálida refuerza la sensación de refugio y discreción.</div>
+<div class="cm"><span class="ck">Imagen</span><span class="cv">nubiex_valores_1.jpg</span></div>
+<div class="cm"><span class="ck">Tipo</span><span class="cv tp">foto_galeria</span></div></div>
+      
+      <div class="cap-card hook-cap">
+        <div class="cap-lbl">HOOK <span class="char-n">66 chars</span></div>
+        <div class="cap-txt hook-txt">El cuerpo guarda historias que el silencio no siempre sabe contar.</div>
+      </div>
+      <div class="cap-card">
+        <div class="cap-lbl">BODY</div>
+        <div class="cap-txt">En el ruido de Barcelona, encontrar un lugar donde simplemente *ser* es un lujo necesario. Nubiex nace de una convicción: el bienestar masculino necesita un espacio propio, seguro y libre de juicios.<br><br>Aquí, el masaje no es solo técnica. Es un encuentro entre el toque consciente y tu energía vital. Combinamos lo holístico y lo tántrico para ayudarte a liberar tensiones acumuladas y reconectar con tu centro.<br><br>Un refugio discreto diseñado para que recuperes tu equilibrio y despiertes tu vitalidad más auténtica. ✨</div>
+      </div>
+      <div class="cap-card cta-cap"><div class="cap-lbl">CTA</div><div class="cap-txt cta-txt">Escríbenos por DM para reservar tu sesión.</div></div>
+      <div class="tags-row"><code class="tag">#NubiexTherapy</code> <code class="tag">#MasajeMasculino</code> <code class="tag">#BienestarBarcelona</code> <code class="tag">#MasajeTantrico</code> <code class="tag">#CuidadoPersonalHombre</code> <code class="tag">#BarcelonaWellness</code> <code class="tag">#ToqueConsciente</code></div>
+    </div>
+    <div class="lc-right-col">
+      <div class="section-lbl">Imagenes</div>
+      <div class="img-strip"><figure class="ti use"><span class="bd bd-use">USE</span><img src="../images/Nubiex Valores 1.jpg" alt="nubiex_valores_1.jpg"><figcaption>nubiex_valores_1.jpg</figcaption></figure>
+<figure class="ti"><span class="bd bd-no">—</span><img src="../images/Nubiex Valores 2.jpg" alt="nubiex_valores_2.jpg"><figcaption>nubiex_valores_2.jpg</figcaption></figure>
+<figure class="ti"><span class="bd bd-no">—</span><img src="../images/Nubiex Valores 3.jpg" alt="nubiex_valores_3.jpg"><figcaption>nubiex_valores_3.jpg</figcaption></figure>
+<figure class="ti"><span class="bd bd-no">—</span><img src="../images/Nubiex Valores 4.jpg" alt="nubiex_valores_4.jpg"><figcaption>nubiex_valores_4.jpg</figcaption></figure></div>
+      <div class="section-lbl" style="margin-top:14px">Gen prompt</div><div class="genprompt">Close-up of a conscious embrace between two men, holistic massage setting, warm candlelight, bokeh background with golden tones #edd494 and deep plum shadows #5e204d, intimate and respectful atmosphere, high-end wellness aesthetic, 4:5 aspect ratio.</div>
+    </div>
+  </div>
+
+  <details class="dna-details"><summary class="dna-summary">Brand DNA</summary><div class="dna-body"><pre class="dna-pre">CLIENT DNA — Nubiex Men&#x27;s Massage by Bruno
+
+Colors
+Primario: #5e204d (Deep Plum Sanctuary)
+Secundario: #9c7945 (Antique Gold Earth)
+Accent: #edd494 (Soft Candlelight)
+Extra: #8d3db4 (Ethereal Amethyst)
+
+Design Style
+{
+  &quot;style_reference_analysis&quot;: {
+    &quot;atmospheric_logic&quot;: &quot;Intimate Masculine Sanctum. Warmth through darkness — private, grounded, energetically charged.&quot;,
+    &quot;compositional_physics&quot;: &quot;Centered and stable. Subjects are anchored in the middle of the frame to convey presence and safety.&quot;,
+    &quot;depth_stack&quot;: &quot;Typography lives in negative space or overlaps slightly with a translucent band to maintain image focus.&quot;,
+    &quot;imagery_lighting_standards&quot;: &quot;Shallow depth of field. Warm, low-key lighting with visible candle flickers or golden hour glows.&quot;,
+    &quot;spatial_ratio&quot;: &quot;40% negative space minimum, usually dark or textured, to allow the subject to breathe.&quot;,
+    &quot;graphic_scaffolding&quot;: &quot;Minimalist frames or thin golden lines that suggest exclusivity without cluttering the visual.&quot;,
+    &quot;typographic_hierarchy&quot;: &quot;Clean sans-serif. Large, airy hooks followed by centered body text with generous leading.&quot;,
+    &quot;variability_directive&quot;: &quot;Layouts can shift between full-bleed photography and centered text blocks, but the warm palette is fixed.&quot;
+  }
+}
+
+Typography
+Sans-serif for all communications to maintain a modern, clean, and accessible aesthetic.
+
+Logo
+Preserve brand integrity — avoid busy backgrounds without a translucent overlay. Place in corners with high contrast.
+
+Contact
+nubiexmensmassage@gmail.com · +34664421717 · @nubiex.mens.massage</pre></div></details>
+
+  <details class="cf-details">
+    <summary class="cf-summary">CF JSON — copiar para compartir
+      <button class="copy-btn" onclick="copyJson('card-4965078282316325133')">Copiar</button>
+    </summary>
+    <div class="cf-json-wrap">
+      <textarea id="json-card-4965078282316325133" class="cf-json-ta" readonly>{
+  &quot;total_items&quot;: 1,
+  &quot;client_dna&quot;: &quot;CLIENT DNA — Nubiex Men&#x27;s Massage by Bruno\n\nColors\nPrimario: #5e204d (Deep Plum Sanctuary)\nSecundario: #9c7945 (Antique Gold Earth)\nAccent: #edd494 (Soft Candlelight)\nExtra: #8d3db4 (Ethereal Amethyst)\n\nDesign Style\n{\n  \&quot;style_reference_analysis\&quot;: {\n    \&quot;atmospheric_logic\&quot;: \&quot;Intimate Masculine Sanctum. Warmth through darkness — private, grounded, energetically charged.\&quot;,\n    \&quot;compositional_physics\&quot;: \&quot;Centered and stable. Subjects are anchored in the middle of the frame to convey presence and safety.\&quot;,\n    \&quot;depth_stack\&quot;: \&quot;Typography lives in negative space or overlaps slightly with a translucent band to maintain image focus.\&quot;,\n    \&quot;imagery_lighting_standards\&quot;: \&quot;Shallow depth of field. Warm, low-key lighting with visible candle flickers or golden hour glows.\&quot;,\n    \&quot;spatial_ratio\&quot;: \&quot;40% negative space minimum, usually dark or textured, to allow the subject to breathe.\&quot;,\n    \&quot;graphic_scaffolding\&quot;: \&quot;Minimalist frames or thin golden lines that suggest exclusivity without cluttering the visual.\&quot;,\n    \&quot;typographic_hierarchy\&quot;: \&quot;Clean sans-serif. Large, airy hooks followed by centered body text with generous leading.\&quot;,\n    \&quot;variability_directive\&quot;: \&quot;Layouts can shift between full-bleed photography and centered text blocks, but the warm palette is fixed.\&quot;\n  }\n}\n\nTypography\nSans-serif for all communications to maintain a modern, clean, and accessible aesthetic.\n\nLogo\nPreserve brand integrity — avoid busy backgrounds without a translucent overlay. Place in corners with high contrast.\n\nContact\nnubiexmensmassage@gmail.com · +34664421717 · @nubiex.mens.massage&quot;,
+  &quot;client_request&quot;: &quot;CONCEPT — Abrazo consciente de reconexión\nEl abrazo en penumbra transmite amparo antes de que hable cualquier titular — el hombre se siente en un espacio seguro antes de leer una palabra. El uso de la luz cálida refuerza la sensación de refugio y discreción.\nImagen: nubiex_valores_1.jpg\nTipo: foto_galeria\n\nCaption:\nEl cuerpo guarda historias que el silencio no siempre sabe contar.\nEn el ruido de Barcelona, encontrar un lugar donde simplemente *ser* es un lujo necesario. Nubiex nace de una convicción: el bienestar masculino necesita un espacio propio, seguro y libre de juicios.\n\nAquí, el masaje no es solo técnica. Es un encuentro entre el toque consciente y tu energía vital. Combinamos lo holístico y lo tántrico para ayudarte a liberar tensiones acumuladas y reconectar con tu centro.\n\nUn refugio discreto diseñado para que recuperes tu equilibrio y despiertes tu vitalidad más auténtica. ✨\nEscríbenos por DM para reservar tu sesión.\n\nHashtags:\n#NubiexTherapy #MasajeMasculino #BienestarBarcelona #MasajeTantrico #CuidadoPersonalHombre #BarcelonaWellness #ToqueConsciente&quot;,
+  &quot;resources&quot;: [
+    &quot;https://cdn.nubiex.es/brand/nubiex_valores_1.jpg&quot;
+  ]
+}</textarea>
+    </div>
+  </details>
+</div>
+<div class="run-card" id="card-4259002311791053893">
+  <div class="lc-head">
+    <div class="lc-left">
+      <span class="run-label">Run #2</span>
+      <span class="status-ok">COMPLETED</span>
+      <span class="sf-pill">carousel</span>
+      <span class="pil-pill">education</span>
+      <span class="muted-pill">equilibrio</span>
+      <span class="lat-pill">21.9s</span>
+      <span class="tok-pill" title="est. Flash pricing">8703in / 2319out +1319th &nbsp;~$0.0035</span>
+      
+    </div>
+    <span class="ts-lbl">2026-04-22 00:44:17</span>
+  </div>
+  <p class="angle-line">los cuatro pilares del bienestar masculino consciente</p>
+
+  <div class="lc-grid">
+    <div class="lc-left-col">
+      <div class="section-lbl cf-lbl">Para Content Factory</div>
+      
+      <div class="cap-card carousel-raw"><div class="cap-lbl">CF BRIEF — CAROUSEL</div><div class="cap-txt cf-raw-txt">Carrusel — Los 4 Pilares de Nubiex<br>Este carrusel educa al cliente sobre la metodología integral de Nubiex, moviéndolo de la curiosidad a la comprensión del valor premium. El arco narrativo fluye desde la presencia del fundador hacia la explicación táctil y energética, culminando en una invitación a la reserva.<br><br>Slide 1 — Cover (nubiex_valores_4.jpg)<br>Bruno en postura de meditación transmitiendo presencia plena.<br>Copy: Los 4 Pilares del Bienestar Consciente.<br><br>Slide 2 (nubiex_valores_3.jpg)<br>Detalle de técnica manual precisa sobre el cuerpo.<br>Copy: Cuerpo: Liberar la tensión física para habitar el presente.<br><br>Slide 3 (AI-generated)<br>Composición visual de luz y sombras suaves que evocan calma mental.<br>Copy: Mente: Calmar el ruido para encontrar claridad.<br><br>Slide 4 (nubiex_valores_2.jpg)<br>Manos sobre el pecho en un gesto de conexión energética.<br>Copy: Energía: Despertar la vitalidad que fluye en ti.<br><br>Slide 5 (nubiex_valores_1.jpg)<br>Abrazo consciente que transmite amparo y seguridad emocional.<br>Copy: Emoción: Un espacio seguro para sentir y soltar.<br><br>Slide 6 (AI-generated)<br>Detalle de ambiente de spa con velas y tonos dorados #edd494.<br>Copy: Tu equilibrio te espera.<br><br>Caption:<br>El bienestar no es solo la ausencia de tensión; es la armonía entre lo que sientes, lo que piensas y lo que proyectas.<br>En Nubiex, no solo trabajamos el músculo. Entendemos al hombre como un todo integrado.<br><br>Desliza para descubrir los 4 pilares que sostienen nuestra terapia consciente y cómo cada uno transforma tu experiencia de vitalidad.<br><br>Desde el toque físico hasta la expansión energética, cada sesión es un viaje de regreso a ti mismo. Un espacio seguro, discreto y diseñado para tu reconexión.<br>Reserva tu sesión enviándonos un DM.<br><br>Hashtags:<br>#NubiexTherapy #BienestarMasculino #MasajeConsciente #BarcelonaWellness #SaludEmocional #EnergiaVital #MasajeHolistico</div></div>
+      
+    </div>
+    <div class="lc-right-col">
+      <div class="section-lbl">Imagenes</div>
+      <div class="img-strip"><figure class="ti use"><span class="bd bd-use">USE</span><img src="../images/Nubiex Valores 1.jpg" alt="nubiex_valores_1.jpg"><figcaption>nubiex_valores_1.jpg</figcaption></figure>
+<figure class="ti use"><span class="bd bd-use">USE</span><img src="../images/Nubiex Valores 2.jpg" alt="nubiex_valores_2.jpg"><figcaption>nubiex_valores_2.jpg</figcaption></figure>
+<figure class="ti use"><span class="bd bd-use">USE</span><img src="../images/Nubiex Valores 3.jpg" alt="nubiex_valores_3.jpg"><figcaption>nubiex_valores_3.jpg</figcaption></figure>
+<figure class="ti use"><span class="bd bd-use">USE</span><img src="../images/Nubiex Valores 4.jpg" alt="nubiex_valores_4.jpg"><figcaption>nubiex_valores_4.jpg</figcaption></figure></div>
+      <div class="section-lbl" style="margin-top:14px">Gen prompt</div><div class="genprompt">A high-end aesthetic composition for a wellness brand. Four smooth river stones stacked perfectly on a dark wooden surface. A single flickering candle nearby casting a warm golden glow #edd494. Soft shadows in deep plum #5e204d. Shallow depth of field, macro photography style, serene and premium atmosphere, 4:5 aspect ratio.</div>
+    </div>
+  </div>
+
+  <details class="dna-details"><summary class="dna-summary">Brand DNA</summary><div class="dna-body"><pre class="dna-pre">CLIENT DNA — Nubiex Men&#x27;s Massage by Bruno
+
+Colors
+Primario: #5e204d (Mystic Plum)
+Secundario: #9c7945 (Golden Earth)
+Accent: #edd494 (Champagne Glow)
+Extra: #8d3db4 (Royal Energy)
+
+Design Style
+{
+  &quot;style_reference_analysis&quot;: {
+    &quot;atmospheric_logic&quot;: &quot;Intimate Masculine Sanctuary. Warmth through deep shadows and golden highlights — private, grounded, and energetically charged.&quot;,
+    &quot;compositional_physics&quot;: &quot;Centered and stable compositions that evoke balance and presence. Elements anchor to the center to create a sense of focus.&quot;,
+    &quot;depth_stack&quot;: &quot;Typography lives in the negative space or overlaps with soft translucent bands to maintain legibility without obscuring the human touch.&quot;,
+    &quot;imagery_lighting_standards&quot;: &quot;Shallow depth of field with warm, directional lighting. Focus on textures (skin, fabric, light) to evoke sensory memory.&quot;,
+    &quot;spatial_ratio&quot;: &quot;Minimum 40% negative space, utilizing dark plum #5e204d or earth tones to frame the subject.&quot;,
+    &quot;graphic_scaffolding&quot;: &quot;Minimalist frames and thin lines in #edd494 to guide the eye without cluttering the aesthetic.&quot;,
+    &quot;typographic_hierarchy&quot;: &quot;Clean sans-serif. Large, airy headlines for hooks; medium weight for body; fine-print for contact details.&quot;,
+    &quot;variability_directive&quot;: &quot;Layouts can shift between full-bleed imagery and text-heavy slides, but the warm golden glow must remain constant.&quot;
+  }
+}
+
+Typography
+Sans-serif for all levels to maintain a modern, clean, and accessible feel. High tracking in headlines for an &#x27;aesthetic&#x27; look.
+
+Logo
+Preserve brand integrity — use the light version on dark backgrounds (#5e204d) and avoid busy areas. Ensure clear space around the mark.
+
+Contact
+nubiexmensmassage@gmail.com · +34664421717 · @nubiex.mens.massage</pre></div></details>
+
+  <details class="cf-details">
+    <summary class="cf-summary">CF JSON — copiar para compartir
+      <button class="copy-btn" onclick="copyJson('card-4259002311791053893')">Copiar</button>
+    </summary>
+    <div class="cf-json-wrap">
+      <textarea id="json-card-4259002311791053893" class="cf-json-ta" readonly>{
+  &quot;total_items&quot;: 4,
+  &quot;client_dna&quot;: &quot;CLIENT DNA — Nubiex Men&#x27;s Massage by Bruno\n\nColors\nPrimario: #5e204d (Mystic Plum)\nSecundario: #9c7945 (Golden Earth)\nAccent: #edd494 (Champagne Glow)\nExtra: #8d3db4 (Royal Energy)\n\nDesign Style\n{\n  \&quot;style_reference_analysis\&quot;: {\n    \&quot;atmospheric_logic\&quot;: \&quot;Intimate Masculine Sanctuary. Warmth through deep shadows and golden highlights — private, grounded, and energetically charged.\&quot;,\n    \&quot;compositional_physics\&quot;: \&quot;Centered and stable compositions that evoke balance and presence. Elements anchor to the center to create a sense of focus.\&quot;,\n    \&quot;depth_stack\&quot;: \&quot;Typography lives in the negative space or overlaps with soft translucent bands to maintain legibility without obscuring the human touch.\&quot;,\n    \&quot;imagery_lighting_standards\&quot;: \&quot;Shallow depth of field with warm, directional lighting. Focus on textures (skin, fabric, light) to evoke sensory memory.\&quot;,\n    \&quot;spatial_ratio\&quot;: \&quot;Minimum 40% negative space, utilizing dark plum #5e204d or earth tones to frame the subject.\&quot;,\n    \&quot;graphic_scaffolding\&quot;: \&quot;Minimalist frames and thin lines in #edd494 to guide the eye without cluttering the aesthetic.\&quot;,\n    \&quot;typographic_hierarchy\&quot;: \&quot;Clean sans-serif. Large, airy headlines for hooks; medium weight for body; fine-print for contact details.\&quot;,\n    \&quot;variability_directive\&quot;: \&quot;Layouts can shift between full-bleed imagery and text-heavy slides, but the warm golden glow must remain constant.\&quot;\n  }\n}\n\nTypography\nSans-serif for all levels to maintain a modern, clean, and accessible feel. High tracking in headlines for an &#x27;aesthetic&#x27; look.\n\nLogo\nPreserve brand integrity — use the light version on dark backgrounds (#5e204d) and avoid busy areas. Ensure clear space around the mark.\n\nContact\nnubiexmensmassage@gmail.com · +34664421717 · @nubiex.mens.massage&quot;,
+  &quot;client_request&quot;: &quot;Carrusel — Los 4 Pilares de Nubiex\nEste carrusel educa al cliente sobre la metodología integral de Nubiex, moviéndolo de la curiosidad a la comprensión del valor premium. El arco narrativo fluye desde la presencia del fundador hacia la explicación táctil y energética, culminando en una invitación a la reserva.\n\nSlide 1 — Cover (nubiex_valores_4.jpg)\nBruno en postura de meditación transmitiendo presencia plena.\nCopy: Los 4 Pilares del Bienestar Consciente.\n\nSlide 2 (nubiex_valores_3.jpg)\nDetalle de técnica manual precisa sobre el cuerpo.\nCopy: Cuerpo: Liberar la tensión física para habitar el presente.\n\nSlide 3 (AI-generated)\nComposición visual de luz y sombras suaves que evocan calma mental.\nCopy: Mente: Calmar el ruido para encontrar claridad.\n\nSlide 4 (nubiex_valores_2.jpg)\nManos sobre el pecho en un gesto de conexión energética.\nCopy: Energía: Despertar la vitalidad que fluye en ti.\n\nSlide 5 (nubiex_valores_1.jpg)\nAbrazo consciente que transmite amparo y seguridad emocional.\nCopy: Emoción: Un espacio seguro para sentir y soltar.\n\nSlide 6 (AI-generated)\nDetalle de ambiente de spa con velas y tonos dorados #edd494.\nCopy: Tu equilibrio te espera.\n\nCaption:\nEl bienestar no es solo la ausencia de tensión; es la armonía entre lo que sientes, lo que piensas y lo que proyectas.\nEn Nubiex, no solo trabajamos el músculo. Entendemos al hombre como un todo integrado.\n\nDesliza para descubrir los 4 pilares que sostienen nuestra terapia consciente y cómo cada uno transforma tu experiencia de vitalidad.\n\nDesde el toque físico hasta la expansión energética, cada sesión es un viaje de regreso a ti mismo. Un espacio seguro, discreto y diseñado para tu reconexión.\nReserva tu sesión enviándonos un DM.\n\nHashtags:\n#NubiexTherapy #BienestarMasculino #MasajeConsciente #BarcelonaWellness #SaludEmocional #EnergiaVital #MasajeHolistico&quot;,
+  &quot;resources&quot;: [
+    &quot;https://cdn.nubiex.es/brand/nubiex_valores_4.jpg&quot;,
+    &quot;https://cdn.nubiex.es/brand/nubiex_valores_3.jpg&quot;,
+    &quot;https://cdn.nubiex.es/brand/nubiex_valores_2.jpg&quot;,
+    &quot;https://cdn.nubiex.es/brand/nubiex_valores_1.jpg&quot;
+  ]
+}</textarea>
+    </div>
+  </details>
+</div></div>
+
+<h2 class="section-h">Historial <span class="run-count">(19 runs)</span></h2>
+<div class="table-wrap">
+<table class="hist">
+  <thead><tr>
+    <th>Timestamp</th><th>Estado</th><th>Surface</th><th>Pillar</th>
+    <th>Hook</th><th>Imagen</th><th>Tipo</th><th>Lat</th><th>Warnings</th>
+  </tr></thead>
+  <tbody><tr>
+              <td class="mono">2026-04-22 00:44:17</td>
+              <td class="status-ok">COMP</td>
+              <td>carousel</td>
+              <td>education</td>
+              <td class="hook-cell">El bienestar no es solo la ausencia de tensión; es la armonía entre lo que …</td>
+              <td class="mono img-cell">nubiex_valores_4.jpg, nubiex_valores_3.jpg, nubiex_valores_2.jpg, nubiex_valores_1.jpg</td>
+              <td class="mono">—</td>
+              <td class="mono">22s</td>
+              <td class="warn-cell">—</td>
+            </tr><tr>
+              <td class="mono">2026-04-22 00:42:03</td>
+              <td class="status-ok">COMP</td>
+              <td>post</td>
+              <td>product</td>
+              <td class="hook-cell">El cuerpo guarda historias que el silencio no siempre sabe contar.</td>
+              <td class="mono img-cell">nubiex_valores_1.jpg</td>
+              <td class="mono">foto_galeria</td>
+              <td class="mono">19s</td>
+              <td class="warn-cell">—</td>
+            </tr><tr>
+              <td class="mono">2026-04-21 19:21:39</td>
+              <td class="status-ok">COMP</td>
+              <td>post</td>
+              <td>product</td>
+              <td class="hook-cell">El cuerpo guarda historias que el silencio no siempre sabe contar.</td>
+              <td class="mono img-cell">nubiex_valores_1.jpg</td>
+              <td class="mono">foto_galeria</td>
+              <td class="mono">20s</td>
+              <td class="warn-cell">—</td>
+            </tr><tr>
+              <td class="mono">2026-04-21 19:05:50</td>
+              <td class="status-ok">COMP</td>
+              <td>carousel</td>
+              <td>education</td>
+              <td class="hook-cell">El bienestar no es solo la ausencia de dolor; es la armonía entre lo que si…</td>
+              <td class="mono img-cell">nubiex_valores_4.jpg, nubiex_valores_3.jpg, nubiex_valores_2.jpg, nubiex_valores_1.jpg</td>
+              <td class="mono">—</td>
+              <td class="mono">28s</td>
+              <td class="warn-cell">—</td>
+            </tr><tr>
+              <td class="mono">2026-04-21 18:05:46</td>
+              <td class="status-bad">FAIL</td>
+              <td>—</td>
+              <td>—</td>
+              <td class="hook-cell"></td>
+              <td class="mono img-cell">AI-gen</td>
+              <td class="mono">—</td>
+              <td class="mono">2s</td>
+              <td class="warn-cell">—</td>
+            </tr><tr>
+              <td class="mono">2026-04-21 18:01:55</td>
+              <td class="status-ok">COMP</td>
+              <td>post</td>
+              <td>product</td>
+              <td class="hook-cell">El cuerpo guarda historias que el silencio no siempre sabe contar.</td>
+              <td class="mono img-cell">nubiex_valores_1.jpg</td>
+              <td class="mono">foto_galeria\nCaption:\nEl cuerpo guarda historias que el silencio no siempre sabe contar.\nEn el corazón de Barcelona, Nubiex nace como un espacio de seguridad y respeto absoluto para el hombre. Aquí, el masaje holístico y tántrico no es solo técnica; es una invitación a reconectar con tu energía vital y liberar las tensiones que la mente no logra soltar.\n\nCombinamos el toque consciente con la presencia plena para restaurar tu equilibrio emocional. Un refugio discreto y exclusivo donde el bienestar se siente en cada fibra.\nReserva tu sesión enviándonos un DM.\nHashtags:\n#NubiexTherapy #MassageBarcelona #NubiexMasaje #BienestarMasculino #MasajeHolistico #TantraBarcelona #CuidadoPersonal #BarcelonaWellness #HombreConsciente #SaludEmocional</td>
+              <td class="mono">28s</td>
+              <td class="warn-cell">claim_not_in_brief</td>
+            </tr><tr>
+              <td class="mono">2026-04-21 17:47:28</td>
+              <td class="status-ok">COMP</td>
+              <td>carousel</td>
+              <td>education</td>
+              <td class="hook-cell">El bienestar no es una meta, es un equilibrio entre cuatro fuerzas que habi…</td>
+              <td class="mono img-cell">nubiex_valores_4.jpg, nubiex_valores_3.jpg, nubiex_valores_2.jpg, nubiex_valores_1.jpg</td>
+              <td class="mono">—</td>
+              <td class="mono">36s</td>
+              <td class="warn-cell">—</td>
+            </tr><tr>
+              <td class="mono">2026-04-21 17:45:36</td>
+              <td class="status-ok">COMP</td>
+              <td>post</td>
+              <td>product</td>
+              <td class="hook-cell">Hay una calma que solo llega cuando permites que tu cuerpo vuelva a ser esc…</td>
+              <td class="mono img-cell">nubiex_valores_1.jpg</td>
+              <td class="mono">foto_galeria</td>
+              <td class="mono">26s</td>
+              <td class="warn-cell">—</td>
+            </tr><tr>
+              <td class="mono">2026-04-21 17:31:33</td>
+              <td class="status-ok">COMP</td>
+              <td>carousel</td>
+              <td>education</td>
+              <td class="hook-cell">El bienestar no es solo la ausencia de tensión física; es una sintonía prof…</td>
+              <td class="mono img-cell">nubiex_valores_1.jpg, nubiex_valores_2.jpg, nubiex_valores_3.jpg, nubiex_valores_4.jpg</td>
+              <td class="mono">—</td>
+              <td class="mono">27s</td>
+              <td class="warn-cell">—</td>
+            </tr><tr>
+              <td class="mono">2026-04-21 17:29:30</td>
+              <td class="status-ok">COMP</td>
+              <td>post</td>
+              <td>product</td>
+              <td class="hook-cell">El cuerpo guarda historias que el silencio no siempre sabe contar.</td>
+              <td class="mono img-cell">nubiex_valores_1.jpg</td>
+              <td class="mono">foto_galeria</td>
+              <td class="mono">22s</td>
+              <td class="warn-cell">—</td>
+            </tr><tr>
+              <td class="mono">2026-04-21 17:27:35</td>
+              <td class="status-ok">COMP</td>
+              <td>post</td>
+              <td>product</td>
+              <td class="hook-cell">El cuerpo guarda historias que el silencio no siempre sabe contar.</td>
+              <td class="mono img-cell">AI-gen</td>
+              <td class="mono">ai_generada</td>
+              <td class="mono">62s</td>
+              <td class="warn-cell">schema_repair_used, claim_not_in_brief, claim_not_in_brief</td>
+            </tr><tr>
+              <td class="mono">2026-04-21 17:23:39</td>
+              <td class="status-ok">COMP</td>
+              <td>carousel</td>
+              <td>education</td>
+              <td class="hook-cell">Muchos hombres buscan relajación, pero pocos encuentran el espacio para int…</td>
+              <td class="mono img-cell">nubiex_valores_4.jpg, nubiex_valores_3.jpg, nubiex_valores_2.jpg, nubiex_valores_1.jpg</td>
+              <td class="mono">—</td>
+              <td class="mono">27s</td>
+              <td class="warn-cell">—</td>
+            </tr><tr>
+              <td class="mono">2026-04-21 17:21:46</td>
+              <td class="status-ok">COMP</td>
+              <td>carousel</td>
+              <td>education</td>
+              <td class="hook-cell">El bienestar no es un destino, es un equilibrio entre cuatro fuerzas.</td>
+              <td class="mono img-cell">AI-gen</td>
+              <td class="mono">ai_generada</td>
+              <td class="mono">70s</td>
+              <td class="warn-cell">schema_repair_used</td>
+            </tr><tr>
+              <td class="mono">2026-04-21 17:20:04</td>
+              <td class="status-ok">COMP</td>
+              <td>reel</td>
+              <td>behind_the_scenes</td>
+              <td class="hook-cell">El bienestar no empieza cuando entras por la puerta, sino mucho antes.</td>
+              <td class="mono img-cell">AI-gen</td>
+              <td class="mono">captura_reels</td>
+              <td class="mono">40s</td>
+              <td class="warn-cell">—</td>
+            </tr><tr>
+              <td class="mono">2026-04-21 17:04:53</td>
+              <td class="status-ok">COMP</td>
+              <td>post</td>
+              <td>product</td>
+              <td class="hook-cell">El cuerpo guarda historias que el silencio no siempre sabe contar.</td>
+              <td class="mono img-cell">nubiex_valores_1.jpg</td>
+              <td class="mono">foto_galeria</td>
+              <td class="mono">35s</td>
+              <td class="warn-cell">—</td>
+            </tr><tr>
+              <td class="mono">2026-04-21 17:03:16</td>
+              <td class="status-ok">COMP</td>
+              <td>post</td>
+              <td>community</td>
+              <td class="hook-cell">A veces, el mayor acto de valentía es permitirse un momento de pausa en un …</td>
+              <td class="mono img-cell">nubiex_valores_1.jpg</td>
+              <td class="mono">foto_galeria</td>
+              <td class="mono">26s</td>
+              <td class="warn-cell">—</td>
+            </tr><tr>
+              <td class="mono">2026-04-21 17:01:22</td>
+              <td class="status-ok">COMP</td>
+              <td>post</td>
+              <td>product</td>
+              <td class="hook-cell">Tu cuerpo es el mapa de todo lo que has vivido, pero a veces necesita un lu…</td>
+              <td class="mono img-cell">nubiex_valores_1.jpg</td>
+              <td class="mono">foto_galeria</td>
+              <td class="mono">29s</td>
+              <td class="warn-cell">—</td>
+            </tr><tr>
+              <td class="mono">2026-04-21 16:59:29</td>
+              <td class="status-ok">COMP</td>
+              <td>post</td>
+              <td>product</td>
+              <td class="hook-cell">Tu cuerpo es el mapa de tu historia, y a veces necesita un espacio seguro p…</td>
+              <td class="mono img-cell">nubiex_valores_1.jpg</td>
+              <td class="mono">foto_galeria</td>
+              <td class="mono">22s</td>
+              <td class="warn-cell">—</td>
+            </tr><tr>
+              <td class="mono">2026-04-21 16:44:49</td>
+              <td class="status-ok">COMP</td>
+              <td>post</td>
+              <td>product</td>
+              <td class="hook-cell">Más que un masaje, un regreso a ti mismo.</td>
+              <td class="mono img-cell">nubiex_valores_1.jpg</td>
+              <td class="mono">foto_galeria</td>
+              <td class="mono">25s</td>
+              <td class="warn-cell">—</td>
+            </tr></tbody>
+</table>
+</div>
+
+</div>
+<script>
+function copyJson(cardId) {
+  var ta = document.getElementById('json-' + cardId);
+  if (!ta) return;
+  var text = ta.value;
+  var btn = document.querySelector('#' + cardId + ' .copy-btn');
+  function markDone() {
+    if (btn) { btn.textContent = 'Copiado!'; setTimeout(function(){ btn.textContent = 'Copiar'; }, 1500); }
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(markDone).catch(function() { fallbackCopy(text, markDone); });
+  } else {
+    fallbackCopy(text, markDone);
+  }
+}
+function fallbackCopy(text, cb) {
+  var tmp = document.createElement('textarea');
+  tmp.value = text;
+  tmp.style.cssText = 'position:fixed;top:0;left:0;opacity:0;';
+  document.body.appendChild(tmp);
+  tmp.focus();
+  tmp.select();
+  try { document.execCommand('copy'); cb(); } catch(e) {}
+  document.body.removeChild(tmp);
+}
+</script>
+</body>
+</html>

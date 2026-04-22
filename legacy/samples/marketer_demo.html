@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>MARKETER — Post Enrichment v2</title>
+<style>
+  :root {
+    --bg: #0b0f17;
+    --panel: #121826;
+    --panel-2: #0f1422;
+    --text: #e6ecf5;
+    --muted: #8b97ad;
+    --line: #1f2738;
+    --accent: #7c5cff;
+    --accent-2: #00d4ff;
+    --good: #2bd07b;
+    --warn: #f5a524;
+    --bad: #ff5d6c;
+    --in: #00d4ff;
+    --out: #7c5cff;
+    --merge: #2bd07b;
+    --code-bg: #0a0e17;
+    --string: #a5d6ff;
+    --number: #f6c177;
+    --bool: #ff7eb6;
+    --null: #c4a7e7;
+    --key: #7ee787;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f6f7fb;
+      --panel: #ffffff;
+      --panel-2: #fafbff;
+      --text: #1a2030;
+      --muted: #5b6577;
+      --line: #e6e8ef;
+      --code-bg: #f1f3f9;
+      --string: #0f6cbf;
+      --number: #b3580a;
+      --bool: #b6357a;
+      --null: #6841c5;
+      --key: #166534;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial, sans-serif; }
+  a { color: var(--accent-2); }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 32px 24px 80px; }
+  header.hero {
+    display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: end;
+    padding-bottom: 24px; border-bottom: 1px solid var(--line); margin-bottom: 28px;
+  }
+  .hero h1 { margin: 0; font-size: 28px; letter-spacing: -0.01em; }
+  .hero h1 .grad {
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .hero p { margin: 6px 0 0; color: var(--muted); max-width: 780px; line-height: 1.5; }
+  .meta { color: var(--muted); font-size: 13px; text-align: right; line-height: 1.6; }
+  .meta b { color: var(--text); font-weight: 600; }
+
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px;
+    border: 1px solid var(--line); border-radius: 999px; font-size: 12px; color: var(--muted); }
+
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 16px 0 28px; }
+  @media (max-width: 900px) { .grid-3 { grid-template-columns: 1fr; } }
+
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; }
+  .card h3 { margin: 0 0 8px; font-size: 14px; letter-spacing: 0.03em; text-transform: uppercase; color: var(--muted); }
+  .card .v { font-size: 18px; font-weight: 600; }
+  .card .v small { color: var(--muted); font-weight: 400; font-size: 12px; margin-left: 6px; }
+
+  section.block { margin: 28px 0; }
+  .section-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .section-head .num {
+    width: 28px; height: 28px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 13px; color: #0b0f17;
+  }
+  .section-head h2 { margin: 0; font-size: 20px; letter-spacing: -0.01em; }
+  .section-head .tag { margin-left: auto; font-size: 12px; color: var(--muted); border: 1px solid var(--line); padding: 4px 10px; border-radius: 999px; }
+  .num.hero { background: linear-gradient(135deg, #f5a524, #ff7eb6); }
+  .num.in { background: linear-gradient(135deg, var(--in), #6ad6ff); }
+  .num.out { background: linear-gradient(135deg, var(--out), #b39bff); }
+  .num.merge { background: linear-gradient(135deg, var(--merge), #88f0c0); }
+  .lead { color: var(--muted); margin: 0 0 14px; line-height: 1.55; }
+
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+  .panel-head { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--panel-2); }
+  .panel-head .label { font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
+  .panel-head .right { margin-left: auto; display: flex; gap: 8px; }
+  .btn { font: inherit; font-size: 12px; cursor: pointer; background: transparent; color: var(--muted);
+    border: 1px solid var(--line); padding: 4px 10px; border-radius: 8px; }
+  .btn:hover { color: var(--text); border-color: var(--accent); }
+  pre.json { margin: 0; padding: 16px; background: var(--code-bg); color: var(--text);
+    overflow: auto; max-height: 540px; font-family: ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, monospace;
+    font-size: 12.5px; line-height: 1.55; }
+  .json .k { color: var(--key); }
+  .json .s { color: var(--string); }
+  .json .n { color: var(--number); }
+  .json .b { color: var(--bool); }
+  .json .nu { color: var(--null); }
+
+  /* Post proposal card */
+  .post-card { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; margin-bottom: 20px; }
+  .post-head { padding: 22px 26px 14px; border-bottom: 1px solid var(--line); display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+  .surface-pill { display: inline-block; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--accent); background: rgba(124,92,255,0.12); border: 1px solid rgba(124,92,255,0.35);
+    padding: 4px 10px; border-radius: 999px; }
+  .pillar-pill { display: inline-block; font-size: 11px; letter-spacing: 0.10em; text-transform: uppercase;
+    color: var(--accent-2); background: rgba(0,212,255,0.10); border: 1px solid rgba(0,212,255,0.30);
+    padding: 4px 10px; border-radius: 999px; }
+  .post-title { width:100%; margin: 10px 0 0; font-size: 26px; line-height: 1.25; letter-spacing: -0.01em; font-weight: 700; }
+  .post-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 0; }
+  @media (max-width: 980px) { .post-grid { grid-template-columns: 1fr; } }
+  .post-col { padding: 22px 26px; }
+  .post-col + .post-col { border-left: 1px solid var(--line); }
+  @media (max-width: 980px) {
+    .post-col + .post-col { border-left: none; border-top: 1px solid var(--line); }
+  }
+  .post-section { margin: 0 0 18px; }
+  .post-section:last-child { margin-bottom: 0; }
+  .post-section h4 {
+    margin: 0 0 6px; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--muted); display: flex; align-items: center; gap: 6px;
+  }
+  .post-section h4 .emoji { font-size: 14px; }
+  .post-section p { margin: 0; line-height: 1.6; }
+
+  /* Strategic decision blocks */
+  .decision { background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; }
+  .decision .label { font-size: 11px; letter-spacing: 0.10em; text-transform: uppercase; color: var(--muted); }
+  .decision .chosen { margin-top: 4px; font-weight: 600; font-size: 15px; color: var(--text); }
+  .decision .alts { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .decision .alt { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: transparent;
+    border: 1px dashed var(--line); color: var(--muted); text-decoration: line-through; }
+  .decision .why { margin-top: 8px; font-size: 13px; color: var(--text); line-height: 1.55; opacity: 0.92; }
+  .decision .why::before { content: "↳ "; color: var(--muted); }
+
+  /* Caption blocks */
+  .cap { background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px;
+    padding: 12px 14px; margin-bottom: 10px; }
+  .cap .lbl { font-size: 11px; letter-spacing: 0.10em; text-transform: uppercase; color: var(--muted); display:flex; justify-content:space-between; }
+  .cap .lbl .len { font-variant-numeric: tabular-nums; }
+  .cap .txt { margin-top: 6px; white-space: pre-wrap; line-height: 1.6; font-size: 14.5px;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .cap.hook .txt { font-weight: 600; }
+
+  /* CTA */
+  .cta-card { display:flex; align-items:center; gap:10px; padding: 12px 14px;
+    background: linear-gradient(90deg, rgba(124,92,255,0.12), rgba(0,212,255,0.10));
+    border: 1px solid rgba(124,92,255,0.30); border-radius: 12px; margin-bottom: 10px; }
+  .cta-card .ch {
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    color: white; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 4px 10px; border-radius: 999px; font-weight: 700;
+  }
+  .cta-card .lbl { font-weight: 600; }
+  .cta-card .url { color: var(--muted); font-size: 12px; word-break: break-all; }
+
+  /* Image brief */
+  .img-brief { background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px;
+    padding: 12px 14px; margin-bottom: 10px; }
+  .img-brief .lbl { font-size: 11px; letter-spacing: 0.10em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+  .img-brief .body { line-height: 1.55; font-size: 14px; }
+  .img-brief.gen .body { font-family: ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, monospace;
+    font-size: 12.5px; color: var(--accent-2); }
+  .img-brief.alt .body { color: var(--muted); font-style: italic; font-size: 13px; }
+
+  /* Visual selection gallery */
+  .img-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; margin-top: 10px; }
+  .thumb { background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 8px; }
+  .thumb .t { font-size: 11px; color: var(--muted); word-break: break-all; line-height: 1.4; }
+  .thumb .role { display: inline-block; font-size: 10px; padding: 2px 6px; border-radius: 999px;
+    background: rgba(124,92,255,0.15); color: var(--accent); margin-bottom: 4px; margin-right: 4px; }
+  .thumb.use { outline: 2px solid var(--good); outline-offset: -2px; }
+  .thumb.avoid { opacity: 0.55; outline: 2px dashed var(--bad); outline-offset: -2px; }
+  .thumb.reference { outline: 2px solid var(--accent-2); outline-offset: -2px; }
+
+  .pill-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--panel-2); font-size: 12px; color: var(--text); }
+  .chip.good { color: var(--good); border-color: rgba(43,208,123,0.4); }
+  .chip.bad  { color: var(--bad);  border-color: rgba(255,93,108,0.4); }
+  .chip.warn { color: var(--warn); border-color: rgba(245,165,36,0.4); }
+  .chip.ghost { color: var(--muted); border-style: dashed; }
+
+  .conf-row { display:grid; grid-template-columns: repeat(2,1fr); gap:10px; }
+  @media (max-width: 700px) { .conf-row { grid-template-columns: 1fr; } }
+  .conf { display:flex; align-items:center; justify-content:space-between;
+    background: var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:8px 12px; font-size:13px; }
+  .conf b { font-weight:600; }
+  .conf .lvl { font-size:11px; padding:2px 8px; border-radius:999px; text-transform:uppercase; letter-spacing:.08em; }
+  .lvl.high   { background: rgba(43,208,123,0.15); color: var(--good); }
+  .lvl.medium { background: rgba(245,165,36,0.15); color: var(--warn); }
+  .lvl.low    { background: rgba(255,93,108,0.15); color: var(--bad); }
+
+  details.acc { margin-top: 12px; }
+  details.acc > summary { cursor: pointer; color: var(--muted); font-size: 13px; padding: 8px 12px;
+    border: 1px dashed var(--line); border-radius: 10px; }
+  details.acc[open] > summary { color: var(--text); border-style: solid; }
+
+  footer { color: var(--muted); font-size: 12px; margin-top: 32px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div>
+      <h1>MARKETER <span class="grad">post enrichment v2</span></h1>
+      <p>One ROUTER dispatch, one MARKETER reply, one merged record. The agent reads the brief, gallery and live request,
+        <b>compares alternatives, commits, and explains</b> — then hands a concrete post proposal to Content Factory:
+        strategic decisions, structured caption, image brief, channel-aware CTA, hashtag direction, and anti-patterns.</p>
+    </div>
+    <div class="meta">
+      <div><b>task_id</b> eeee5555-eeee-5555-eeee-555555555555</div>
+      <div><b>action_code</b> create_post</div>
+      <div><b>model</b> gemini-3-flash-preview</div>
+      <div><b>generated</b> 2026-04-20T18:53:43.180839+00:00</div>
+    </div>
+  </header>
+
+  <div class="grid-3">
+    <div class="card">
+      <h3>Status</h3>
+      <div class="v">COMPLETED <small>post / create</small></div>
+    </div>
+    <div class="card">
+      <h3>Latency</h3>
+      <div class="v">13274 ms <small>repair: no</small></div>
+    </div>
+    <div class="card">
+      <h3>Gallery</h3>
+      <div class="v">4 / 4 <small>truncated: no</small></div>
+    </div>
+  </div>
+
+  <!-- POST PROPOSAL -->
+  <section class="block">
+    <div class="section-head">
+      <span class="num hero">!</span>
+      <h2>Post proposal — strategic output</h2>
+      <span class="tag">post_enrichment.v2</span>
+    </div>
+    <p class="lead">Anchored on brand_tokens, available_channels and brief_facts. Every load-bearing decision lists
+      <em>chosen</em>, <em>alternatives considered</em>, and <em>rationale</em>.</p>
+
+    <div class="post-card">
+      <div class="post-head">
+        <span class="surface-pill">POST</span>
+        <span class="pillar-pill">PRODUCT</span>
+        <h3 class="post-title">Plato Estrella de la Semana - Mercado Ruzafa</h3>
+      </div>
+      <div class="post-grid">
+        <div class="post-col">
+          <div class="post-section">
+            <h4><span class="emoji">&#127919;</span> Objective</h4>
+            <p>Atraer clientes al local destacando la calidad y frescura del producto de temporada en el menú del día.</p>
+          </div>
+          <div class="post-section">
+            <h4><span class="emoji">&#9878;</span> Strategic decisions</h4>
+            <div class="decision">  <div class="label">Surface format</div>  <div class="chosen">post</div>  <div class="alts"><span class="alt">story</span></div>  <div class="why">Se elige el formato post para que la imagen del plato permanezca en el feed como testimonio de la calidad del producto. El formato story se descartó por ser efímero para un contenido que define la identidad de 'cocina de mercado' de la marca.</div></div><div class="decision">  <div class="label">Angle</div>  <div class="chosen">Producto de temporada y origen</div>  <div class="alts"><span class="alt">Promoción de precio</span></div>  <div class="why">Se prioriza el valor del producto y su paso por el mercado de Ruzafa sobre el precio, alineándose con la petición del usuario de explicar el 'por qué' de la elección. El precio de 12 € se incluye como apoyo, no como eje central.</div></div><div class="decision">  <div class="label">Voice</div>  <div class="chosen">Cercano y sin florituras</div>  <div class="alts"><span class="alt">Informativo/Técnico</span></div>  <div class="why">Se utiliza un tono amable y directo que refleja la 'terquedad de una nieta' y la honestidad de la cocina de barrio, evitando adjetivos innecesarios según el brief.</div></div>
+          </div>
+          <div class="post-section">
+            <h4><span class="emoji">&#10024;</span> Visual style notes</h4>
+            <p>Iluminación natural lateral para resaltar texturas. Uso de fondos de madera oscura #8b5a2b para contrastar con el plato. Encuadre cerrado (close-up) que transmita honestidad, sin elementos decorativos artificiales.</p>
+          </div>
+          
+          <div class="post-section">
+            <h4><span class="emoji">&#128683;</span> Do not</h4>
+            <div class="pill-row"><span class="chip ghost">no usar filtros saturados o artificiales</span><span class="chip ghost">no incluir texto gráfico sobre la imagen</span><span class="chip ghost">no usar lenguaje corporativo o distante</span><span class="chip ghost">no utilizar fotos de stock genéricas</span><span class="chip ghost">no omitir la referencia al mercado local</span></div>
+          </div>
+        </div>
+        <div class="post-col">
+          <div class="post-section">
+            <h4><span class="emoji">&#128444;</span> Image brief</h4>
+            <div class="img-brief">
+              <div class="lbl">Concept</div>
+              <div class="body">Primer plano de un plato de temporada servido en vajilla artesanal sobre una mesa de madera rústica.</div>
+            </div>
+            <div class="img-brief gen">
+              <div class="lbl">Generation prompt</div>
+              <div class="body">Close-up of a seasonal Mediterranean stew in a rustic ceramic bowl, placed on a dark weathered wooden table (#8b5a2b). Soft natural window lighting, warm earthy tones, steam rising slightly, no-frills presentation, authentic Spanish tavern atmosphere, 4:5 aspect ratio.</div>
+            </div>
+            <div class="img-brief alt">
+              <div class="lbl">Alt text</div>
+              <div class="body">Primer plano de un plato casero de temporada servido en una mesa de madera rústica con luz natural.</div>
+            </div>
+          </div>
+          <div class="post-section">
+            <h4><span class="emoji">&#128221;</span> Caption</h4>
+            <div class="cap hook">
+              <div class="lbl"><span>Hook</span><span class="len">89 ch</span></div>
+              <div class="txt">Directo del mercado de Ruzafa: esta semana el protagonista es nuestro plato de temporada.</div>
+            </div>
+            <div class="cap body">
+              <div class="lbl"><span>Body</span><span class="len">360 ch</span></div>
+              <div class="txt">En Casa Maruja cocinamos con lo que la tierra nos da cada mañana. Hemos elegido este plato porque el producto está en su punto óptimo de sabor y frescura, respetando los tiempos de la huerta valenciana.
+
+Sin complicaciones ni adornos innecesarios. Solo buen producto tratado con el cariño de siempre. Puedes disfrutarlo dentro de nuestro menú del día por 12 €.</div>
+            </div>
+            <div class="cap cta">
+              <div class="lbl"><span>CTA line</span><span class="len">34 ch</span></div>
+              <div class="txt">Reserva tu mesa enviándonos un DM.</div>
+            </div>
+          </div>
+          <div class="post-section">
+            <h4><span class="emoji">&#128073;</span> Call to action</h4>
+            <div class="cta-card">  <span class="ch">DM</span>  <span class="lbl">Reserva por DM</span>  </div>
+          </div>
+          <div class="post-section">
+            <h4><span class="emoji">&#127991;</span> Hashtag strategy</h4>
+            <div class="pill-row">
+              <span class="chip">intent · local_discovery</span>
+              <span class="chip">volume · 10</span>
+            </div>
+            <div class="pill-row"><span class="chip">#Ruzafa</span><span class="chip">#Cocina de mercado</span><span class="chip">#Valencia Food</span><span class="chip">#Producto de temporada</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <h3>Visual selection</h3>
+      <div class="pill-row" style="margin:6px 0 10px;">
+        <span class="chip good">use · 1</span>
+        <span class="chip">reference · 0</span>
+        <span class="chip bad">avoid · 1</span>
+      </div>
+      <div class="img-row"><div class="thumb ">  <span class="role">brand_asset</span>  <div class="t"><b>hero.jpg</b><br/>https://cdn.example/casamaruja/hero.jpg</div></div><div class="thumb ">  <span class="role">brand_asset</span>  <div class="t"><b>arros.jpg</b><br/>https://cdn.example/casamaruja/arros.jpg</div></div><div class="thumb use">  <span class="role">unknown</span> <span class="role" style="background:rgba(43,208,123,0.18);color:var(--good)">use</span>  <div class="t"><b>plato_semana.jpg</b><br/>https://i.pinimg.com/736x/00/2f/ef/002fefd0c200e93fd65f823cac70ed05.jpg</div></div><div class="thumb avoid">  <span class="role">unknown</span> <span class="role" style="background:rgba(255,93,108,0.18);color:var(--bad)">avoid</span>  <div class="t"><b>equipo.jpg</b><br/>https://cdn.example/casamaruja/equipo.jpg</div></div></div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <h3>Confidence</h3>
+      <div class="conf-row">
+        <div class="conf"><b>surface_format</b><span class="lvl high">high</span></div>
+        <div class="conf"><b>angle</b><span class="lvl high">high</span></div>
+        <div class="conf"><b>palette_match</b><span class="lvl high">high</span></div>
+        <div class="conf"><b>cta_channel</b><span class="lvl high">high</span></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <h3>Warnings &amp; trace</h3>
+      <div class="pill-row"><span class="chip good">no warnings</span></div>
+      <details class="acc"><summary>Show raw trace</summary>
+        <pre class="json" id="trace-pre"></pre>
+      </details>
+    </div>
+  </section>
+
+  <!-- INPUT -->
+  <section class="block">
+    <div class="section-head">
+      <span class="num in">1</span>
+      <h2>Input — what ROUTER sends MARKETER</h2>
+      <span class="tag">Contrato B · POST /tasks</span>
+    </div>
+    <p class="lead">The orchestrator dispatches one envelope: <code>client_request</code>, <code>context</code>,
+      <code>action_execution_gates</code> (brief + image catalog), <code>agent_sequence</code>.</p>
+    <div class="panel">
+      <div class="panel-head">
+        <span class="label">router_dispatch.body</span>
+        <div class="right">
+          <button class="btn" data-copy="input-pre">Copy</button>
+          <button class="btn" data-toggle="input-pre">Collapse</button>
+        </div>
+      </div>
+      <pre class="json" id="input-pre"></pre>
+    </div>
+  </section>
+
+  <!-- OUTPUT -->
+  <section class="block">
+    <div class="section-head">
+      <span class="num out">2</span>
+      <h2>Output — what MARKETER returns</h2>
+      <span class="tag">Contrato C · PATCH /api/v1/tasks/&lt;id&gt;/callback</span>
+    </div>
+    <p class="lead">A single callback body: <code>status</code>, the strategic <code>enrichment</code> (v2),
+      <code>warnings</code>, and a <code>trace</code> with model + latency + gallery stats.</p>
+    <div class="panel">
+      <div class="panel-head">
+        <span class="label">marketer_callback.body</span>
+        <div class="right">
+          <button class="btn" data-copy="output-pre">Copy</button>
+          <button class="btn" data-toggle="output-pre">Collapse</button>
+        </div>
+      </div>
+      <pre class="json" id="output-pre"></pre>
+    </div>
+  </section>
+
+  <!-- MERGED -->
+  <section class="block">
+    <div class="section-head">
+      <span class="num merge">3</span>
+      <h2>Merged — orchestrator-side record after MARKETER</h2>
+      <span class="tag">gate_responses + sequence_responses[marketer]</span>
+    </div>
+    <p class="lead">After the callback, ROUTER stores the gate responses and the marketer step output keyed by
+      <code>step_code</code>. This is the shape the next agent will see in <code>agent_sequence.previous</code>.</p>
+    <div class="panel">
+      <div class="panel-head">
+        <span class="label">router_record_after_step</span>
+        <div class="right">
+          <button class="btn" data-copy="merged-pre">Copy</button>
+          <button class="btn" data-toggle="merged-pre">Collapse</button>
+        </div>
+      </div>
+      <pre class="json" id="merged-pre"></pre>
+    </div>
+  </section>
+
+  <footer>
+    Generated from <code>samples/casa_maruja_run.json</code> ·
+    <a href="casa_maruja_run.json">open raw JSON</a>
+  </footer>
+</div>
+
+<script>
+  const DATA = {"transcript": {"flow": "router_dispatch -> marketer -> router_callback", "agent": "marketer", "task_id": "eeee5555-eeee-5555-eeee-555555555555", "job_id": "ffff6666-ffff-6666-ffff-666666666666", "correlation_id": "ig-20260420-007", "generated_at": "2026-04-20T18:53:43.180839+00:00"}, "router_dispatch": {"method": "POST", "path": "/tasks", "headers": {"Content-Type": "application/json", "X-Task-Id": "eeee5555-eeee-5555-eeee-555555555555", "X-Correlation-Id": "ig-20260420-007", "X-Callback-Url": "https://d1lwu6lioovdrb.cloudfront.net/api/v1/tasks/eeee5555-eeee-5555-eeee-555555555555/callback"}, "body": {"task_id": "eeee5555-eeee-5555-eeee-555555555555", "job_id": "ffff6666-ffff-6666-ffff-666666666666", "action_code": "create_post", "action_id": "7777aaaa-7777-aaaa-7777-aaaa77777777", "correlation_id": "ig-20260420-007", "callback_url": "https://d1lwu6lioovdrb.cloudfront.net/api/v1/tasks/eeee5555-eeee-5555-eeee-555555555555/callback", "payload": {"client_request": {"description": "Crea un post destacando el plato estrella de esta semana, con descripción del producto de temporada y el por qué lo hemos elegido. Tono cercano, apetecible y sin florituras.", "attachments": []}, "context": {"account_uuid": "9b1c0f12-0d8b-4a46-aea5-2a2cc4b47f21", "client_name": "Casa Maruja", "platform": "instagram"}, "action_execution_gates": {"brief": {"passed": true, "reason": "ok", "status_code": 200, "response": {"status": "success", "message": "Account with brief retrieved successfully", "data": {"uuid": "9b1c0f12-0d8b-4a46-aea5-2a2cc4b47f21", "profile": {"business_name": "Casa Maruja", "website_url": "https://www.casamaruja.es", "tone": "cálido, cercano, sin florituras"}, "brief": {"uuid": "abcd0001-0000-0000-0000-000000000001", "form_values": {"FIELD_COMPANY_NAME": "Casa Maruja", "FIELD_COMPANY_CATEGORY": "Restauración", "FIELD_COUNTRY": "España", "FIELD_LARGE_ANSWER": "Casa Maruja nació del recetario de una abuela y la terquedad de una nieta. Cocina de mercado de temporada en Ruzafa, Valencia. Menú del día a 12 €. Especialidades: arròs al forn los lunes, croquetas de puchero.", "FIELD_PRODUCTS_SERVICES_ANSWER": "Restaurante de cocina de mercado. Menú diario, especialidades caseras, producto de temporada.", "FIELD_TARGET_CUSTOMER_ANSWER": "Vecinos de Ruzafa y Valencia que buscan comida casera, honesta y asequible; sensibles a producto local y trato cercano.", "FIELD_VALUE_PROPOSITION": "Cocina casera de mercado, producto de temporada, sin florituras, trato familiar.", "FIELD_COMMUNICATION_LANGUAGE": "spanish", "FIELD_COMMUNICATION_STYLE": "friendly", "FIELD_COLOR_LIST_PICKER": ["#8B5A2B", "#D4A017", "#556B2F"], "FIELD_FONT_STYLE": "sans", "FIELD_POST_CONTENT_STYLE": "image_text", "FIELD_KEYWORDS_TAGS_INPUT": ["cocina de mercado", "producto de temporada", "Ruzafa", "Valencia"], "FIELD_HAS_BRAND_MATERIAL": true, "FIELD_BRAND_MATERIAL": [{"url": "https://cdn.example/casamaruja/hero.jpg", "name": "hero.jpg", "extension": "jpg", "size": 1024000}, {"url": "https://cdn.example/casamaruja/arros.jpg", "name": "arros.jpg", "extension": "jpg", "size": 1200000}]}}}}}, "image_catalog": {"passed": true, "reason": "ok", "status_code": 200, "response": {"status": "success", "data": [{"url": "https://i.pinimg.com/736x/00/2f/ef/002fefd0c200e93fd65f823cac70ed05.jpg", "name": "plato_semana.jpg", "extension": "jpg", "size": 800000, "tags": ["plato_semana", "producto_temporada"], "description": "Plato de temporada servido en mesa de madera con luz natural", "category": "product_photo", "used_previously": false}, {"url": "https://cdn.example/casamaruja/equipo.jpg", "name": "equipo.jpg", "extension": "jpg", "size": 900000, "tags": ["equipo", "barrio"], "description": "El equipo en la puerta del local saludando", "category": "team", "used_previously": true}]}}}, "agent_sequence": {"current": {"step_code": "marketing_enrichment", "step_order": 1, "task_id": "eeee5555-eeee-5555-eeee-555555555555", "agent_id": "5a258d4e-b01d-48dc-95b1-0e67d81b7f4c", "agent_name": "marketer", "endpoint": "https://marketer.internal/tasks", "http_method": "POST", "is_mandatory": true, "timeout_seconds": 60, "retry_count": 0}, "previous": {}}}}}, "marketer_callback": {"method": "PATCH", "path": "/api/v1/tasks/eeee5555-eeee-5555-eeee-555555555555/callback", "headers": {"X-API-Key": "<marketer_agent_token>"}, "body": {"status": "COMPLETED", "output_data": {"enrichment": {"schema_version": "2.0", "surface_format": "post", "content_pillar": "product", "title": "Plato Estrella de la Semana - Mercado Ruzafa", "objective": "Atraer clientes al local destacando la calidad y frescura del producto de temporada en el menú del día.", "strategic_decisions": {"surface_format": {"chosen": "post", "alternatives_considered": ["story"], "rationale": "Se elige el formato post para que la imagen del plato permanezca en el feed como testimonio de la calidad del producto. El formato story se descartó por ser efímero para un contenido que define la identidad de 'cocina de mercado' de la marca."}, "angle": {"chosen": "Producto de temporada y origen", "alternatives_considered": ["Promoción de precio"], "rationale": "Se prioriza el valor del producto y su paso por el mercado de Ruzafa sobre el precio, alineándose con la petición del usuario de explicar el 'por qué' de la elección. El precio de 12 € se incluye como apoyo, no como eje central."}, "voice": {"chosen": "Cercano y sin florituras", "alternatives_considered": ["Informativo/Técnico"], "rationale": "Se utiliza un tono amable y directo que refleja la 'terquedad de una nieta' y la honestidad de la cocina de barrio, evitando adjetivos innecesarios según el brief."}}, "visual_style_notes": "Iluminación natural lateral para resaltar texturas. Uso de fondos de madera oscura #8b5a2b para contrastar con el plato. Encuadre cerrado (close-up) que transmita honestidad, sin elementos decorativos artificiales.", "narrative_connection": null, "image": {"concept": "Primer plano de un plato de temporada servido en vajilla artesanal sobre una mesa de madera rústica.", "generation_prompt": "Close-up of a seasonal Mediterranean stew in a rustic ceramic bowl, placed on a dark weathered wooden table (#8b5a2b). Soft natural window lighting, warm earthy tones, steam rising slightly, no-frills presentation, authentic Spanish tavern atmosphere, 4:5 aspect ratio.", "alt_text": "Primer plano de un plato casero de temporada servido en una mesa de madera rústica con luz natural."}, "caption": {"hook": "Directo del mercado de Ruzafa: esta semana el protagonista es nuestro plato de temporada.", "body": "En Casa Maruja cocinamos con lo que la tierra nos da cada mañana. Hemos elegido este plato porque el producto está en su punto óptimo de sabor y frescura, respetando los tiempos de la huerta valenciana.\n\nSin complicaciones ni adornos innecesarios. Solo buen producto tratado con el cariño de siempre. Puedes disfrutarlo dentro de nuestro menú del día por 12 €.", "cta_line": "Reserva tu mesa enviándonos un DM."}, "cta": {"channel": "dm", "url_or_handle": null, "label": "Reserva por DM"}, "hashtag_strategy": {"intent": "local_discovery", "suggested_volume": 10, "themes": ["Ruzafa", "Cocina de mercado", "Valencia Food", "Producto de temporada"]}, "do_not": ["no usar filtros saturados o artificiales", "no incluir texto gráfico sobre la imagen", "no usar lenguaje corporativo o distante", "no utilizar fotos de stock genéricas", "no omitir la referencia al mercado local"], "visual_selection": {"recommended_asset_urls": ["https://i.pinimg.com/736x/00/2f/ef/002fefd0c200e93fd65f823cac70ed05.jpg"], "recommended_reference_urls": [], "avoid_asset_urls": ["https://cdn.example/casamaruja/equipo.jpg"]}, "confidence": {"surface_format": "high", "angle": "high", "palette_match": "high", "cta_channel": "high"}}, "warnings": [], "trace": {"task_id": "eeee5555-eeee-5555-eeee-555555555555", "action_code": "create_post", "surface": "post", "mode": "create", "latency_ms": 13274, "gemini_model": "gemini-3-flash-preview", "repair_attempted": false, "degraded": false, "gallery_stats": {"raw_count": 4, "accepted_count": 4, "rejected_count": 0, "truncated": false}}}, "error_message": null}}, "router_record_after_step": {"job_id": "ffff6666-ffff-6666-ffff-666666666666", "gate_responses": {"brief": {"passed": true, "reason": "ok", "status_code": 200, "response": {"status": "success", "message": "Account with brief retrieved successfully", "data": {"uuid": "9b1c0f12-0d8b-4a46-aea5-2a2cc4b47f21", "profile": {"business_name": "Casa Maruja", "website_url": "https://www.casamaruja.es", "tone": "cálido, cercano, sin florituras"}, "brief": {"uuid": "abcd0001-0000-0000-0000-000000000001", "form_values": {"FIELD_COMPANY_NAME": "Casa Maruja", "FIELD_COMPANY_CATEGORY": "Restauración", "FIELD_COUNTRY": "España", "FIELD_LARGE_ANSWER": "Casa Maruja nació del recetario de una abuela y la terquedad de una nieta. Cocina de mercado de temporada en Ruzafa, Valencia. Menú del día a 12 €. Especialidades: arròs al forn los lunes, croquetas de puchero.", "FIELD_PRODUCTS_SERVICES_ANSWER": "Restaurante de cocina de mercado. Menú diario, especialidades caseras, producto de temporada.", "FIELD_TARGET_CUSTOMER_ANSWER": "Vecinos de Ruzafa y Valencia que buscan comida casera, honesta y asequible; sensibles a producto local y trato cercano.", "FIELD_VALUE_PROPOSITION": "Cocina casera de mercado, producto de temporada, sin florituras, trato familiar.", "FIELD_COMMUNICATION_LANGUAGE": "spanish", "FIELD_COMMUNICATION_STYLE": "friendly", "FIELD_COLOR_LIST_PICKER": ["#8B5A2B", "#D4A017", "#556B2F"], "FIELD_FONT_STYLE": "sans", "FIELD_POST_CONTENT_STYLE": "image_text", "FIELD_KEYWORDS_TAGS_INPUT": ["cocina de mercado", "producto de temporada", "Ruzafa", "Valencia"], "FIELD_HAS_BRAND_MATERIAL": true, "FIELD_BRAND_MATERIAL": [{"url": "https://cdn.example/casamaruja/hero.jpg", "name": "hero.jpg", "extension": "jpg", "size": 1024000}, {"url": "https://cdn.example/casamaruja/arros.jpg", "name": "arros.jpg", "extension": "jpg", "size": 1200000}]}}}}}, "image_catalog": {"passed": true, "reason": "ok", "status_code": 200, "response": {"status": "success", "data": [{"url": "https://i.pinimg.com/736x/00/2f/ef/002fefd0c200e93fd65f823cac70ed05.jpg", "name": "plato_semana.jpg", "extension": "jpg", "size": 800000, "tags": ["plato_semana", "producto_temporada"], "description": "Plato de temporada servido en mesa de madera con luz natural", "category": "product_photo", "used_previously": false}, {"url": "https://cdn.example/casamaruja/equipo.jpg", "name": "equipo.jpg", "extension": "jpg", "size": 900000, "tags": ["equipo", "barrio"], "description": "El equipo en la puerta del local saludando", "category": "team", "used_previously": true}]}}}, "sequence_responses": {"marketer": {"status": "COMPLETED", "sequence_order": 1, "output_schema": "post_enrichment.v1", "output_data": {"enrichment": {"schema_version": "2.0", "surface_format": "post", "content_pillar": "product", "title": "Plato Estrella de la Semana - Mercado Ruzafa", "objective": "Atraer clientes al local destacando la calidad y frescura del producto de temporada en el menú del día.", "strategic_decisions": {"surface_format": {"chosen": "post", "alternatives_considered": ["story"], "rationale": "Se elige el formato post para que la imagen del plato permanezca en el feed como testimonio de la calidad del producto. El formato story se descartó por ser efímero para un contenido que define la identidad de 'cocina de mercado' de la marca."}, "angle": {"chosen": "Producto de temporada y origen", "alternatives_considered": ["Promoción de precio"], "rationale": "Se prioriza el valor del producto y su paso por el mercado de Ruzafa sobre el precio, alineándose con la petición del usuario de explicar el 'por qué' de la elección. El precio de 12 € se incluye como apoyo, no como eje central."}, "voice": {"chosen": "Cercano y sin florituras", "alternatives_considered": ["Informativo/Técnico"], "rationale": "Se utiliza un tono amable y directo que refleja la 'terquedad de una nieta' y la honestidad de la cocina de barrio, evitando adjetivos innecesarios según el brief."}}, "visual_style_notes": "Iluminación natural lateral para resaltar texturas. Uso de fondos de madera oscura #8b5a2b para contrastar con el plato. Encuadre cerrado (close-up) que transmita honestidad, sin elementos decorativos artificiales.", "narrative_connection": null, "image": {"concept": "Primer plano de un plato de temporada servido en vajilla artesanal sobre una mesa de madera rústica.", "generation_prompt": "Close-up of a seasonal Mediterranean stew in a rustic ceramic bowl, placed on a dark weathered wooden table (#8b5a2b). Soft natural window lighting, warm earthy tones, steam rising slightly, no-frills presentation, authentic Spanish tavern atmosphere, 4:5 aspect ratio.", "alt_text": "Primer plano de un plato casero de temporada servido en una mesa de madera rústica con luz natural."}, "caption": {"hook": "Directo del mercado de Ruzafa: esta semana el protagonista es nuestro plato de temporada.", "body": "En Casa Maruja cocinamos con lo que la tierra nos da cada mañana. Hemos elegido este plato porque el producto está en su punto óptimo de sabor y frescura, respetando los tiempos de la huerta valenciana.\n\nSin complicaciones ni adornos innecesarios. Solo buen producto tratado con el cariño de siempre. Puedes disfrutarlo dentro de nuestro menú del día por 12 €.", "cta_line": "Reserva tu mesa enviándonos un DM."}, "cta": {"channel": "dm", "url_or_handle": null, "label": "Reserva por DM"}, "hashtag_strategy": {"intent": "local_discovery", "suggested_volume": 10, "themes": ["Ruzafa", "Cocina de mercado", "Valencia Food", "Producto de temporada"]}, "do_not": ["no usar filtros saturados o artificiales", "no incluir texto gráfico sobre la imagen", "no usar lenguaje corporativo o distante", "no utilizar fotos de stock genéricas", "no omitir la referencia al mercado local"], "visual_selection": {"recommended_asset_urls": ["https://i.pinimg.com/736x/00/2f/ef/002fefd0c200e93fd65f823cac70ed05.jpg"], "recommended_reference_urls": [], "avoid_asset_urls": ["https://cdn.example/casamaruja/equipo.jpg"]}, "confidence": {"surface_format": "high", "angle": "high", "palette_match": "high", "cta_channel": "high"}}, "warnings": [], "trace": {"task_id": "eeee5555-eeee-5555-eeee-555555555555", "action_code": "create_post", "surface": "post", "mode": "create", "latency_ms": 13274, "gemini_model": "gemini-3-flash-preview", "repair_attempted": false, "degraded": false, "gallery_stats": {"raw_count": 4, "accepted_count": 4, "rejected_count": 0, "truncated": false}}}, "duration_ms": 13274}}}};
+
+  function escapeHtml(s) { return s.replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
+  function highlight(jsonStr) {
+    const esc = escapeHtml(jsonStr);
+    return esc.replace(
+      /("(\\u[a-fA-F0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false)\b|\bnull\b|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/g,
+      function (match) {
+        let cls = 'n';
+        if (/^"/.test(match)) {
+          cls = /:$/.test(match) ? 'k' : 's';
+        } else if (/true|false/.test(match)) cls = 'b';
+        else if (/null/.test(match)) cls = 'nu';
+        return '<span class="' + cls + '">' + match + '</span>';
+      }
+    );
+  }
+  function fillJson(id, value) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = highlight(JSON.stringify(value, null, 2));
+  }
+
+  fillJson('input-pre', DATA.router_dispatch);
+  fillJson('output-pre', DATA.marketer_callback);
+  fillJson('merged-pre', DATA.router_record_after_step);
+  fillJson('trace-pre', DATA.marketer_callback.body.output_data && DATA.marketer_callback.body.output_data.trace || {});
+
+  document.querySelectorAll('button[data-copy]').forEach(b => {
+    b.addEventListener('click', async () => {
+      const id = b.getAttribute('data-copy');
+      const text = document.getElementById(id).innerText;
+      try { await navigator.clipboard.writeText(text); b.textContent = 'Copied'; setTimeout(()=>b.textContent='Copy', 1200); }
+      catch(e) { b.textContent = 'Copy failed'; }
+    });
+  });
+  document.querySelectorAll('button[data-toggle]').forEach(b => {
+    b.addEventListener('click', () => {
+      const el = document.getElementById(b.getAttribute('data-toggle'));
+      el.style.display = (el.style.display === 'none') ? '' : 'none';
+      b.textContent = (el.style.display === 'none') ? 'Expand' : 'Collapse';
+    });
+  });
+</script>
+</body>
+</html>

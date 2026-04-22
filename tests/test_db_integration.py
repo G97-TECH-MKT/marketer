@@ -380,6 +380,70 @@ def test_partial_unique_index_enforces_one_active_strategy_per_user():
         assert sum(1 for r in rows if r.is_active) == 1
 
 
+# ─── action_types catalog gates the ingest path ──────────────────────────────
+
+
+def test_unknown_action_code_returns_422(patched):
+    """ROUTER → MARKETER with an action_code that's not in action_types
+    catalog must be rejected at ingest with 422 (no background work)."""
+    envelope = {
+        "task_id": str(uuid4()),
+        "action_code": "no_such_action_xyz",
+        "callback_url": "https://example.test/cb",
+        "payload": {
+            "client_request": {"description": "x"},
+            "context": {"account_uuid": str(uuid4())},
+        },
+    }
+    with TestClient(main_module.app) as client:
+        resp = client.post("/tasks", json=envelope)
+    assert resp.status_code == 422
+    assert "action_unknown" in resp.json()["detail"]
+
+
+def test_disabled_action_code_returns_422(patched):
+    """Toggling action_types.is_enabled=false at runtime should reject new
+    requests for that code within one cache refresh. Restores state when done."""
+    from marketer.db import actions_cache
+
+    engine = _sync_engine()
+
+    # Flip create_post off in DB and invalidate cache
+    with Session(engine) as session:
+        session.execute(
+            ActionType.__table__.update()
+            .where(ActionType.code == "create_post")
+            .values(is_enabled=False)
+        )
+        session.commit()
+    actions_cache.invalidate()
+
+    try:
+        envelope = {
+            "task_id": str(uuid4()),
+            "action_code": "create_post",
+            "callback_url": "https://example.test/cb",
+            "payload": {
+                "client_request": {"description": "x"},
+                "context": {"account_uuid": str(uuid4())},
+            },
+        }
+        with TestClient(main_module.app) as client:
+            resp = client.post("/tasks", json=envelope)
+        assert resp.status_code == 422
+        assert "not_enabled" in resp.json()["detail"]
+    finally:
+        # Restore for other tests + next startup check
+        with Session(engine) as session:
+            session.execute(
+                ActionType.__table__.update()
+                .where(ActionType.code == "create_post")
+                .values(is_enabled=True)
+            )
+            session.commit()
+        actions_cache.invalidate()
+
+
 def test_check_constraint_rejects_invalid_job_status():
     """jobs.status CHECK restricts values; bogus strings must fail."""
     account_uuid = uuid4()

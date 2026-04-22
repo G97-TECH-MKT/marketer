@@ -1,0 +1,2276 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>MARKETER — Multi-vertical demo v2</title>
+<style>
+  :root {
+    --bg: #0b0f17;
+    --panel: #121826;
+    --panel-2: #0f1422;
+    --text: #e6ecf5;
+    --muted: #8b97ad;
+    --line: #1f2738;
+    --accent: #7c5cff;
+    --accent-2: #00d4ff;
+    --good: #2bd07b;
+    --warn: #f5a524;
+    --bad: #ff5d6c;
+    --code-bg: #0a0e17;
+    --key: #7ee787;
+    --string: #a5d6ff;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f6f7fb; --panel: #ffffff; --panel-2: #fafbff;
+      --text: #1a2030; --muted: #5b6577; --line: #e6e8ef;
+      --code-bg: #f1f3f9; --key: #166534; --string: #0f6cbf;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Inter, Roboto, sans-serif; }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 28px 22px 80px; }
+
+  header.hero {
+    display: grid; grid-template-columns: 1fr auto; gap: 20px; align-items: end;
+    padding-bottom: 22px; border-bottom: 1px solid var(--line); margin-bottom: 22px;
+  }
+  .hero h1 { margin: 0; font-size: 26px; letter-spacing: -0.01em; }
+  .hero h1 .grad {
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .hero p { margin: 6px 0 0; color: var(--muted); max-width: 820px; line-height: 1.5; }
+  .meta { color: var(--muted); font-size: 12.5px; text-align: right; line-height: 1.6; }
+  .meta b { color: var(--text); font-weight: 600; }
+
+  /* Comparison table */
+  table.cmp { width: 100%; border-collapse: collapse; margin: 14px 0 24px;
+    font-size: 13px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  table.cmp th, table.cmp td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.cmp thead th { background: var(--panel-2); color: var(--muted); font-weight: 600;
+    font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; }
+  table.cmp tr:last-child td { border-bottom: none; }
+  table.cmp small { color: var(--muted); display:block; margin-top: 2px; }
+  table.cmp code { font-size: 12px; color: var(--accent-2); }
+  .status-ok { color: var(--good); font-weight: 600; }
+  .status-bad { color: var(--bad); font-weight: 600; }
+
+  /* Tabs */
+  .tabs-nav { display: flex; gap: 6px; flex-wrap: wrap; margin: 16px 0 20px;
+    padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+  .tab-btn { font: inherit; cursor: pointer; background: transparent; color: var(--muted);
+    border: 1px solid var(--line); padding: 8px 14px; border-radius: 10px;
+    display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+    transition: all 0.15s; min-width: 140px; }
+  .tab-btn:hover { color: var(--text); border-color: var(--accent); }
+  .tab-btn b { font-size: 13.5px; font-weight: 600; }
+  .tab-btn small { font-size: 11px; color: var(--muted); }
+  .tab-btn.active { background: linear-gradient(135deg, rgba(124,92,255,0.15), rgba(0,212,255,0.12));
+    color: var(--text); border-color: var(--accent); }
+  .tab-btn.active small { color: var(--text); opacity: 0.75; }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* Cards */
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 4px 0 20px; }
+  @media (max-width: 900px) { .grid-3 { grid-template-columns: 1fr; } }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+  .card h3 { margin: 0 0 6px; font-size: 13px; letter-spacing: 0.03em; text-transform: uppercase; color: var(--muted); }
+  .card .v { font-size: 17px; font-weight: 600; }
+  .card .v small { color: var(--muted); font-weight: 400; font-size: 12px; margin-left: 6px; }
+
+  .card-block { background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+    padding: 16px 18px; margin: 14px 0; }
+  .card-block h3 { margin: 0 0 4px; font-size: 16px; }
+  .card-block-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .tag-public { font-size: 11px; background: rgba(43,208,123,0.15); color: var(--good);
+    padding: 3px 10px; border-radius: 999px; border: 1px solid rgba(43,208,123,0.35); }
+  .tag-internal { font-size: 11px; background: rgba(124,92,255,0.12); color: var(--accent);
+    padding: 3px 10px; border-radius: 999px; border: 1px solid rgba(124,92,255,0.35); }
+  .lead { color: var(--muted); margin: 0 0 12px; line-height: 1.5; font-size: 13.5px; }
+
+  .split-2 { display: grid; grid-template-columns: 1.5fr 1fr; gap: 14px; }
+  @media (max-width: 900px) { .split-2 { grid-template-columns: 1fr; } }
+
+  /* Post card */
+  .post-card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; margin-bottom: 14px; }
+  .post-head { padding: 18px 22px 12px; border-bottom: 1px solid var(--line); display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+  .surface-pill, .pillar-pill { display: inline-block; font-size: 11px; letter-spacing: 0.10em;
+    text-transform: uppercase; padding: 4px 10px; border-radius: 999px; }
+  .surface-pill { color: var(--accent); background: rgba(124,92,255,0.12); border: 1px solid rgba(124,92,255,0.35); }
+  .pillar-pill { color: var(--accent-2); background: rgba(0,212,255,0.10); border: 1px solid rgba(0,212,255,0.30); }
+  .post-title { width:100%; margin: 8px 0 0; font-size: 22px; line-height: 1.25; font-weight: 700; }
+  .post-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 0; }
+  @media (max-width: 980px) { .post-grid { grid-template-columns: 1fr; } }
+  .post-col { padding: 18px 22px; }
+  .post-col + .post-col { border-left: 1px solid var(--line); }
+  @media (max-width: 980px) { .post-col + .post-col { border-left: none; border-top: 1px solid var(--line); } }
+  .post-section { margin: 0 0 16px; }
+  .post-section:last-child { margin-bottom: 0; }
+  .post-section h4 { margin: 0 0 6px; font-size: 12px; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--muted); }
+  .post-section p { margin: 0; line-height: 1.55; font-size: 14px; }
+
+  /* Decisions */
+  .decision { background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px;
+    padding: 10px 12px; margin-bottom: 8px; }
+  .decision .label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .decision .chosen { margin-top: 3px; font-weight: 600; font-size: 14px; }
+  .decision .alts { margin-top: 5px; display: flex; flex-wrap: wrap; gap: 5px; }
+  .decision .alt { font-size: 11px; padding: 2px 7px; border-radius: 999px; border: 1px dashed var(--line); color: var(--muted); text-decoration: line-through; }
+  .decision .why { margin-top: 6px; font-size: 12.5px; color: var(--text); line-height: 1.5; opacity: 0.9; }
+  .decision .why::before { content: "↳ "; color: var(--muted); }
+
+  /* Caption */
+  .cap { background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
+  .cap .lbl { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); display:flex; justify-content:space-between; }
+  .cap .txt { margin-top: 5px; white-space: pre-wrap; line-height: 1.5; font-size: 13.5px; }
+  .cap.hook .txt { font-weight: 600; }
+
+  /* Image brief */
+  .img-brief { background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
+  .img-brief .lbl { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+  .img-brief .body { line-height: 1.5; font-size: 13px; }
+  .img-brief.gen .body { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--accent-2); }
+  .img-brief.alt .body { color: var(--muted); font-style: italic; font-size: 12.5px; }
+
+  /* CTA */
+  .cta-card { display:flex; align-items:center; gap:10px; padding: 10px 12px;
+    background: linear-gradient(90deg, rgba(124,92,255,0.12), rgba(0,212,255,0.10));
+    border: 1px solid rgba(124,92,255,0.30); border-radius: 10px; }
+  .cta-card .ch { background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    color: white; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 3px 10px; border-radius: 999px; font-weight: 700; }
+  .cta-card .lbl { font-weight: 600; }
+  .cta-card .url { color: var(--muted); font-size: 12px; word-break: break-all; }
+
+  /* Brand DNA */
+  pre.dna { background: var(--code-bg); color: var(--text); padding: 14px 16px;
+    border-radius: 10px; border: 1px solid var(--line); white-space: pre-wrap;
+    font-family: ui-sans-serif, system-ui, sans-serif; font-size: 13.5px;
+    line-height: 1.55; max-height: 600px; overflow: auto; margin: 8px 0 0; }
+
+  /* Brand intelligence grid */
+  .bi-grid { display: grid; grid-template-columns: 180px 1fr; gap: 0; background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin-top: 8px; }
+  .bi-row { display: contents; }
+  .bi-row > div { padding: 9px 14px; border-bottom: 1px solid var(--line); }
+  .bi-row:last-child > div { border-bottom: none; }
+  .bi-label { color: var(--muted); font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase;
+    background: rgba(0,0,0,0.10); }
+  .bi-value { font-size: 13.5px; line-height: 1.45; }
+  .bi-empty { color: var(--muted); font-style: italic; padding: 12px; }
+
+  /* Chips */
+  .pill-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .chip { display: inline-flex; align-items: center; gap: 5px; padding: 5px 9px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--panel-2); font-size: 12px; color: var(--text); }
+  .chip.good { color: var(--good); border-color: rgba(43,208,123,0.4); }
+  .chip.bad  { color: var(--bad);  border-color: rgba(255,93,108,0.4); }
+  .chip.warn { color: var(--warn); border-color: rgba(245,165,36,0.4); }
+  .chip.ghost { color: var(--muted); border-style: dashed; }
+
+  /* Confidence */
+  .conf-row { display:grid; grid-template-columns: 1fr; gap: 6px; }
+  .conf { display:flex; align-items:center; justify-content:space-between;
+    background: var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:6px 10px; font-size:12.5px; }
+  .conf .lvl { font-size:11px; padding:2px 8px; border-radius:999px; text-transform:uppercase; letter-spacing:.06em; }
+  .lvl.high   { background: rgba(43,208,123,0.15); color: var(--good); }
+  .lvl.medium { background: rgba(245,165,36,0.15); color: var(--warn); }
+  .lvl.low    { background: rgba(255,93,108,0.15); color: var(--bad); }
+
+  /* Visual selection */
+  .img-row { display: grid; grid-template-columns: 1fr; gap: 6px; margin-top: 8px; }
+  .thumb { background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; display: flex; align-items: center; gap: 8px; }
+  .thumb.use { border-left: 3px solid var(--good); }
+  .thumb.avoid { opacity: 0.6; border-left: 3px dashed var(--bad); }
+  .thumb.reference { border-left: 3px solid var(--accent-2); }
+  .thumb .role { font-size: 10px; padding: 2px 6px; border-radius: 999px; background: rgba(124,92,255,0.15); color: var(--accent); }
+  .thumb .t { font-size: 11.5px; color: var(--muted); word-break: break-all; line-height: 1.35; flex: 1; }
+
+  details.acc { margin-top: 10px; }
+  details.acc > summary { cursor: pointer; color: var(--muted); font-size: 13px; padding: 8px 12px;
+    border: 1px dashed var(--line); border-radius: 8px; }
+  details.acc[open] > summary { color: var(--text); border-style: solid; }
+  pre.json { margin: 0; padding: 14px 16px; background: var(--code-bg); color: var(--text);
+    overflow: auto; max-height: 480px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px; line-height: 1.5; border: 1px solid var(--line); border-radius: 0 0 8px 8px; border-top: none; }
+
+  .fail-box { background: rgba(255,93,108,0.08); border: 1px solid rgba(255,93,108,0.35);
+    border-radius: 12px; padding: 22px 28px; margin: 14px 0; }
+  .fail-box h2 { margin: 0 0 8px; color: var(--bad); }
+  .error-text { font-family: ui-monospace, monospace; font-size: 13px; color: var(--muted); white-space: pre-wrap; }
+
+  footer { color: var(--muted); font-size: 12px; margin-top: 26px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div>
+      <h1>MARKETER <span class="grad">multi-vertical demo v2</span></h1>
+      <p>6 verticales reales corridos contra Gemini 3 Flash. Cada tab muestra un post enrichment completo con
+        las dos nuevas capas: <b>brand_dna</b> (narrativa pública que viaja a CONTENT_FACTORY) y
+        <b>brand_intelligence</b> (razonamiento interno, solo para subagentes).</p>
+    </div>
+    <div class="meta">
+      <div><b>fixtures</b> 6</div>
+      <div><b>model</b> gemini-3-flash-preview</div>
+      <div><b>generated</b> 2026-04-21T08:24:59+00:00</div>
+    </div>
+  </header>
+
+  <h2 style="margin:0 0 8px; font-size:16px; letter-spacing:.02em;">Comparación cross-vertical</h2>
+  
+<table class="cmp">
+<thead><tr>
+  <th>Vertical</th><th>Status</th><th>Latency</th>
+  <th>Pillar</th><th>CTA channel</th><th>Funnel</th>
+  <th>Taxonomy</th><th>Voice register</th><th>Emotional beat</th><th>Warnings</th>
+</tr></thead>
+<tbody><tr><td><b>Casa Maruja</b><br><small>Restaurante local · Ruzafa</small></td><td class="status-ok">COMPLETED</td><td>30439 ms</td><td>product</td><td>dm</td><td>consideration</td><td><code>local_food_service</code></td><td>cercano-artesanal</td><td>pertenencia</td><td>0</td></tr><tr><td><b>Pulsemetrics</b><br><small>SaaS B2B analytics</small></td><td class="status-ok">COMPLETED</td><td>20924 ms</td><td>product</td><td>website</td><td>awareness</td><td><code>b2b_saas_analytics</code></td><td>autoritativo-tecnológico</td><td>tranquilidad</td><td>1</td></tr><tr><td><b>Verdea Studio</b><br><small>E-commerce moda sostenible</small></td><td class="status-ok">COMPLETED</td><td>24276 ms</td><td>product</td><td>website</td><td>conversion</td><td><code>b2c_ecom_fashion</code></td><td>honesto-estético</td><td>tranquilidad</td><td>0</td></tr><tr><td><b>Clínica Dental</b><br><small>Salud · Barcelona</small></td><td class="status-ok">COMPLETED</td><td>16696 ms</td><td>education</td><td>phone</td><td>consideration</td><td><code>professional_health_dental</code></td><td>tranquilizador-profesional</td><td>tranquilidad</td><td>1</td></tr><tr><td><b>Minimal SL</b><br><small>Brief mínimo</small></td><td class="status-ok">COMPLETED</td><td>14252 ms</td><td>community</td><td>none</td><td>retention</td><td><code>retail_physical_local_shop</code></td><td>cercano-agradecido</td><td>pertenencia</td><td>2</td></tr><tr><td><b>No Brief Brand</b><br><small>Sin brief (gate failed)</small></td><td class="status-ok">COMPLETED</td><td>16370 ms</td><td>product</td><td>none</td><td>awareness</td><td><code>b2c_ecom_fashion</code></td><td>natural-transparente</td><td>tranquilidad</td><td>3</td></tr></tbody>
+</table>
+
+
+  <div class="tabs-nav"><button class="tab-btn active" data-tab="0"><b>Casa Maruja</b><small>Restaurante local · Ruzafa</small></button><button class="tab-btn" data-tab="1"><b>Pulsemetrics</b><small>SaaS B2B analytics</small></button><button class="tab-btn" data-tab="2"><b>Verdea Studio</b><small>E-commerce moda sostenible</small></button><button class="tab-btn" data-tab="3"><b>Clínica Dental</b><small>Salud · Barcelona</small></button><button class="tab-btn" data-tab="4"><b>Minimal SL</b><small>Brief mínimo</small></button><button class="tab-btn" data-tab="5"><b>No Brief Brand</b><small>Sin brief (gate failed)</small></button></div>
+
+  
+<div class="tab-panel" id="panel-0">
+  <div class="grid-3">
+    <div class="card"><h3>Status</h3><div class="v">COMPLETED <small>post / create</small></div></div>
+    <div class="card"><h3>Latency</h3><div class="v">30439 ms <small>repair: no</small></div></div>
+    <div class="card"><h3>Gallery</h3><div class="v">4 / 4 <small>degraded: no</small></div></div>
+  </div>
+
+  <!-- POST CARD -->
+  <div class="post-card">
+    <div class="post-head">
+      <span class="surface-pill">POST</span>
+      <span class="pillar-pill">PRODUCT</span>
+      <h3 class="post-title">Plato Estrella de la Semana</h3>
+    </div>
+    <div class="post-grid">
+      <div class="post-col">
+        <div class="post-section">
+          <h4>🎯 Objective</h4>
+          <p>Atraer clientes al local destacando la frescura del producto de temporada y la honestidad de la cocina.</p>
+        </div>
+        <div class="post-section">
+          <h4>⚔️ Strategic decisions</h4>
+          <div class="decision">  <div class="label">Surface format</div>  <div class="chosen">post</div>  <div class="alts"><span class="alt">story</span></div>  <div class="why">El formato post permite una descripción más detallada del producto de temporada y permanece visible en el feed durante toda la semana de vigencia del plato.</div></div><div class="decision">  <div class="label">Angle</div>  <div class="chosen">producto de temporada y origen local</div>  <div class="alts"><span class="alt">behind_the_scenes</span></div>  <div class="why">Se alinea directamente con la petición del usuario de destacar el plato estrella y explicar la elección basada en el mercado.</div></div><div class="decision">  <div class="label">Voice</div>  <div class="chosen">cálida, honesta y sin florituras</div>  <div class="alts"><span class="alt">profesional</span></div>  <div class="why">Refuerza el valor de 'cocina casera' y 'trato familiar' definido en el brief, evitando un tono comercial frío.</div></div>
+        </div>
+        <div class="post-section">
+          <h4>✨ Visual style notes</h4>
+          <p>Iluminación natural lateral para resaltar texturas. Uso de fondos de madera rústica alineados con el tono #8b5a2b. Encuadre cenital o a 45 grados centrado en el producto.</p>
+        </div>
+        <div class="post-section">
+          <h4>🚫 Do not</h4>
+          <div class="pill-row"><span class="chip ghost">no usar tipografía sobre la imagen</span><span class="chip ghost">no aplicar filtros que desaturen los colores naturales</span><span class="chip ghost">no usar un tono de voz excesivamente formal</span><span class="chip ghost">no incluir más de un canal de contacto</span><span class="chip ghost">no usar fotos de stock genéricas</span></div>
+        </div>
+      </div>
+      <div class="post-col">
+        <div class="post-section">
+          <h4>🖼️ Image brief</h4>
+          <div class="img-brief"><div class="lbl">Concept</div><div class="body">Primer plano de un plato de temporada servido en cerámica tradicional sobre una mesa de madera rústica.</div></div>
+          <div class="img-brief gen"><div class="lbl">Generation prompt</div><div class="body">Close-up of a traditional Spanish seasonal dish, like a vegetable stew or roasted meat, served in a simple ceramic bowl. Rustic wooden table background with visible grain. Natural soft window light from the side. Color palette emphasizing earth tones #8b5a2b and olive green #556b2f. Authentic, warm, and appetizing atmosphere. 4:5 aspect ratio.</div></div>
+          <div class="img-brief alt"><div class="lbl">Alt text</div><div class="body">Un plato de comida casera de temporada servido sobre una mesa de madera rústica con luz natural.</div></div>
+        </div>
+        <div class="post-section">
+          <h4>📝 Caption</h4>
+          <div class="cap hook"><div class="lbl"><span>Hook</span><span class="len">76 ch</span></div><div class="txt">Esta semana el mercado nos ha traído lo mejor y no hemos podido resistirnos.</div></div>
+          <div class="cap body"><div class="lbl"><span>Body</span><span class="len">288 ch</span></div><div class="txt">Hemos elegido este plato como nuestro protagonista porque representa exactamente lo que somos: respeto por el producto y cocina sin prisas. Ingredientes frescos, directos de Ruzafa a nuestra cocina, cocinados como lo hacía la abuela.
+
+Ven a probarlo en nuestro menú del día por solo 12 €.</div></div>
+          <div class="cap cta"><div class="lbl"><span>CTA line</span><span class="len">34 ch</span></div><div class="txt">Reserva tu mesa enviándonos un DM.</div></div>
+        </div>
+        <div class="post-section">
+          <h4>👉 Call to action</h4>
+          <div class="cta-card">  <span class="ch">DM</span>  <span class="lbl">Reserva por DM</span>  </div>
+        </div>
+        <div class="post-section">
+          <h4>🏷️ Hashtag strategy</h4>
+          <div class="pill-row"><span class="chip">intent · local_discovery</span><span class="chip">volume · 10</span></div>
+          <div class="pill-row"><span class="chip">#Ruzafa</span><span class="chip">#cocina de mercado</span><span class="chip">#Valencia foodies</span><span class="chip">#producto de temporada</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BRAND DNA (NEW · public) -->
+  <div class="card-block">
+    <div class="card-block-head"><h3>🧬 Brand DNA</h3><span class="tag-public">public · viaja a Content Factory</span></div>
+    <p class="lead">Narrativa destilada del brief. El copywriter de CONTENT_FACTORY la lee antes de redactar.</p>
+    <pre class="dna">Bienvenidos a Casa Maruja
+Cocina de mercado de temporada en el corazón de Ruzafa.
+
+Nuestra Historia
+Casa Maruja nació del recetario de una abuela y la terquedad de una nieta. Es el resultado de querer preservar los sabores que marcaron nuestra infancia, trayendo a la Valencia de hoy la honestidad de los platos de siempre. No buscábamos crear un concepto moderno, sino un refugio donde la tradición se mantuviera viva a través de las manos de quienes aman el fuego lento y el respeto por el legado familiar.
+
+Nuestra propuesta
+Nuestra cocina se rige por lo que el mercado nos dicta cada mañana. Visitamos a nuestros proveedores locales en Ruzafa para seleccionar el producto de temporada en su punto óptimo de madurez y sabor. Creemos en una cocina casera sin florituras innecesarias, donde el ingrediente es el protagonista absoluto y el trato familiar hace que cada cliente se sienta como un invitado en nuestra propia casa. Para nosotros, la calidad no está reñida con el precio, por eso mantenemos una propuesta asequible que permita a los vecinos disfrutar de comida real todos los días de la semana. Cada elección en nuestra carta tiene un porqué: desde el origen de la verdura hasta el punto exacto de la cocción, buscando siempre la máxima expresión del sabor tradicional valenciano.
+
+Especialidades
+- Arròs al forn (los lunes)
+- Croquetas de puchero hechas a mano
+- Menú del día por 12 €
+- Platos de cuchara según mercado
+
+Estilo visual
+Nuestra identidad se apoya en una paleta de colores orgánicos que reflejan la tierra y el producto: el marrón #8b5a2b, el mostaza #d4a017 y el verde oliva #556b2f. Utilizamos una tipografía sans-serif limpia para mantener la claridad y un estilo fotográfico que prioriza la luz natural, las texturas rústicas de la madera y la honestidad del plato servido sin artificios.
+
+📍 Ruzafa, Valencia
+🌐 https://www.casamaruja.es</pre>
+  </div>
+
+  <!-- BRAND INTELLIGENCE (NEW · internal) -->
+  <div class="card-block">
+    <div class="card-block-head"><h3>🧠 Brand Intelligence</h3><span class="tag-internal">internal · solo subagentes</span></div>
+    <p class="lead">Razonamiento interno del agente. Nunca aparece en el post; informa a specialists downstream.</p>
+    <div class="bi-grid"><div class="bi-row"><div class="bi-label">Business taxonomy</div><div class="bi-value">local_food_service</div></div><div class="bi-row"><div class="bi-label">Funnel stage</div><div class="bi-value">consideration</div></div><div class="bi-row"><div class="bi-label">Voice register</div><div class="bi-value">cercano-artesanal</div></div><div class="bi-row"><div class="bi-label">Emotional beat</div><div class="bi-value">pertenencia</div></div><div class="bi-row"><div class="bi-label">Audience persona</div><div class="bi-value">Vecino de Ruzafa de 35-55 años que busca comida honesta y huye de los sitios pretenciosos; su mayor objeción es la falta de autenticidad.</div></div><div class="bi-row"><div class="bi-label">Unfair advantage</div><div class="bi-value">Recetario de abuela ejecutado con producto fresco del mercado de Ruzafa a precio de barrio (12 €).</div></div><div class="bi-row"><div class="bi-label">Rhetorical device</div><div class="bi-value">narración_origen</div></div><div class="bi-row"><div class="bi-label">Risk flags</div><div class="bi-value"><span class="chip ghost">none</span></div></div></div>
+  </div>
+
+  <div class="split-2">
+    <div class="card-block">
+      <h3>Visual selection</h3>
+      <div class="pill-row" style="margin:6px 0 10px;">
+        <span class="chip good">use · 1</span>
+        <span class="chip">reference · 0</span>
+        <span class="chip bad">avoid · 1</span>
+      </div>
+      <div class="img-row"><div class="thumb use"><span class="role" style="background:rgba(43,208,123,0.18);color:var(--good)">use</span><div class="t">https://i.pinimg.com/736x/00/2f/ef/002fefd0c200e93fd65f823cac70ed05.jpg</div></div><div class="thumb avoid"><span class="role" style="background:rgba(255,93,108,0.18);color:var(--bad)">avoid</span><div class="t">https://cdn.example/casamaruja/equipo.jpg</div></div></div>
+    </div>
+    <div class="card-block">
+      <h3>Confidence</h3>
+      <div class="conf-row">
+        <div class="conf"><b>surface_format</b><span class="lvl high">high</span></div>
+        <div class="conf"><b>angle</b><span class="lvl high">high</span></div>
+        <div class="conf"><b>palette_match</b><span class="lvl high">high</span></div>
+        <div class="conf"><b>cta_channel</b><span class="lvl high">high</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-block">
+    <h3>Warnings</h3>
+    <div class="pill-row"><span class="chip good">no warnings</span></div>
+  </div>
+
+  <details class="acc">
+    <summary>Raw input envelope (ROUTER → MARKETER)</summary>
+    <pre class="json">{
+  "task_id": "eeee5555-eeee-5555-eeee-555555555555",
+  "job_id": "ffff6666-ffff-6666-ffff-666666666666",
+  "action_code": "create_post",
+  "action_id": "7777aaaa-7777-aaaa-7777-aaaa77777777",
+  "correlation_id": "ig-20260420-007",
+  "callback_url": "https://d1lwu6lioovdrb.cloudfront.net/api/v1/tasks/eeee5555-eeee-5555-eeee-555555555555/callback",
+  "payload": {
+    "client_request": {
+      "description": "Crea un post destacando el plato estrella de esta semana, con descripción del producto de temporada y el por qué lo hemos elegido. Tono cercano, apetecible y sin florituras.",
+      "attachments": []
+    },
+    "context": {
+      "account_uuid": "9b1c0f12-0d8b-4a46-aea5-2a2cc4b47f21",
+      "client_name": "Casa Maruja",
+      "platform": "instagram"
+    },
+    "action_execution_gates": {
+      "brief": {
+        "passed": true,
+        "reason": "ok",
+        "status_code": 200,
+        "response": {
+          "status": "success",
+          "message": "Account with brief retrieved successfully",
+          "data": {
+            "uuid": "9b1c0f12-0d8b-4a46-aea5-2a2cc4b47f21",
+            "profile": {
+              "business_name": "Casa Maruja",
+              "website_url": "https://www.casamaruja.es",
+              "tone": "cálido, cercano, sin florituras"
+            },
+            "brief": {
+              "uuid": "abcd0001-0000-0000-0000-000000000001",
+              "form_values": {
+                "FIELD_COMPANY_NAME": "Casa Maruja",
+                "FIELD_COMPANY_CATEGORY": "Restauración",
+                "FIELD_COUNTRY": "España",
+                "FIELD_LARGE_ANSWER": "Casa Maruja nació del recetario de una abuela y la terquedad de una nieta. Cocina de mercado de temporada en Ruzafa, Valencia. Menú del día a 12 €. Especialidades: arròs al forn los lunes, croquetas de puchero.",
+                "FIELD_PRODUCTS_SERVICES_ANSWER": "Restaurante de cocina de mercado. Menú diario, especialidades caseras, producto de temporada.",
+                "FIELD_TARGET_CUSTOMER_ANSWER": "Vecinos de Ruzafa y Valencia que buscan comida casera, honesta y asequible; sensibles a producto local y trato cercano.",
+                "FIELD_VALUE_PROPOSITION": "Cocina casera de mercado, producto de temporada, sin florituras, trato familiar.",
+                "FIELD_COMMUNICATION_LANGUAGE": "spanish",
+                "FIELD_COMMUNICATION_STYLE": "friendly",
+                "FIELD_COLOR_LIST_PICKER": [
+                  "#8B5A2B",
+                  "#D4A017",
+                  "#556B2F"
+                ],
+                "FIELD_FONT_STYLE": "sans",
+                "FIELD_POST_CONTENT_STYLE": "image_text",
+                "FIELD_KEYWORDS_TAGS_INPUT": [
+                  "cocina de mercado",
+                  "producto de temporada",
+                  "Ruzafa",
+                  "Valencia"
+                ],
+                "FIELD_HAS_BRAND_MATERIAL": true,
+                "FIELD_BRAND_MATERIAL": [
+                  {
+                    "url": "https://cdn.example/casamaruja/hero.jpg",
+                    "name": "hero.jpg",
+                    "extension": "jpg",
+                    "size": 1024000
+                  },
+                  {
+                    "url": "https://cdn.example/casamaruja/arros.jpg",
+                    "name": "arros.jpg",
+                    "extension": "jpg",
+                    "size": 1200000
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "image_catalog": {
+        "passed": true,
+        "reason": "ok",
+        "status_code": 200,
+        "response": {
+          "status": "success",
+          "data": [
+            {
+              "url": "https://i.pinimg.com/736x/00/2f/ef/002fefd0c200e93fd65f823cac70ed05.jpg",
+              "name": "plato_semana.jpg",
+              "extension": "jpg",
+              "size": 800000,
+              "tags": [
+                "plato_semana",
+                "producto_temporada"
+              ],
+              "description": "Plato de temporada servido en mesa de madera con luz natural",
+              "category": "product_photo",
+              "used_previously": false
+            },
+            {
+              "url": "https://cdn.example/casamaruja/equipo.jpg",
+              "name": "equipo.jpg",
+              "extension": "jpg",
+              "size": 900000,
+              "tags": [
+                "equipo",
+                "barrio"
+              ],
+              "description": "El equipo en la puerta del local saludando",
+              "category": "team",
+              "used_previously": true
+            }
+          ]
+        }
+      }
+    },
+    "agent_sequence": {
+      "current": {
+        "step_code": "marketing_enrichment",
+        "step_order": 1,
+        "task_id": "eeee5555-eeee-5555-eeee-555555555555",
+        "agent_id": "5a258d4e-b01d-48dc-95b1-0e67d81b7f4c",
+        "agent_name": "marketer",
+        "endpoint": "https://marketer.internal/tasks",
+        "http_method": "POST",
+        "is_mandatory": true,
+        "timeout_seconds": 60,
+        "retry_count": 0
+      },
+      "previous": {}
+    }
+  }
+}</pre>
+  </details>
+  <details class="acc">
+    <summary>Raw output callback (MARKETER → ROUTER)</summary>
+    <pre class="json">{
+  "status": "COMPLETED",
+  "output_data": {
+    "enrichment": {
+      "schema_version": "2.0",
+      "surface_format": "post",
+      "content_pillar": "product",
+      "title": "Plato Estrella de la Semana",
+      "objective": "Atraer clientes al local destacando la frescura del producto de temporada y la honestidad de la cocina.",
+      "brand_dna": "Bienvenidos a Casa Maruja\nCocina de mercado de temporada en el corazón de Ruzafa.\n\nNuestra Historia\nCasa Maruja nació del recetario de una abuela y la terquedad de una nieta. Es el resultado de querer preservar los sabores que marcaron nuestra infancia, trayendo a la Valencia de hoy la honestidad de los platos de siempre. No buscábamos crear un concepto moderno, sino un refugio donde la tradición se mantuviera viva a través de las manos de quienes aman el fuego lento y el respeto por el legado familiar.\n\nNuestra propuesta\nNuestra cocina se rige por lo que el mercado nos dicta cada mañana. Visitamos a nuestros proveedores locales en Ruzafa para seleccionar el producto de temporada en su punto óptimo de madurez y sabor. Creemos en una cocina casera sin florituras innecesarias, donde el ingrediente es el protagonista absoluto y el trato familiar hace que cada cliente se sienta como un invitado en nuestra propia casa. Para nosotros, la calidad no está reñida con el precio, por eso mantenemos una propuesta asequible que permita a los vecinos disfrutar de comida real todos los días de la semana. Cada elección en nuestra carta tiene un porqué: desde el origen de la verdura hasta el punto exacto de la cocción, buscando siempre la máxima expresión del sabor tradicional valenciano.\n\nEspecialidades\n- Arròs al forn (los lunes)\n- Croquetas de puchero hechas a mano\n- Menú del día por 12 €\n- Platos de cuchara según mercado\n\nEstilo visual\nNuestra identidad se apoya en una paleta de colores orgánicos que reflejan la tierra y el producto: el marrón #8b5a2b, el mostaza #d4a017 y el verde oliva #556b2f. Utilizamos una tipografía sans-serif limpia para mantener la claridad y un estilo fotográfico que prioriza la luz natural, las texturas rústicas de la madera y la honestidad del plato servido sin artificios.\n\n📍 Ruzafa, Valencia\n🌐 https://www.casamaruja.es",
+      "strategic_decisions": {
+        "surface_format": {
+          "chosen": "post",
+          "alternatives_considered": [
+            "story"
+          ],
+          "rationale": "El formato post permite una descripción más detallada del producto de temporada y permanece visible en el feed durante toda la semana de vigencia del plato."
+        },
+        "angle": {
+          "chosen": "producto de temporada y origen local",
+          "alternatives_considered": [
+            "behind_the_scenes"
+          ],
+          "rationale": "Se alinea directamente con la petición del usuario de destacar el plato estrella y explicar la elección basada en el mercado."
+        },
+        "voice": {
+          "chosen": "cálida, honesta y sin florituras",
+          "alternatives_considered": [
+            "profesional"
+          ],
+          "rationale": "Refuerza el valor de 'cocina casera' y 'trato familiar' definido en el brief, evitando un tono comercial frío."
+        }
+      },
+      "visual_style_notes": "Iluminación natural lateral para resaltar texturas. Uso de fondos de madera rústica alineados con el tono #8b5a2b. Encuadre cenital o a 45 grados centrado en el producto.",
+      "narrative_connection": null,
+      "image": {
+        "concept": "Primer plano de un plato de temporada servido en cerámica tradicional sobre una mesa de madera rústica.",
+        "generation_prompt": "Close-up of a traditional Spanish seasonal dish, like a vegetable stew or roasted meat, served in a simple ceramic bowl. Rustic wooden table background with visible grain. Natural soft window light from the side. Color palette emphasizing earth tones #8b5a2b and olive green #556b2f. Authentic, warm, and appetizing atmosphere. 4:5 aspect ratio.",
+        "alt_text": "Un plato de comida casera de temporada servido sobre una mesa de madera rústica con luz natural."
+      },
+      "caption": {
+        "hook": "Esta semana el mercado nos ha traído lo mejor y no hemos podido resistirnos.",
+        "body": "Hemos elegido este plato como nuestro protagonista porque representa exactamente lo que somos: respeto por el producto y cocina sin prisas. Ingredientes frescos, directos de Ruzafa a nuestra cocina, cocinados como lo hacía la abuela.\n\nVen a probarlo en nuestro menú del día por solo 12 €.",
+        "cta_line": "Reserva tu mesa enviándonos un DM."
+      },
+      "cta": {
+        "channel": "dm",
+        "url_or_handle": null,
+        "label": "Reserva por DM"
+      },
+      "hashtag_strategy": {
+        "intent": "local_discovery",
+        "suggested_volume": 10,
+        "themes": [
+          "Ruzafa",
+          "cocina de mercado",
+          "Valencia foodies",
+          "producto de temporada"
+        ]
+      },
+      "do_not": [
+        "no usar tipografía sobre la imagen",
+        "no aplicar filtros que desaturen los colores naturales",
+        "no usar un tono de voz excesivamente formal",
+        "no incluir más de un canal de contacto",
+        "no usar fotos de stock genéricas"
+      ],
+      "visual_selection": {
+        "recommended_asset_urls": [
+          "https://i.pinimg.com/736x/00/2f/ef/002fefd0c200e93fd65f823cac70ed05.jpg"
+        ],
+        "recommended_reference_urls": [],
+        "avoid_asset_urls": [
+          "https://cdn.example/casamaruja/equipo.jpg"
+        ]
+      },
+      "confidence": {
+        "surface_format": "high",
+        "angle": "high",
+        "palette_match": "high",
+        "cta_channel": "high"
+      },
+      "brand_intelligence": {
+        "business_taxonomy": "local_food_service",
+        "funnel_stage_target": "consideration",
+        "voice_register": "cercano-artesanal",
+        "emotional_beat": "pertenencia",
+        "audience_persona": "Vecino de Ruzafa de 35-55 años que busca comida honesta y huye de los sitios pretenciosos; su mayor objeción es la falta de autenticidad.",
+        "unfair_advantage": "Recetario de abuela ejecutado con producto fresco del mercado de Ruzafa a precio de barrio (12 €).",
+        "risk_flags": [],
+        "rhetorical_device": "narración_origen"
+      }
+    },
+    "warnings": [],
+    "trace": {
+      "task_id": "eeee5555-eeee-5555-eeee-555555555555",
+      "action_code": "create_post",
+      "surface": "post",
+      "mode": "create",
+      "latency_ms": 30439,
+      "gemini_model": "gemini-3-flash-preview",
+      "repair_attempted": false,
+      "degraded": false,
+      "gallery_stats": {
+        "raw_count": 4,
+        "accepted_count": 4,
+        "rejected_count": 0,
+        "truncated": false
+      }
+    }
+  },
+  "error_message": null
+}</pre>
+  </details>
+</div>
+
+
+<div class="tab-panel" id="panel-1">
+  <div class="grid-3">
+    <div class="card"><h3>Status</h3><div class="v">COMPLETED <small>post / create</small></div></div>
+    <div class="card"><h3>Latency</h3><div class="v">20924 ms <small>repair: no</small></div></div>
+    <div class="card"><h3>Gallery</h3><div class="v">0 / 0 <small>degraded: yes</small></div></div>
+  </div>
+
+  <!-- POST CARD -->
+  <div class="post-card">
+    <div class="post-head">
+      <span class="surface-pill">POST</span>
+      <span class="pillar-pill">PRODUCT</span>
+      <h3 class="post-title">Lanzamiento Alertas Predictivas</h3>
+    </div>
+    <div class="post-grid">
+      <div class="post-col">
+        <div class="post-section">
+          <h4>🎯 Objective</h4>
+          <p>Anunciar la nueva funcionalidad de alertas predictivas para generar interés y tráfico hacia la web de Pulsemetrics.</p>
+        </div>
+        <div class="post-section">
+          <h4>⚔️ Strategic decisions</h4>
+          <div class="decision">  <div class="label">Surface format</div>  <div class="chosen">post</div>  <div class="alts"><span class="alt">story</span><span class="alt">carousel</span></div>  <div class="why">El formato post permite una presencia permanente en el feed para un lanzamiento de producto clave, alineándose con la preferencia de estilo image_text del brief.</div></div><div class="decision">  <div class="label">Angle</div>  <div class="chosen">eficiencia operacional mediante alertas predictivas</div>  <div class="alts"><span class="alt">comparativa técnica</span><span class="alt">ahorro de costes</span></div>  <div class="why">Se elige este ángulo para conectar directamente con el dolor principal del target (ruido en alertas) y el beneficio de ahorro de tiempo mencionado en el user_request.</div></div><div class="decision">  <div class="label">Voice</div>  <div class="chosen">profesional y orientado a resultados</div>  <div class="alts"><span class="alt">cercano</span><span class="alt">visionario</span></div>  <div class="why">Mantiene la coherencia con el estilo de comunicación profesional definido en los tokens de marca y el tono solicitado por el usuario.</div></div>
+        </div>
+        <div class="post-section">
+          <h4>✨ Visual style notes</h4>
+          <p>Composición limpia con predominio del azul oscuro #0b1f3a. Uso de acentos en azul brillante #1e88e5 para resaltar datos clave. Tipografía sans-serif clara sobre fondo #f5f7fa.</p>
+        </div>
+        <div class="post-section">
+          <h4>🚫 Do not</h4>
+          <div class="pill-row"><span class="chip ghost">no usar emojis excesivos</span><span class="chip ghost">no usar filtros vintage o desaturados</span><span class="chip ghost">no incluir precios no confirmados</span><span class="chip ghost">no usar lenguaje excesivamente informal</span><span class="chip ghost">no colocar texto que tape la visualización de datos</span></div>
+        </div>
+      </div>
+      <div class="post-col">
+        <div class="post-section">
+          <h4>🖼️ Image brief</h4>
+          <div class="img-brief"><div class="lbl">Concept</div><div class="body">Visualización de una alerta predictiva evitando un pico crítico en un entorno de software profesional.</div></div>
+          <div class="img-brief gen"><div class="lbl">Generation prompt</div><div class="body">A clean, minimalist software dashboard displayed on a high-end studio monitor. The UI features a dark theme using #0b1f3a. A prominent line graph in #1e88e5 blue shows a steady trend with a highlighted predictive segment that stays flat while a ghosted red line spikes upward. Professional office background with soft bokeh. High resolution, 4k, tech aesthetic, 4:5 aspect ratio.</div></div>
+          <div class="img-brief alt"><div class="lbl">Alt text</div><div class="body">Monitor mostrando un panel de control tecnológico con una gráfica de métricas en azul prediciendo la estabilidad del sistema.</div></div>
+        </div>
+        <div class="post-section">
+          <h4>📝 Caption</h4>
+          <div class="cap hook"><div class="lbl"><span>Hook</span><span class="len">44 ch</span></div><div class="txt">Anticipa el incidente antes de que ocurra. 🚀</div></div>
+          <div class="cap body"><div class="lbl"><span>Body</span><span class="len">368 ch</span></div><div class="txt">Presentamos las nuevas Alertas Predictivas de Pulsemetrics. En el mundo SRE, cada segundo cuenta. Nuestra nueva funcionalidad utiliza ML para identificar patrones anómalos antes de que afecten a tus usuarios finales.
+
+Menos ruido, más señal. Reduce el MTTR y devuelve horas de trabajo real a tu equipo de operaciones. Integración nativa con Slack, Datadog y PagerDuty.</div></div>
+          <div class="cap cta"><div class="lbl"><span>CTA line</span><span class="len">55 ch</span></div><div class="txt">Descubre el futuro de la observabilidad en nuestra web.</div></div>
+        </div>
+        <div class="post-section">
+          <h4>👉 Call to action</h4>
+          <div class="cta-card">  <span class="ch">WEBSITE</span>  <span class="lbl">Saber más</span>  <span class="url">→ https://www.pulsemetrics.io</span></div>
+        </div>
+        <div class="post-section">
+          <h4>🏷️ Hashtag strategy</h4>
+          <div class="pill-row"><span class="chip">intent · brand_awareness</span><span class="chip">volume · 10</span></div>
+          <div class="pill-row"><span class="chip">#SRE</span><span class="chip">#DevOps</span><span class="chip">#Observabilidad</span><span class="chip">#SaaS B2B</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BRAND DNA (NEW · public) -->
+  <div class="card-block">
+    <div class="card-block-head"><h3>🧬 Brand DNA</h3><span class="tag-public">public · viaja a Content Factory</span></div>
+    <p class="lead">Narrativa destilada del brief. El copywriter de CONTENT_FACTORY la lee antes de redactar.</p>
+    <pre class="dna">Bienvenidos a Pulsemetrics
+La plataforma de analítica operacional que anticipa el futuro de tu infraestructura.
+
+Nuestra Historia
+Fundada en 2022, Pulsemetrics nació para resolver el exceso de ruido en la monitorización moderna. Trabajamos con equipos de producto en empresas medianas y enterprise para transformar la observabilidad en acción preventiva.
+
+Nuestra propuesta
+Combinamos métricas en tiempo real con alertas inteligentes basadas en Machine Learning. Nuestro enfoque permite a los equipos DevOps y SRE ganar horas de productividad cada semana al filtrar el ruido y centrarse en lo que realmente importa antes de que ocurra un incidente.
+
+Especialidades
+- Dashboard de analítica operacional
+- Alertas predictivas con Machine Learning
+- Integraciones con Datadog, PagerDuty y Slack
+- Planes Team y Enterprise
+
+Estilo visual
+Identidad tecnológica basada en una paleta de azules profundos #0b1f3a y #1e88e5 sobre fondos limpios #f5f7fa. El estilo es minimalista, con tipografías sans-serif y composiciones que priorizan la claridad de los datos.
+
+🌐 https://www.pulsemetrics.io</pre>
+  </div>
+
+  <!-- BRAND INTELLIGENCE (NEW · internal) -->
+  <div class="card-block">
+    <div class="card-block-head"><h3>🧠 Brand Intelligence</h3><span class="tag-internal">internal · solo subagentes</span></div>
+    <p class="lead">Razonamiento interno del agente. Nunca aparece en el post; informa a specialists downstream.</p>
+    <div class="bi-grid"><div class="bi-row"><div class="bi-label">Business taxonomy</div><div class="bi-value">b2b_saas_analytics</div></div><div class="bi-row"><div class="bi-label">Funnel stage</div><div class="bi-value">awareness</div></div><div class="bi-row"><div class="bi-label">Voice register</div><div class="bi-value">autoritativo-tecnológico</div></div><div class="bi-row"><div class="bi-label">Emotional beat</div><div class="bi-value">tranquilidad</div></div><div class="bi-row"><div class="bi-label">Audience persona</div><div class="bi-value">Responsable SRE en SaaS mediana que gestiona infraestructura compleja; su mayor objeción es que una nueva herramienta genere más ruido que soluciones.</div></div><div class="bi-row"><div class="bi-label">Unfair advantage</div><div class="bi-value">Anticipación real de incidentes mediante ML antes de que el usuario note el impacto, reduciendo el ruido operativo.</div></div><div class="bi-row"><div class="bi-label">Rhetorical device</div><div class="bi-value">contraste</div></div><div class="bi-row"><div class="bi-label">Risk flags</div><div class="bi-value"><span class="chip ghost">none</span></div></div></div>
+  </div>
+
+  <div class="split-2">
+    <div class="card-block">
+      <h3>Visual selection</h3>
+      <div class="pill-row" style="margin:6px 0 10px;">
+        <span class="chip good">use · 0</span>
+        <span class="chip">reference · 0</span>
+        <span class="chip bad">avoid · 0</span>
+      </div>
+      <div class="bi-empty">No gallery recommendations.</div>
+    </div>
+    <div class="card-block">
+      <h3>Confidence</h3>
+      <div class="conf-row">
+        <div class="conf"><b>surface_format</b><span class="lvl high">high</span></div>
+        <div class="conf"><b>angle</b><span class="lvl high">high</span></div>
+        <div class="conf"><b>palette_match</b><span class="lvl high">high</span></div>
+        <div class="conf"><b>cta_channel</b><span class="lvl high">high</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-block">
+    <h3>Warnings</h3>
+    <div class="pill-row"><span class="chip warn" title="No images supplied">gallery_empty</span></div>
+  </div>
+
+  <details class="acc">
+    <summary>Raw input envelope (ROUTER → MARKETER)</summary>
+    <pre class="json">{
+  "task_id": "aaaa1111-aaaa-1111-aaaa-111111111111",
+  "job_id": "bbbb2222-bbbb-2222-bbbb-222222222222",
+  "action_code": "create_post",
+  "action_id": "cccc3333-cccc-3333-cccc-333333333333",
+  "correlation_id": "saas-20260420-101",
+  "callback_url": "https://d1lwu6lioovdrb.cloudfront.net/api/v1/tasks/aaaa1111-aaaa-1111-aaaa-111111111111/callback",
+  "payload": {
+    "client_request": {
+      "description": "Anuncia el lanzamiento de nuestra nueva funcionalidad de alertas predictivas para equipos de operaciones, enfatizando el ahorro de tiempo y la reducción de incidentes. Tono claro y orientado a resultados.",
+      "attachments": []
+    },
+    "context": {
+      "account_uuid": "d1e2f3a4-5566-7788-99aa-bbccddeeff00",
+      "client_name": "Pulsemetrics",
+      "platform": "instagram"
+    },
+    "action_execution_gates": {
+      "brief": {
+        "passed": true,
+        "reason": "ok",
+        "status_code": 200,
+        "response": {
+          "status": "success",
+          "message": "Account with brief retrieved successfully",
+          "data": {
+            "uuid": "d1e2f3a4-5566-7788-99aa-bbccddeeff00",
+            "profile": {
+              "business_name": "Pulsemetrics",
+              "website_url": "https://www.pulsemetrics.io",
+              "tone": "profesional, claro, orientado a resultados"
+            },
+            "brief": {
+              "uuid": "abcd0002-0000-0000-0000-000000000002",
+              "form_values": {
+                "FIELD_COMPANY_NAME": "Pulsemetrics",
+                "FIELD_COMPANY_CATEGORY": "SaaS B2B",
+                "FIELD_COUNTRY": "España",
+                "FIELD_LARGE_ANSWER": "Pulsemetrics es una plataforma de analítica operacional para equipos SRE y DevOps. Combina métricas en tiempo real con alertas inteligentes basadas en ML para anticipar incidentes antes de que afecten al usuario. Fundada en 2022, trabajamos con equipos de producto en empresas medianas y enterprise.",
+                "FIELD_PRODUCTS_SERVICES_ANSWER": "Dashboard de analítica operacional, alertas predictivas, integraciones con Datadog, PagerDuty, Slack. Planes Team y Enterprise.",
+                "FIELD_TARGET_CUSTOMER_ANSWER": "Responsables de operaciones, SREs, líderes de producto y CTOs en empresas SaaS medianas (50-500 empleados) que gestionan infraestructura compleja y necesitan reducir el MTTR.",
+                "FIELD_VALUE_PROPOSITION": "Anticipamos incidentes antes de que ocurran. Menos ruido, más señal: el equipo de operaciones gana horas cada semana.",
+                "FIELD_COMMUNICATION_LANGUAGE": "spanish",
+                "FIELD_COMMUNICATION_STYLE": "professional",
+                "FIELD_COLOR_LIST_PICKER": [
+                  "#0B1F3A",
+                  "#1E88E5",
+                  "#F5F7FA"
+                ],
+                "FIELD_FONT_STYLE": "sans",
+                "FIELD_POST_CONTENT_STYLE": "image_text",
+                "FIELD_KEYWORDS_TAGS_INPUT": [
+                  "observabilidad",
+                  "alertas predictivas",
+                  "SRE",
+                  "DevOps",
+                  "MTTR"
+                ],
+                "FIELD_WEBSITE_URL": "https://www.pulsemetrics.io",
+                "FIELD_HAS_BRAND_MATERIAL": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "agent_sequence": {
+      "current": {
+        "step_code": "marketing_enrichment",
+        "step_order": 1,
+        "task_id": "aaaa1111-aaaa-1111-aaaa-111111111111",
+        "agent_id": "5a258d4e-b01d-48dc-95b1-0e67d81b7f4c",
+        "agent_name": "marketer",
+        "endpoint": "https://marketer.internal/tasks",
+        "http_method": "POST",
+        "is_mandatory": true,
+        "timeout_seconds": 60,
+        "retry_count": 0
+      },
+      "previous": {}
+    }
+  }
+}</pre>
+  </details>
+  <details class="acc">
+    <summary>Raw output callback (MARKETER → ROUTER)</summary>
+    <pre class="json">{
+  "status": "COMPLETED",
+  "output_data": {
+    "enrichment": {
+      "schema_version": "2.0",
+      "surface_format": "post",
+      "content_pillar": "product",
+      "title": "Lanzamiento Alertas Predictivas",
+      "objective": "Anunciar la nueva funcionalidad de alertas predictivas para generar interés y tráfico hacia la web de Pulsemetrics.",
+      "brand_dna": "Bienvenidos a Pulsemetrics\nLa plataforma de analítica operacional que anticipa el futuro de tu infraestructura.\n\nNuestra Historia\nFundada en 2022, Pulsemetrics nació para resolver el exceso de ruido en la monitorización moderna. Trabajamos con equipos de producto en empresas medianas y enterprise para transformar la observabilidad en acción preventiva.\n\nNuestra propuesta\nCombinamos métricas en tiempo real con alertas inteligentes basadas en Machine Learning. Nuestro enfoque permite a los equipos DevOps y SRE ganar horas de productividad cada semana al filtrar el ruido y centrarse en lo que realmente importa antes de que ocurra un incidente.\n\nEspecialidades\n- Dashboard de analítica operacional\n- Alertas predictivas con Machine Learning\n- Integraciones con Datadog, PagerDuty y Slack\n- Planes Team y Enterprise\n\nEstilo visual\nIdentidad tecnológica basada en una paleta de azules profundos #0b1f3a y #1e88e5 sobre fondos limpios #f5f7fa. El estilo es minimalista, con tipografías sans-serif y composiciones que priorizan la claridad de los datos.\n\n🌐 https://www.pulsemetrics.io",
+      "strategic_decisions": {
+        "surface_format": {
+          "chosen": "post",
+          "alternatives_considered": [
+            "story",
+            "carousel"
+          ],
+          "rationale": "El formato post permite una presencia permanente en el feed para un lanzamiento de producto clave, alineándose con la preferencia de estilo image_text del brief."
+        },
+        "angle": {
+          "chosen": "eficiencia operacional mediante alertas predictivas",
+          "alternatives_considered": [
+            "comparativa técnica",
+            "ahorro de costes"
+          ],
+          "rationale": "Se elige este ángulo para conectar directamente con el dolor principal del target (ruido en alertas) y el beneficio de ahorro de tiempo mencionado en el user_request."
+        },
+        "voice": {
+          "chosen": "profesional y orientado a resultados",
+          "alternatives_considered": [
+            "cercano",
+            "visionario"
+          ],
+          "rationale": "Mantiene la coherencia con el estilo de comunicación profesional definido en los tokens de marca y el tono solicitado por el usuario."
+        }
+      },
+      "visual_style_notes": "Composición limpia con predominio del azul oscuro #0b1f3a. Uso de acentos en azul brillante #1e88e5 para resaltar datos clave. Tipografía sans-serif clara sobre fondo #f5f7fa.",
+      "narrative_connection": null,
+      "image": {
+        "concept": "Visualización de una alerta predictiva evitando un pico crítico en un entorno de software profesional.",
+        "generation_prompt": "A clean, minimalist software dashboard displayed on a high-end studio monitor. The UI features a dark theme using #0b1f3a. A prominent line graph in #1e88e5 blue shows a steady trend with a highlighted predictive segment that stays flat while a ghosted red line spikes upward. Professional office background with soft bokeh. High resolution, 4k, tech aesthetic, 4:5 aspect ratio.",
+        "alt_text": "Monitor mostrando un panel de control tecnológico con una gráfica de métricas en azul prediciendo la estabilidad del sistema."
+      },
+      "caption": {
+        "hook": "Anticipa el incidente antes de que ocurra. 🚀",
+        "body": "Presentamos las nuevas Alertas Predictivas de Pulsemetrics. En el mundo SRE, cada segundo cuenta. Nuestra nueva funcionalidad utiliza ML para identificar patrones anómalos antes de que afecten a tus usuarios finales.\n\nMenos ruido, más señal. Reduce el MTTR y devuelve horas de trabajo real a tu equipo de operaciones. Integración nativa con Slack, Datadog y PagerDuty.",
+        "cta_line": "Descubre el futuro de la observabilidad en nuestra web."
+      },
+      "cta": {
+        "channel": "website",
+        "url_or_handle": "https://www.pulsemetrics.io",
+        "label": "Saber más"
+      },
+      "hashtag_strategy": {
+        "intent": "brand_awareness",
+        "suggested_volume": 10,
+        "themes": [
+          "SRE",
+          "DevOps",
+          "Observabilidad",
+          "SaaS B2B"
+        ]
+      },
+      "do_not": [
+        "no usar emojis excesivos",
+        "no usar filtros vintage o desaturados",
+        "no incluir precios no confirmados",
+        "no usar lenguaje excesivamente informal",
+        "no colocar texto que tape la visualización de datos"
+      ],
+      "visual_selection": {
+        "recommended_asset_urls": [],
+        "recommended_reference_urls": [],
+        "avoid_asset_urls": []
+      },
+      "confidence": {
+        "surface_format": "high",
+        "angle": "high",
+        "palette_match": "high",
+        "cta_channel": "high"
+      },
+      "brand_intelligence": {
+        "business_taxonomy": "b2b_saas_analytics",
+        "funnel_stage_target": "awareness",
+        "voice_register": "autoritativo-tecnológico",
+        "emotional_beat": "tranquilidad",
+        "audience_persona": "Responsable SRE en SaaS mediana que gestiona infraestructura compleja; su mayor objeción es que una nueva herramienta genere más ruido que soluciones.",
+        "unfair_advantage": "Anticipación real de incidentes mediante ML antes de que el usuario note el impacto, reduciendo el ruido operativo.",
+        "risk_flags": [],
+        "rhetorical_device": "contraste"
+      }
+    },
+    "warnings": [
+      {
+        "code": "gallery_empty",
+        "message": "No images supplied",
+        "field": null
+      }
+    ],
+    "trace": {
+      "task_id": "aaaa1111-aaaa-1111-aaaa-111111111111",
+      "action_code": "create_post",
+      "surface": "post",
+      "mode": "create",
+      "latency_ms": 20924,
+      "gemini_model": "gemini-3-flash-preview",
+      "repair_attempted": false,
+      "degraded": true,
+      "gallery_stats": {
+        "raw_count": 0,
+        "accepted_count": 0,
+        "rejected_count": 0,
+        "truncated": false
+      }
+    }
+  },
+  "error_message": null
+}</pre>
+  </details>
+</div>
+
+
+<div class="tab-panel" id="panel-2">
+  <div class="grid-3">
+    <div class="card"><h3>Status</h3><div class="v">COMPLETED <small>post / create</small></div></div>
+    <div class="card"><h3>Latency</h3><div class="v">24276 ms <small>repair: no</small></div></div>
+    <div class="card"><h3>Gallery</h3><div class="v">6 / 6 <small>degraded: no</small></div></div>
+  </div>
+
+  <!-- POST CARD -->
+  <div class="post-card">
+    <div class="post-head">
+      <span class="surface-pill">POST</span>
+      <span class="pillar-pill">PRODUCT</span>
+      <h3 class="post-title">Lanzamiento Cápsula Primavera Algodón Reciclado</h3>
+    </div>
+    <div class="post-grid">
+      <div class="post-col">
+        <div class="post-section">
+          <h4>🎯 Objective</h4>
+          <p>Generar tráfico a la tienda online y comunicar el valor del algodón reciclado en la nueva colección.</p>
+        </div>
+        <div class="post-section">
+          <h4>⚔️ Strategic decisions</h4>
+          <div class="decision">  <div class="label">Surface format</div>  <div class="chosen">post</div>  <div class="alts"><span class="alt">carousel</span></div>  <div class="why">Al ser un lanzamiento de colección con un estilo visual definido como image_text, el formato post permite una composición estática de alta calidad que resalta la textura del tejido y el mensaje de sostenibilidad de forma directa.</div></div><div class="decision">  <div class="label">Angle</div>  <div class="chosen">moda consciente con algodón reciclado</div>  <div class="alts"><span class="alt">estética minimalista de primavera</span><span class="alt">producción local en Portugal</span></div>  <div class="why">Responde directamente a la petición de destacar el valor sostenible y el material específico de la nueva cápsula de primavera, alineándose con la propuesta de valor de la marca.</div></div><div class="decision">  <div class="label">Voice</div>  <div class="chosen">honesta, estética y consciente</div>  <div class="alts"><span class="alt">informativa y técnica</span></div>  <div class="why">Combina el tono cercano del brief con la necesidad de proyectar una imagen de marca de moda premium y responsable, evitando un tono puramente comercial.</div></div>
+        </div>
+        <div class="post-section">
+          <h4>✨ Visual style notes</h4>
+          <p>Composición minimalista centrada en la textura del tejido. Uso de la paleta orgánica con fondo en #e8e4d9 y producto en #2f5233. Tipografía serif para el texto sobre imagen siguiendo el estilo image_text.</p>
+        </div>
+        <div class="post-section">
+          <h4>🚫 Do not</h4>
+          <div class="pill-row"><span class="chip ghost">no usar tipografía sans-serif</span><span class="chip ghost">no usar colores fuera de la paleta #2f5233, #e8e4d9, #c9a66b</span><span class="chip ghost">no usar imágenes con mucho ruido visual</span><span class="chip ghost">no incluir llamadas a la acción genéricas como compra ya</span><span class="chip ghost">no usar filtros excesivamente saturados</span></div>
+        </div>
+      </div>
+      <div class="post-col">
+        <div class="post-section">
+          <h4>🖼️ Image brief</h4>
+          <div class="img-brief"><div class="lbl">Concept</div><div class="body">Primer plano de la textura del algodón reciclado en la nueva prenda verde para enfatizar la calidad táctil.</div></div>
+          <div class="img-brief gen"><div class="lbl">Generation prompt</div><div class="body">Close-up of a high-quality recycled cotton t-shirt in forest green #2f5233. The fabric texture is clearly visible, showing the slight irregularities of recycled fibers. The garment is neatly folded on a neutral beige #e8e4d9 linen surface. Soft, natural morning light creates gentle shadows. Minimalist aesthetic, 4:5 aspect ratio.</div></div>
+          <div class="img-brief alt"><div class="lbl">Alt text</div><div class="body">Primer plano de una camiseta de algodón reciclado verde sobre un fondo de lino beige con luz natural suave.</div></div>
+        </div>
+        <div class="post-section">
+          <h4>📝 Caption</h4>
+          <div class="cap hook"><div class="lbl"><span>Hook</span><span class="len">58 ch</span></div><div class="txt">La primavera ya está aquí, y viene con un propósito claro.</div></div>
+          <div class="cap body"><div class="lbl"><span>Body</span><span class="len">375 ch</span></div><div class="txt">Presentamos nuestra nueva colección cápsula. Prendas diseñadas en Barcelona y confeccionadas en Portugal con algodón reciclado certificado GOTS. 
+
+En Verdea Studio creemos en una moda que no deja huella. Por eso, nuestras ediciones son limitadas, evitando el sobrestock y respetando los tiempos de la naturaleza. Calidad, transparencia y diseño minimalista para tu día a día.</div></div>
+          <div class="cap cta"><div class="lbl"><span>CTA line</span><span class="len">48 ch</span></div><div class="txt">Descubre la cápsula de primavera en nuestra web.</div></div>
+        </div>
+        <div class="post-section">
+          <h4>👉 Call to action</h4>
+          <div class="cta-card">  <span class="ch">WEBSITE</span>  <span class="lbl">Ver colección</span>  <span class="url">→ https://www.verdeastudio.com</span></div>
+        </div>
+        <div class="post-section">
+          <h4>🏷️ Hashtag strategy</h4>
+          <div class="pill-row"><span class="chip">intent · brand_awareness</span><span class="chip">volume · 10</span></div>
+          <div class="pill-row"><span class="chip">#moda sostenible</span><span class="chip">#algodón reciclado</span><span class="chip">#slow fashion</span><span class="chip">#diseño consciente</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BRAND DNA (NEW · public) -->
+  <div class="card-block">
+    <div class="card-block-head"><h3>🧬 Brand DNA</h3><span class="tag-public">public · viaja a Content Factory</span></div>
+    <p class="lead">Narrativa destilada del brief. El copywriter de CONTENT_FACTORY la lee antes de redactar.</p>
+    <pre class="dna">Bienvenidos a Verdea Studio
+Moda slow hecha con tejidos reciclados y certificados.
+
+Nuestra Historia
+Nacida en Barcelona en 2021, Verdea Studio surge con la misión de transformar la industria textil desde la honestidad y la consciencia. Lo que empezó como una búsqueda personal de prendas que respetaran el planeta se convirtió en una marca que diseña colecciones cápsula reducidas, priorizando siempre la calidad sobre la cantidad y el respeto por los procesos humanos y ambientales.
+
+Nuestra propuesta
+Apostamos por un modelo de negocio transparente y de cercanía. Todas nuestras prendas se diseñan en nuestro estudio de Barcelona y se confeccionan en pequeños talleres de Portugal, garantizando condiciones laborales justas y reduciendo la huella de carbono del transporte. Utilizamos exclusivamente tejidos certificados, como el algodón reciclado GOTS y el lino europeo, para asegurar que cada fibra cumple con los más altos estándares de sostenibilidad. Nuestro enfoque de ediciones limitadas nos permite operar sin excedentes de stock, combatiendo directamente el fast fashion.
+
+Especialidades
+- Prendas unisex de temporada con diseño minimalista
+- Colecciones cápsula en ediciones limitadas
+- Camisetas y básicos de algodón reciclado certificado GOTS
+- Prendas de lino europeo de alta calidad
+- Producción ética de cercanía en Portugal
+
+Estilo visual
+Nuestra identidad visual refleja la calma y la naturaleza a través de una paleta orgánica compuesta por el verde bosque #2f5233, el beige arena #e8e4d9 y el tono tierra #c9a66b. Apostamos por una estética limpia y minimalista, utilizando tipografías serif que evocan tradición y elegancia atemporal. Las imágenes suelen capturar la textura real de los tejidos bajo luz natural, evitando artificios.
+
+📍 Barcelona, España
+🌐 https://www.verdeastudio.com
+📸 https://instagram.com/verdeastudio</pre>
+  </div>
+
+  <!-- BRAND INTELLIGENCE (NEW · internal) -->
+  <div class="card-block">
+    <div class="card-block-head"><h3>🧠 Brand Intelligence</h3><span class="tag-internal">internal · solo subagentes</span></div>
+    <p class="lead">Razonamiento interno del agente. Nunca aparece en el post; informa a specialists downstream.</p>
+    <div class="bi-grid"><div class="bi-row"><div class="bi-label">Business taxonomy</div><div class="bi-value">b2c_ecom_fashion</div></div><div class="bi-row"><div class="bi-label">Funnel stage</div><div class="bi-value">conversion</div></div><div class="bi-row"><div class="bi-label">Voice register</div><div class="bi-value">honesto-estético</div></div><div class="bi-row"><div class="bi-label">Emotional beat</div><div class="bi-value">tranquilidad</div></div><div class="bi-row"><div class="bi-label">Audience persona</div><div class="bi-value">Mujer u hombre urbano de 25-40 años que busca básicos atemporales y sostenibles; su principal objeción es si la calidad realmente justifica el precio frente al fast fashion.</div></div><div class="bi-row"><div class="bi-label">Unfair advantage</div><div class="bi-value">Diseño en Barcelona con producción local en Portugal y tejidos 100% certificados GOTS en ediciones limitadas.</div></div><div class="bi-row"><div class="bi-label">Rhetorical device</div><div class="bi-value">especificidad_concreta</div></div><div class="bi-row"><div class="bi-label">Risk flags</div><div class="bi-value"><span class="chip ghost">none</span></div></div></div>
+  </div>
+
+  <div class="split-2">
+    <div class="card-block">
+      <h3>Visual selection</h3>
+      <div class="pill-row" style="margin:6px 0 10px;">
+        <span class="chip good">use · 1</span>
+        <span class="chip">reference · 0</span>
+        <span class="chip bad">avoid · 0</span>
+      </div>
+      <div class="img-row"><div class="thumb use"><span class="role" style="background:rgba(43,208,123,0.18);color:var(--good)">use</span><div class="t">https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc</div></div></div>
+    </div>
+    <div class="card-block">
+      <h3>Confidence</h3>
+      <div class="conf-row">
+        <div class="conf"><b>surface_format</b><span class="lvl high">high</span></div>
+        <div class="conf"><b>angle</b><span class="lvl high">high</span></div>
+        <div class="conf"><b>palette_match</b><span class="lvl high">high</span></div>
+        <div class="conf"><b>cta_channel</b><span class="lvl high">high</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-block">
+    <h3>Warnings</h3>
+    <div class="pill-row"><span class="chip good">no warnings</span></div>
+  </div>
+
+  <details class="acc">
+    <summary>Raw input envelope (ROUTER → MARKETER)</summary>
+    <pre class="json">{
+  "task_id": "dddd4444-dddd-4444-dddd-444444444444",
+  "job_id": "eeee5555-eeee-5555-eeee-555555555501",
+  "action_code": "create_post",
+  "action_id": "ffff6666-ffff-6666-ffff-666666666601",
+  "correlation_id": "retail-20260420-202",
+  "callback_url": "https://d1lwu6lioovdrb.cloudfront.net/api/v1/tasks/dddd4444-dddd-4444-dddd-444444444444/callback",
+  "payload": {
+    "client_request": {
+      "description": "Crea un post para el lanzamiento de la nueva colección cápsula de primavera, hecha con algodón reciclado. Queremos dirigir tráfico a la tienda online y transmitir el valor sostenible.",
+      "attachments": []
+    },
+    "context": {
+      "account_uuid": "112233aa-bbcc-44dd-55ee-66ff77889900",
+      "client_name": "Verdea Studio",
+      "platform": "instagram"
+    },
+    "action_execution_gates": {
+      "brief": {
+        "passed": true,
+        "reason": "ok",
+        "status_code": 200,
+        "response": {
+          "status": "success",
+          "message": "Account with brief retrieved successfully",
+          "data": {
+            "uuid": "112233aa-bbcc-44dd-55ee-66ff77889900",
+            "profile": {
+              "business_name": "Verdea Studio",
+              "website_url": "https://www.verdeastudio.com",
+              "instagram": "https://instagram.com/verdeastudio",
+              "tone": "cercano, honesto, estético y consciente"
+            },
+            "brief": {
+              "uuid": "abcd0003-0000-0000-0000-000000000003",
+              "form_values": {
+                "FIELD_COMPANY_NAME": "Verdea Studio",
+                "FIELD_COMPANY_CATEGORY": "Moda sostenible",
+                "FIELD_COUNTRY": "España",
+                "FIELD_LARGE_ANSWER": "Verdea Studio es una marca de ropa sostenible nacida en Barcelona en 2021. Diseñamos colecciones cápsula reducidas, con tejidos certificados (algodón reciclado GOTS, lino europeo) y producción de cercanía en Portugal. Vendemos exclusivamente online a través de nuestra tienda.",
+                "FIELD_PRODUCTS_SERVICES_ANSWER": "Prendas unisex de temporada, ediciones limitadas, algodón reciclado, lino, materiales certificados.",
+                "FIELD_TARGET_CUSTOMER_ANSWER": "Mujeres y hombres 25-40 urbanos, con sensibilidad medioambiental, que valoran el diseño minimalista y están dispuestos a pagar un precio justo por calidad y transparencia.",
+                "FIELD_VALUE_PROPOSITION": "Moda slow hecha con tejidos reciclados y certificados. Colecciones pequeñas, sin stock excedente, producción en Europa.",
+                "FIELD_COMMUNICATION_LANGUAGE": "spanish",
+                "FIELD_COMMUNICATION_STYLE": "friendly",
+                "FIELD_COLOR_LIST_PICKER": [
+                  "#2F5233",
+                  "#E8E4D9",
+                  "#C9A66B"
+                ],
+                "FIELD_FONT_STYLE": "serif",
+                "FIELD_POST_CONTENT_STYLE": "image_text",
+                "FIELD_KEYWORDS_TAGS_INPUT": [
+                  "moda sostenible",
+                  "algodón reciclado",
+                  "slow fashion",
+                  "colección cápsula",
+                  "primavera"
+                ],
+                "FIELD_WEBSITE_URL": "https://www.verdeastudio.com",
+                "FIELD_INSTAGRAM_URL": "https://instagram.com/verdeastudio",
+                "FIELD_HAS_BRAND_MATERIAL": true,
+                "FIELD_BRAND_MATERIAL": [
+                  {
+                    "url": "https://images.unsplash.com/photo-1523381210434-271e8be1f52b",
+                    "name": "camiseta_beige.jpg",
+                    "extension": "jpg",
+                    "size": 980000
+                  },
+                  {
+                    "url": "https://images.unsplash.com/photo-1542272604-787c3835535d",
+                    "name": "pantalon_lino.jpg",
+                    "extension": "jpg",
+                    "size": 1050000
+                  },
+                  {
+                    "url": "https://images.unsplash.com/photo-1496747611176-843222e1e57c",
+                    "name": "colgante_producto.jpg",
+                    "extension": "jpg",
+                    "size": 920000
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "image_catalog": {
+        "passed": true,
+        "reason": "ok",
+        "status_code": 200,
+        "response": {
+          "status": "success",
+          "data": [
+            {
+              "url": "https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc",
+              "name": "capsula_verde.jpg",
+              "extension": "jpg",
+              "size": 960000,
+              "tags": [
+                "coleccion_primavera",
+                "producto",
+                "algodon_reciclado"
+              ],
+              "description": "Camiseta verde de algodón reciclado sobre fondo natural con luz suave",
+              "category": "product_photo",
+              "used_previously": false
+            },
+            {
+              "url": "https://images.unsplash.com/photo-1434389677669-e08b4cac3105",
+              "name": "capsula_beige.jpg",
+              "extension": "jpg",
+              "size": 1020000,
+              "tags": [
+                "coleccion_primavera",
+                "producto",
+                "minimal"
+              ],
+              "description": "Prenda beige en plano cenital sobre textura de lino",
+              "category": "product_photo",
+              "used_previously": false
+            },
+            {
+              "url": "https://picsum.photos/seed/verdea-look/1200/1500",
+              "name": "look_primavera.jpg",
+              "extension": "jpg",
+              "size": 1150000,
+              "tags": [
+                "lookbook",
+                "modelo",
+                "exterior"
+              ],
+              "description": "Modelo vistiendo look completo en exterior con luz natural de primavera",
+              "category": "lookbook",
+              "used_previously": false
+            }
+          ]
+        }
+      }
+    },
+    "agent_sequence": {
+      "current": {
+        "step_code": "marketing_enrichment",
+        "step_order": 1,
+        "task_id": "dddd4444-dddd-4444-dddd-444444444444",
+        "agent_id": "5a258d4e-b01d-48dc-95b1-0e67d81b7f4c",
+        "agent_name": "marketer",
+        "endpoint": "https://marketer.internal/tasks",
+        "http_method": "POST",
+        "is_mandatory": true,
+        "timeout_seconds": 60,
+        "retry_count": 0
+      },
+      "previous": {}
+    }
+  }
+}</pre>
+  </details>
+  <details class="acc">
+    <summary>Raw output callback (MARKETER → ROUTER)</summary>
+    <pre class="json">{
+  "status": "COMPLETED",
+  "output_data": {
+    "enrichment": {
+      "schema_version": "2.0",
+      "surface_format": "post",
+      "content_pillar": "product",
+      "title": "Lanzamiento Cápsula Primavera Algodón Reciclado",
+      "objective": "Generar tráfico a la tienda online y comunicar el valor del algodón reciclado en la nueva colección.",
+      "brand_dna": "Bienvenidos a Verdea Studio\nModa slow hecha con tejidos reciclados y certificados.\n\nNuestra Historia\nNacida en Barcelona en 2021, Verdea Studio surge con la misión de transformar la industria textil desde la honestidad y la consciencia. Lo que empezó como una búsqueda personal de prendas que respetaran el planeta se convirtió en una marca que diseña colecciones cápsula reducidas, priorizando siempre la calidad sobre la cantidad y el respeto por los procesos humanos y ambientales.\n\nNuestra propuesta\nApostamos por un modelo de negocio transparente y de cercanía. Todas nuestras prendas se diseñan en nuestro estudio de Barcelona y se confeccionan en pequeños talleres de Portugal, garantizando condiciones laborales justas y reduciendo la huella de carbono del transporte. Utilizamos exclusivamente tejidos certificados, como el algodón reciclado GOTS y el lino europeo, para asegurar que cada fibra cumple con los más altos estándares de sostenibilidad. Nuestro enfoque de ediciones limitadas nos permite operar sin excedentes de stock, combatiendo directamente el fast fashion.\n\nEspecialidades\n- Prendas unisex de temporada con diseño minimalista\n- Colecciones cápsula en ediciones limitadas\n- Camisetas y básicos de algodón reciclado certificado GOTS\n- Prendas de lino europeo de alta calidad\n- Producción ética de cercanía en Portugal\n\nEstilo visual\nNuestra identidad visual refleja la calma y la naturaleza a través de una paleta orgánica compuesta por el verde bosque #2f5233, el beige arena #e8e4d9 y el tono tierra #c9a66b. Apostamos por una estética limpia y minimalista, utilizando tipografías serif que evocan tradición y elegancia atemporal. Las imágenes suelen capturar la textura real de los tejidos bajo luz natural, evitando artificios.\n\n📍 Barcelona, España\n🌐 https://www.verdeastudio.com\n📸 https://instagram.com/verdeastudio",
+      "strategic_decisions": {
+        "surface_format": {
+          "chosen": "post",
+          "alternatives_considered": [
+            "carousel"
+          ],
+          "rationale": "Al ser un lanzamiento de colección con un estilo visual definido como image_text, el formato post permite una composición estática de alta calidad que resalta la textura del tejido y el mensaje de sostenibilidad de forma directa."
+        },
+        "angle": {
+          "chosen": "moda consciente con algodón reciclado",
+          "alternatives_considered": [
+            "estética minimalista de primavera",
+            "producción local en Portugal"
+          ],
+          "rationale": "Responde directamente a la petición de destacar el valor sostenible y el material específico de la nueva cápsula de primavera, alineándose con la propuesta de valor de la marca."
+        },
+        "voice": {
+          "chosen": "honesta, estética y consciente",
+          "alternatives_considered": [
+            "informativa y técnica"
+          ],
+          "rationale": "Combina el tono cercano del brief con la necesidad de proyectar una imagen de marca de moda premium y responsable, evitando un tono puramente comercial."
+        }
+      },
+      "visual_style_notes": "Composición minimalista centrada en la textura del tejido. Uso de la paleta orgánica con fondo en #e8e4d9 y producto en #2f5233. Tipografía serif para el texto sobre imagen siguiendo el estilo image_text.",
+      "narrative_connection": null,
+      "image": {
+        "concept": "Primer plano de la textura del algodón reciclado en la nueva prenda verde para enfatizar la calidad táctil.",
+        "generation_prompt": "Close-up of a high-quality recycled cotton t-shirt in forest green #2f5233. The fabric texture is clearly visible, showing the slight irregularities of recycled fibers. The garment is neatly folded on a neutral beige #e8e4d9 linen surface. Soft, natural morning light creates gentle shadows. Minimalist aesthetic, 4:5 aspect ratio.",
+        "alt_text": "Primer plano de una camiseta de algodón reciclado verde sobre un fondo de lino beige con luz natural suave."
+      },
+      "caption": {
+        "hook": "La primavera ya está aquí, y viene con un propósito claro.",
+        "body": "Presentamos nuestra nueva colección cápsula. Prendas diseñadas en Barcelona y confeccionadas en Portugal con algodón reciclado certificado GOTS. \n\nEn Verdea Studio creemos en una moda que no deja huella. Por eso, nuestras ediciones son limitadas, evitando el sobrestock y respetando los tiempos de la naturaleza. Calidad, transparencia y diseño minimalista para tu día a día.",
+        "cta_line": "Descubre la cápsula de primavera en nuestra web."
+      },
+      "cta": {
+        "channel": "website",
+        "url_or_handle": "https://www.verdeastudio.com",
+        "label": "Ver colección"
+      },
+      "hashtag_strategy": {
+        "intent": "brand_awareness",
+        "suggested_volume": 10,
+        "themes": [
+          "moda sostenible",
+          "algodón reciclado",
+          "slow fashion",
+          "diseño consciente"
+        ]
+      },
+      "do_not": [
+        "no usar tipografía sans-serif",
+        "no usar colores fuera de la paleta #2f5233, #e8e4d9, #c9a66b",
+        "no usar imágenes con mucho ruido visual",
+        "no incluir llamadas a la acción genéricas como compra ya",
+        "no usar filtros excesivamente saturados"
+      ],
+      "visual_selection": {
+        "recommended_asset_urls": [
+          "https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc"
+        ],
+        "recommended_reference_urls": [],
+        "avoid_asset_urls": []
+      },
+      "confidence": {
+        "surface_format": "high",
+        "angle": "high",
+        "palette_match": "high",
+        "cta_channel": "high"
+      },
+      "brand_intelligence": {
+        "business_taxonomy": "b2c_ecom_fashion",
+        "funnel_stage_target": "conversion",
+        "voice_register": "honesto-estético",
+        "emotional_beat": "tranquilidad",
+        "audience_persona": "Mujer u hombre urbano de 25-40 años que busca básicos atemporales y sostenibles; su principal objeción es si la calidad realmente justifica el precio frente al fast fashion.",
+        "unfair_advantage": "Diseño en Barcelona con producción local en Portugal y tejidos 100% certificados GOTS en ediciones limitadas.",
+        "risk_flags": [],
+        "rhetorical_device": "especificidad_concreta"
+      }
+    },
+    "warnings": [],
+    "trace": {
+      "task_id": "dddd4444-dddd-4444-dddd-444444444444",
+      "action_code": "create_post",
+      "surface": "post",
+      "mode": "create",
+      "latency_ms": 24276,
+      "gemini_model": "gemini-3-flash-preview",
+      "repair_attempted": false,
+      "degraded": false,
+      "gallery_stats": {
+        "raw_count": 6,
+        "accepted_count": 6,
+        "rejected_count": 0,
+        "truncated": false
+      }
+    }
+  },
+  "error_message": null
+}</pre>
+  </details>
+</div>
+
+
+<div class="tab-panel" id="panel-3">
+  <div class="grid-3">
+    <div class="card"><h3>Status</h3><div class="v">COMPLETED <small>post / create</small></div></div>
+    <div class="card"><h3>Latency</h3><div class="v">16696 ms <small>repair: no</small></div></div>
+    <div class="card"><h3>Gallery</h3><div class="v">0 / 0 <small>degraded: yes</small></div></div>
+  </div>
+
+  <!-- POST CARD -->
+  <div class="post-card">
+    <div class="post-head">
+      <span class="surface-pill">POST</span>
+      <span class="pillar-pill">EDUCATION</span>
+      <h3 class="post-title">Revisión Semestral: Tu Mejor Inversión</h3>
+    </div>
+    <div class="post-grid">
+      <div class="post-col">
+        <div class="post-section">
+          <h4>🎯 Objective</h4>
+          <p>Fomentar la prevención y agendar citas de revisión semestral entre pacientes locales del Eixample.</p>
+        </div>
+        <div class="post-section">
+          <h4>⚔️ Strategic decisions</h4>
+          <div class="decision">  <div class="label">Surface format</div>  <div class="chosen">post</div>  <div class="alts"><span class="alt">story</span><span class="alt">carousel</span></div>  <div class="why">El formato post permite una presencia permanente en el feed para un mensaje educativo fundamental. Se alinea con la preferencia de la marca por el estilo 'image_text'.</div></div><div class="decision">  <div class="label">Angle</div>  <div class="chosen">prevención dental sin miedo y con cercanía</div>  <div class="alts"><span class="alt">consecuencias de la falta de higiene</span><span class="alt">promoción de servicios de estética</span></div>  <div class="why">El usuario solicitó explícitamente un tono que no genere miedo. Centrarse en la revisión semestral como un hábito de bienestar positivo refuerza la propuesta de valor de la clínica.</div></div><div class="decision">  <div class="label">Voice</div>  <div class="chosen">profesional y tranquilizador</div>  <div class="alts"><span class="alt">clínico y distante</span><span class="alt">informal y divertido</span></div>  <div class="why">Mantiene la autoridad médica necesaria para una clínica de salud pero cumple con el requisito de ser 'cercano' para los vecinos del Eixample.</div></div>
+        </div>
+        <div class="post-section">
+          <h4>✨ Visual style notes</h4>
+          <p>Composición limpia y luminosa. Fondo en tono #e3f2fd para transmitir calma. Uso de tipografía sans-serif clara. La imagen debe evitar instrumentos médicos intimidantes, enfocándose en la luz natural y el orden.</p>
+        </div>
+        <div class="post-section">
+          <h4>🚫 Do not</h4>
+          <div class="pill-row"><span class="chip ghost">no usar imágenes de agujas o instrumental quirúrgico expuesto</span><span class="chip ghost">no usar filtros oscuros o excesivamente saturados</span><span class="chip ghost">no usar un lenguaje excesivamente técnico que pueda asustar</span><span class="chip ghost">no incluir más de un número de teléfono o URL diferente</span><span class="chip ghost">no usar tipografías manuscritas difíciles de leer</span></div>
+        </div>
+      </div>
+      <div class="post-col">
+        <div class="post-section">
+          <h4>🖼️ Image brief</h4>
+          <div class="img-brief"><div class="lbl">Concept</div><div class="body">Una consulta dental moderna y acogedora bañada por luz natural que transmite paz y orden.</div></div>
+          <div class="img-brief gen"><div class="lbl">Generation prompt</div><div class="body">Interior of a modern dental clinic in Barcelona Eixample style, bright natural light, minimalist aesthetic, soft blue accents #e3f2fd, white walls #ffffff, a comfortable dental chair in the background, a small plant on a side table, professional and warm atmosphere, high resolution, photography style.</div></div>
+          <div class="img-brief alt"><div class="lbl">Alt text</div><div class="body">Interior luminoso y moderno de una consulta en Clínica Dental Eixample, transmitiendo tranquilidad y limpieza.</div></div>
+        </div>
+        <div class="post-section">
+          <h4>📝 Caption</h4>
+          <div class="cap hook"><div class="lbl"><span>Hook</span><span class="len">47 ch</span></div><div class="txt">Tu sonrisa merece un respiro cada seis meses. ✨</div></div>
+          <div class="cap body"><div class="lbl"><span>Body</span><span class="len">549 ch</span></div><div class="txt">En Clínica Dental Eixample sabemos que el secreto de una boca sana no está en los grandes tratamientos, sino en los pequeños gestos de prevención.
+
+Una revisión semestral nos permite detectar cualquier anomalía a tiempo y realizar una higiene profesional que mantiene tus encías fuertes. Nuestro equipo de 6 profesionales te espera en el corazón del Eixample para cuidar de ti con la calma y el trato cercano que mereces, sin prisas y, sobre todo, sin miedo.
+
+¿Hace más de seis meses de tu última visita? Es el momento perfecto para volver a vernos.</div></div>
+          <div class="cap cta"><div class="lbl"><span>CTA line</span><span class="len">41 ch</span></div><div class="txt">Pide tu cita llamándonos al +34933215478.</div></div>
+        </div>
+        <div class="post-section">
+          <h4>👉 Call to action</h4>
+          <div class="cta-card">  <span class="ch">PHONE</span>  <span class="lbl">Llámanos</span>  <span class="url">→ +34933215478</span></div>
+        </div>
+        <div class="post-section">
+          <h4>🏷️ Hashtag strategy</h4>
+          <div class="pill-row"><span class="chip">intent · local_discovery</span><span class="chip">volume · 10</span></div>
+          <div class="pill-row"><span class="chip">#Eixample</span><span class="chip">#SaludBucodental</span><span class="chip">#PrevenciónDental</span><span class="chip">#DentistaBarcelona</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BRAND DNA (NEW · public) -->
+  <div class="card-block">
+    <div class="card-block-head"><h3>🧬 Brand DNA</h3><span class="tag-public">public · viaja a Content Factory</span></div>
+    <p class="lead">Narrativa destilada del brief. El copywriter de CONTENT_FACTORY la lee antes de redactar.</p>
+    <pre class="dna">Bienvenidos a Clínica Dental Eixample
+Cuidamos tu sonrisa con cercanía y tecnología en el corazón de Barcelona.
+
+Nuestra Historia
+Clínica Dental Eixample nació en 2008 en el emblemático barrio del Eixample de Barcelona. Desde nuestros inicios, nos hemos propuesto transformar la experiencia de ir al dentista, eliminando el miedo y priorizando el bienestar del paciente a través de un equipo de 6 profesionales comprometidos con la salud bucodental de nuestra comunidad.
+
+Nuestra propuesta
+Ofrecemos una salud bucodental integral basada en la atención personalizada y sin prisas. Nuestro método se distingue por combinar la tecnología actual con un trato humano y tranquilizador, asegurando que cada visita sea cómoda y eficiente, sin listas de espera interminables.
+
+Especialidades
+- Odontología general y revisiones preventivas
+- Higienes dentales profesionales
+- Ortodoncia invisible para una estética discreta
+- Implantología avanzada
+- Blanqueamiento y estética dental
+- Odontopediatría para los más pequeños
+
+Estilo visual
+Nuestra identidad se define por la claridad y la confianza, utilizando una paleta de blancos #ffffff, azules suaves #e3f2fd y un azul corporativo sólido #1976d2. Apostamos por un diseño limpio de estilo sans-serif que transmite modernidad y profesionalidad.
+
+📍 Eixample, Barcelona
+📞 +34933215478
+🌐 https://www.clinicadentaleixample.es</pre>
+  </div>
+
+  <!-- BRAND INTELLIGENCE (NEW · internal) -->
+  <div class="card-block">
+    <div class="card-block-head"><h3>🧠 Brand Intelligence</h3><span class="tag-internal">internal · solo subagentes</span></div>
+    <p class="lead">Razonamiento interno del agente. Nunca aparece en el post; informa a specialists downstream.</p>
+    <div class="bi-grid"><div class="bi-row"><div class="bi-label">Business taxonomy</div><div class="bi-value">professional_health_dental</div></div><div class="bi-row"><div class="bi-label">Funnel stage</div><div class="bi-value">consideration</div></div><div class="bi-row"><div class="bi-label">Voice register</div><div class="bi-value">tranquilizador-profesional</div></div><div class="bi-row"><div class="bi-label">Emotional beat</div><div class="bi-value">tranquilidad</div></div><div class="bi-row"><div class="bi-label">Audience persona</div><div class="bi-value">Vecino o profesional del Eixample (25-60 años) que valora su salud pero posterga la visita al dentista por falta de tiempo o ansiedad; busca un lugar de confianza cerca de casa.</div></div><div class="bi-row"><div class="bi-label">Unfair advantage</div><div class="bi-value">Cuidamos tu sonrisa sin generarte miedo, con un equipo de 6 profesionales en una ubicación premium desde 2008.</div></div><div class="bi-row"><div class="bi-label">Rhetorical device</div><div class="bi-value">especificidad_concreta</div></div><div class="bi-row"><div class="bi-label">Risk flags</div><div class="bi-value"><span class="chip warn">health_disclaimer_needed</span></div></div></div>
+  </div>
+
+  <div class="split-2">
+    <div class="card-block">
+      <h3>Visual selection</h3>
+      <div class="pill-row" style="margin:6px 0 10px;">
+        <span class="chip good">use · 0</span>
+        <span class="chip">reference · 0</span>
+        <span class="chip bad">avoid · 0</span>
+      </div>
+      <div class="bi-empty">No gallery recommendations.</div>
+    </div>
+    <div class="card-block">
+      <h3>Confidence</h3>
+      <div class="conf-row">
+        <div class="conf"><b>surface_format</b><span class="lvl high">high</span></div>
+        <div class="conf"><b>angle</b><span class="lvl high">high</span></div>
+        <div class="conf"><b>palette_match</b><span class="lvl high">high</span></div>
+        <div class="conf"><b>cta_channel</b><span class="lvl high">high</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-block">
+    <h3>Warnings</h3>
+    <div class="pill-row"><span class="chip warn" title="No images supplied">gallery_empty</span></div>
+  </div>
+
+  <details class="acc">
+    <summary>Raw input envelope (ROUTER → MARKETER)</summary>
+    <pre class="json">{
+  "task_id": "77778888-7777-8888-7777-888888888888",
+  "job_id": "99990000-9999-0000-9999-000000000000",
+  "action_code": "create_post",
+  "action_id": "aabbccdd-1122-3344-5566-778899aabbcc",
+  "correlation_id": "dentist-20260420-303",
+  "callback_url": "https://d1lwu6lioovdrb.cloudfront.net/api/v1/tasks/77778888-7777-8888-7777-888888888888/callback",
+  "payload": {
+    "client_request": {
+      "description": "Queremos un post informativo que recuerde a nuestros pacientes la importancia de la revisión dental semestral. Tono cercano pero profesional, sin miedo.",
+      "attachments": []
+    },
+    "context": {
+      "account_uuid": "55667788-99aa-bbcc-ddee-ff0011223344",
+      "client_name": "Clínica Dental Eixample",
+      "platform": "instagram"
+    },
+    "action_execution_gates": {
+      "brief": {
+        "passed": true,
+        "reason": "ok",
+        "status_code": 200,
+        "response": {
+          "status": "success",
+          "message": "Account with brief retrieved successfully",
+          "data": {
+            "uuid": "55667788-99aa-bbcc-ddee-ff0011223344",
+            "profile": {
+              "business_name": "Clínica Dental Eixample",
+              "website_url": "https://www.clinicadentaleixample.es",
+              "contact_phone": "+34 933 215 478",
+              "tone": "profesional, cercano, tranquilizador"
+            },
+            "brief": {
+              "uuid": "abcd0004-0000-0000-0000-000000000004",
+              "form_values": {
+                "FIELD_COMPANY_NAME": "Clínica Dental Eixample",
+                "FIELD_COMPANY_CATEGORY": "Salud",
+                "FIELD_COUNTRY": "España",
+                "FIELD_LARGE_ANSWER": "Clínica Dental Eixample es una clínica de salud bucodental ubicada en el barrio del Eixample de Barcelona desde 2008. Ofrecemos odontología general, higiene, ortodoncia invisible, estética dental e implantología. Equipo de 6 profesionales, atención personalizada y trato cercano.",
+                "FIELD_PRODUCTS_SERVICES_ANSWER": "Revisiones, higienes profesionales, ortodoncia invisible, implantes, blanqueamiento, odontopediatría.",
+                "FIELD_TARGET_CUSTOMER_ANSWER": "Familias y profesionales del Eixample (Barcelona) entre 25 y 60 años que buscan una clínica de confianza, trato cercano y atención sin prisas.",
+                "FIELD_VALUE_PROPOSITION": "Salud bucodental integral en el Eixample con trato cercano, tecnología actual y sin listas de espera interminables. Cuidamos tu sonrisa sin generarte miedo.",
+                "FIELD_COMMUNICATION_LANGUAGE": "spanish",
+                "FIELD_COMMUNICATION_STYLE": "professional",
+                "FIELD_COLOR_LIST_PICKER": [
+                  "#FFFFFF",
+                  "#E3F2FD",
+                  "#1976D2"
+                ],
+                "FIELD_FONT_STYLE": "sans",
+                "FIELD_POST_CONTENT_STYLE": "image_text",
+                "FIELD_KEYWORDS_TAGS_INPUT": [
+                  "revisión dental",
+                  "salud bucodental",
+                  "Eixample",
+                  "Barcelona",
+                  "prevención"
+                ],
+                "FIELD_WEBSITE_URL": "https://www.clinicadentaleixample.es",
+                "FIELD_BUSINESS_PHONE": "+34 933 215 478",
+                "FIELD_HAS_BRAND_MATERIAL": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "agent_sequence": {
+      "current": {
+        "step_code": "marketing_enrichment",
+        "step_order": 1,
+        "task_id": "77778888-7777-8888-7777-888888888888",
+        "agent_id": "5a258d4e-b01d-48dc-95b1-0e67d81b7f4c",
+        "agent_name": "marketer",
+        "endpoint": "https://marketer.internal/tasks",
+        "http_method": "POST",
+        "is_mandatory": true,
+        "timeout_seconds": 60,
+        "retry_count": 0
+      },
+      "previous": {}
+    }
+  }
+}</pre>
+  </details>
+  <details class="acc">
+    <summary>Raw output callback (MARKETER → ROUTER)</summary>
+    <pre class="json">{
+  "status": "COMPLETED",
+  "output_data": {
+    "enrichment": {
+      "schema_version": "2.0",
+      "surface_format": "post",
+      "content_pillar": "education",
+      "title": "Revisión Semestral: Tu Mejor Inversión",
+      "objective": "Fomentar la prevención y agendar citas de revisión semestral entre pacientes locales del Eixample.",
+      "brand_dna": "Bienvenidos a Clínica Dental Eixample\nCuidamos tu sonrisa con cercanía y tecnología en el corazón de Barcelona.\n\nNuestra Historia\nClínica Dental Eixample nació en 2008 en el emblemático barrio del Eixample de Barcelona. Desde nuestros inicios, nos hemos propuesto transformar la experiencia de ir al dentista, eliminando el miedo y priorizando el bienestar del paciente a través de un equipo de 6 profesionales comprometidos con la salud bucodental de nuestra comunidad.\n\nNuestra propuesta\nOfrecemos una salud bucodental integral basada en la atención personalizada y sin prisas. Nuestro método se distingue por combinar la tecnología actual con un trato humano y tranquilizador, asegurando que cada visita sea cómoda y eficiente, sin listas de espera interminables.\n\nEspecialidades\n- Odontología general y revisiones preventivas\n- Higienes dentales profesionales\n- Ortodoncia invisible para una estética discreta\n- Implantología avanzada\n- Blanqueamiento y estética dental\n- Odontopediatría para los más pequeños\n\nEstilo visual\nNuestra identidad se define por la claridad y la confianza, utilizando una paleta de blancos #ffffff, azules suaves #e3f2fd y un azul corporativo sólido #1976d2. Apostamos por un diseño limpio de estilo sans-serif que transmite modernidad y profesionalidad.\n\n📍 Eixample, Barcelona\n📞 +34933215478\n🌐 https://www.clinicadentaleixample.es",
+      "strategic_decisions": {
+        "surface_format": {
+          "chosen": "post",
+          "alternatives_considered": [
+            "story",
+            "carousel"
+          ],
+          "rationale": "El formato post permite una presencia permanente en el feed para un mensaje educativo fundamental. Se alinea con la preferencia de la marca por el estilo 'image_text'."
+        },
+        "angle": {
+          "chosen": "prevención dental sin miedo y con cercanía",
+          "alternatives_considered": [
+            "consecuencias de la falta de higiene",
+            "promoción de servicios de estética"
+          ],
+          "rationale": "El usuario solicitó explícitamente un tono que no genere miedo. Centrarse en la revisión semestral como un hábito de bienestar positivo refuerza la propuesta de valor de la clínica."
+        },
+        "voice": {
+          "chosen": "profesional y tranquilizador",
+          "alternatives_considered": [
+            "clínico y distante",
+            "informal y divertido"
+          ],
+          "rationale": "Mantiene la autoridad médica necesaria para una clínica de salud pero cumple con el requisito de ser 'cercano' para los vecinos del Eixample."
+        }
+      },
+      "visual_style_notes": "Composición limpia y luminosa. Fondo en tono #e3f2fd para transmitir calma. Uso de tipografía sans-serif clara. La imagen debe evitar instrumentos médicos intimidantes, enfocándose en la luz natural y el orden.",
+      "narrative_connection": null,
+      "image": {
+        "concept": "Una consulta dental moderna y acogedora bañada por luz natural que transmite paz y orden.",
+        "generation_prompt": "Interior of a modern dental clinic in Barcelona Eixample style, bright natural light, minimalist aesthetic, soft blue accents #e3f2fd, white walls #ffffff, a comfortable dental chair in the background, a small plant on a side table, professional and warm atmosphere, high resolution, photography style.",
+        "alt_text": "Interior luminoso y moderno de una consulta en Clínica Dental Eixample, transmitiendo tranquilidad y limpieza."
+      },
+      "caption": {
+        "hook": "Tu sonrisa merece un respiro cada seis meses. ✨",
+        "body": "En Clínica Dental Eixample sabemos que el secreto de una boca sana no está en los grandes tratamientos, sino en los pequeños gestos de prevención.\n\nUna revisión semestral nos permite detectar cualquier anomalía a tiempo y realizar una higiene profesional que mantiene tus encías fuertes. Nuestro equipo de 6 profesionales te espera en el corazón del Eixample para cuidar de ti con la calma y el trato cercano que mereces, sin prisas y, sobre todo, sin miedo.\n\n¿Hace más de seis meses de tu última visita? Es el momento perfecto para volver a vernos.",
+        "cta_line": "Pide tu cita llamándonos al +34933215478."
+      },
+      "cta": {
+        "channel": "phone",
+        "url_or_handle": "+34933215478",
+        "label": "Llámanos"
+      },
+      "hashtag_strategy": {
+        "intent": "local_discovery",
+        "suggested_volume": 10,
+        "themes": [
+          "Eixample",
+          "SaludBucodental",
+          "PrevenciónDental",
+          "DentistaBarcelona"
+        ]
+      },
+      "do_not": [
+        "no usar imágenes de agujas o instrumental quirúrgico expuesto",
+        "no usar filtros oscuros o excesivamente saturados",
+        "no usar un lenguaje excesivamente técnico que pueda asustar",
+        "no incluir más de un número de teléfono o URL diferente",
+        "no usar tipografías manuscritas difíciles de leer"
+      ],
+      "visual_selection": {
+        "recommended_asset_urls": [],
+        "recommended_reference_urls": [],
+        "avoid_asset_urls": []
+      },
+      "confidence": {
+        "surface_format": "high",
+        "angle": "high",
+        "palette_match": "high",
+        "cta_channel": "high"
+      },
+      "brand_intelligence": {
+        "business_taxonomy": "professional_health_dental",
+        "funnel_stage_target": "consideration",
+        "voice_register": "tranquilizador-profesional",
+        "emotional_beat": "tranquilidad",
+        "audience_persona": "Vecino o profesional del Eixample (25-60 años) que valora su salud pero posterga la visita al dentista por falta de tiempo o ansiedad; busca un lugar de confianza cerca de casa.",
+        "unfair_advantage": "Cuidamos tu sonrisa sin generarte miedo, con un equipo de 6 profesionales en una ubicación premium desde 2008.",
+        "risk_flags": [
+          "health_disclaimer_needed"
+        ],
+        "rhetorical_device": "especificidad_concreta"
+      }
+    },
+    "warnings": [
+      {
+        "code": "gallery_empty",
+        "message": "No images supplied",
+        "field": null
+      }
+    ],
+    "trace": {
+      "task_id": "77778888-7777-8888-7777-888888888888",
+      "action_code": "create_post",
+      "surface": "post",
+      "mode": "create",
+      "latency_ms": 16696,
+      "gemini_model": "gemini-3-flash-preview",
+      "repair_attempted": false,
+      "degraded": true,
+      "gallery_stats": {
+        "raw_count": 0,
+        "accepted_count": 0,
+        "rejected_count": 0,
+        "truncated": false
+      }
+    }
+  },
+  "error_message": null
+}</pre>
+  </details>
+</div>
+
+
+<div class="tab-panel" id="panel-4">
+  <div class="grid-3">
+    <div class="card"><h3>Status</h3><div class="v">COMPLETED <small>post / create</small></div></div>
+    <div class="card"><h3>Latency</h3><div class="v">14252 ms <small>repair: no</small></div></div>
+    <div class="card"><h3>Gallery</h3><div class="v">0 / 0 <small>degraded: yes</small></div></div>
+  </div>
+
+  <!-- POST CARD -->
+  <div class="post-card">
+    <div class="post-head">
+      <span class="surface-pill">POST</span>
+      <span class="pillar-pill">COMMUNITY</span>
+      <h3 class="post-title">Felicitación Fin de Año Minimal SL</h3>
+    </div>
+    <div class="post-grid">
+      <div class="post-col">
+        <div class="post-section">
+          <h4>🎯 Objective</h4>
+          <p>Agradecer la fidelidad de los clientes locales y fortalecer el vínculo comunitario al cierre del año.</p>
+        </div>
+        <div class="post-section">
+          <h4>⚔️ Strategic decisions</h4>
+          <div class="decision">  <div class="label">Surface format</div>  <div class="chosen">post</div>  <div class="alts"><span class="alt">story</span></div>  <div class="why">Un post en el feed ofrece una permanencia mayor para un mensaje de agradecimiento anual, permitiendo que la comunidad lo vea y comente durante los últimos días del año.</div></div><div class="decision">  <div class="label">Angle</div>  <div class="chosen">gratitud y cercanía local</div>  <div class="alts"><span class="alt">promoción de cierre de año</span></div>  <div class="why">El usuario solicitó explícitamente evitar promociones agresivas. El ángulo de gratitud refuerza el valor de 'atención personal' del brief.</div></div><div class="decision">  <div class="label">Voice</div>  <div class="chosen">cercana y honesta</div>  <div class="alts"><span class="alt">formal corporativa</span></div>  <div class="why">Para una tienda local que destaca la atención personal, una voz íntima y de vecindad es más coherente que un tono institucional.</div></div>
+        </div>
+        <div class="post-section">
+          <h4>✨ Visual style notes</h4>
+          <p>Composición minimalista con iluminación cálida de interior. Encuadre cercano que sugiera intimidad. Evitar contrastes altos o colores estridentes.</p>
+        </div>
+        <div class="post-section">
+          <h4>🚫 Do not</h4>
+          <div class="pill-row"><span class="chip ghost">no usar tipografía sobre la imagen</span><span class="chip ghost">no incluir precios o descuentos</span><span class="chip ghost">no usar lenguaje de venta directa</span><span class="chip ghost">no aplicar filtros excesivamente saturados</span><span class="chip ghost">no usar imágenes de stock genéricas de oficina</span></div>
+        </div>
+      </div>
+      <div class="post-col">
+        <div class="post-section">
+          <h4>🖼️ Image brief</h4>
+          <div class="img-brief"><div class="lbl">Concept</div><div class="body">Un detalle cálido de la tienda que evoca el cierre de un ciclo con gratitud.</div></div>
+          <div class="img-brief gen"><div class="lbl">Generation prompt</div><div class="body">Close-up of a small, cozy local shop window at dusk, warm golden light glowing from inside, a simple handmade sign that says 'Gracias' in elegant handwriting resting against the glass, soft bokeh of neighborhood street lights in the background, realistic photography, cinematic lighting, 4:5 aspect ratio.</div></div>
+          <div class="img-brief alt"><div class="lbl">Alt text</div><div class="body">Detalle de un escaparate acogedor con luces cálidas y un cartel de agradecimiento escrito a mano.</div></div>
+        </div>
+        <div class="post-section">
+          <h4>📝 Caption</h4>
+          <div class="cap hook"><div class="lbl"><span>Hook</span><span class="len">65 ch</span></div><div class="txt">Gracias por hacer que este año en el barrio haya sido especial. ✨</div></div>
+          <div class="cap body"><div class="lbl"><span>Body</span><span class="len">323 ch</span></div><div class="txt">Cerramos el año con el corazón lleno de gratitud. Para Minimal SL, lo mejor de estos meses no han sido los productos en las estanterías, sino cada charla y cada sonrisa compartida con vosotros.
+
+Sois el motor de este pequeño rincón local. Gracias por elegir el comercio de proximidad y por confiar en nosotros día tras día.</div></div>
+          <div class="cap cta"><div class="lbl"><span>CTA line</span><span class="len">42 ch</span></div><div class="txt">¡Feliz año nuevo a todos nuestros vecinos!</div></div>
+        </div>
+        <div class="post-section">
+          <h4>👉 Call to action</h4>
+          <div class="cta-card">  <span class="ch">NONE</span>  <span class="lbl"></span>  </div>
+        </div>
+        <div class="post-section">
+          <h4>🏷️ Hashtag strategy</h4>
+          <div class="pill-row"><span class="chip">intent · community</span><span class="chip">volume · 5</span></div>
+          <div class="pill-row"><span class="chip">#comercio local</span><span class="chip">#gratitud</span><span class="chip">#barrio</span><span class="chip">#fin de año</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BRAND DNA (NEW · public) -->
+  <div class="card-block">
+    <div class="card-block-head"><h3>🧬 Brand DNA</h3><span class="tag-public">public · viaja a Content Factory</span></div>
+    <p class="lead">Narrativa destilada del brief. El copywriter de CONTENT_FACTORY la lee antes de redactar.</p>
+    <pre class="dna">Bienvenidos a Minimal SL
+Tu tienda local de confianza centrada en la atención personal.
+
+Nuestra Historia
+Somos una pequeña tienda local que nació con el propósito de servir a los vecinos del barrio. Creemos en el valor de lo cercano y en el impacto positivo de elegir el comercio de proximidad.
+
+Nuestra propuesta
+Nos diferenciamos por ofrecer una atención personal y humana. No somos solo un punto de venta, sino un espacio donde conocemos a nuestros clientes y nos preocupamos por sus necesidades diarias.
+
+Especialidades
+- Atención personalizada al cliente
+- Productos seleccionados para el día a día
+- Compromiso con el comercio de barrio
+
+Estilo visual
+Buscamos una estética limpia, minimalista y acogedora que refleje nuestra esencia de pequeña tienda local sin artificios.</pre>
+  </div>
+
+  <!-- BRAND INTELLIGENCE (NEW · internal) -->
+  <div class="card-block">
+    <div class="card-block-head"><h3>🧠 Brand Intelligence</h3><span class="tag-internal">internal · solo subagentes</span></div>
+    <p class="lead">Razonamiento interno del agente. Nunca aparece en el post; informa a specialists downstream.</p>
+    <div class="bi-grid"><div class="bi-row"><div class="bi-label">Business taxonomy</div><div class="bi-value">retail_physical_local_shop</div></div><div class="bi-row"><div class="bi-label">Funnel stage</div><div class="bi-value">retention</div></div><div class="bi-row"><div class="bi-label">Voice register</div><div class="bi-value">cercano-agradecido</div></div><div class="bi-row"><div class="bi-label">Emotional beat</div><div class="bi-value">pertenencia</div></div><div class="bi-row"><div class="bi-label">Audience persona</div><div class="bi-value">Vecino del barrio que valora el trato humano y prefiere comprar en tiendas locales; su objeción suele ser la falta de conexión emocional con grandes marcas.</div></div><div class="bi-row"><div class="bi-label">Unfair advantage</div><div class="bi-value">La relación personal y directa con los vecinos que solo una tienda pequeña puede mantener.</div></div><div class="bi-row"><div class="bi-label">Rhetorical device</div><div class="bi-value">narración_origen</div></div><div class="bi-row"><div class="bi-label">Risk flags</div><div class="bi-value"><span class="chip ghost">none</span></div></div></div>
+  </div>
+
+  <div class="split-2">
+    <div class="card-block">
+      <h3>Visual selection</h3>
+      <div class="pill-row" style="margin:6px 0 10px;">
+        <span class="chip good">use · 0</span>
+        <span class="chip">reference · 0</span>
+        <span class="chip bad">avoid · 0</span>
+      </div>
+      <div class="bi-empty">No gallery recommendations.</div>
+    </div>
+    <div class="card-block">
+      <h3>Confidence</h3>
+      <div class="conf-row">
+        <div class="conf"><b>surface_format</b><span class="lvl high">high</span></div>
+        <div class="conf"><b>angle</b><span class="lvl high">high</span></div>
+        <div class="conf"><b>palette_match</b><span class="lvl low">low</span></div>
+        <div class="conf"><b>cta_channel</b><span class="lvl high">high</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-block">
+    <h3>Warnings</h3>
+    <div class="pill-row"><span class="chip warn" title="No tone signal in brief">tone_unclear</span><span class="chip warn" title="No images supplied">gallery_empty</span></div>
+  </div>
+
+  <details class="acc">
+    <summary>Raw input envelope (ROUTER → MARKETER)</summary>
+    <pre class="json">{
+  "task_id": "11111111-1111-1111-1111-111111111111",
+  "job_id": "22222222-2222-2222-2222-222222222222",
+  "action_code": "create_post",
+  "correlation_id": "minimal-post-001",
+  "callback_url": "https://example.com/api/v1/tasks/11111111-1111-1111-1111-111111111111/callback",
+  "payload": {
+    "client_request": {
+      "description": "Publica un post corto de felicitación de fin de año para nuestros clientes, tono breve y agradecido sin promociones agresivas.",
+      "attachments": []
+    },
+    "context": {
+      "account_uuid": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+      "client_name": "Minimal SL",
+      "platform": "instagram"
+    },
+    "action_execution_gates": {
+      "brief": {
+        "passed": true,
+        "reason": "ok",
+        "status_code": 200,
+        "response": {
+          "status": "success",
+          "message": "ok",
+          "data": {
+            "profile": {
+              "business_name": "Minimal SL"
+            },
+            "brief": {
+              "form_values": {
+                "FIELD_COMPANY_NAME": "Minimal SL",
+                "FIELD_COMMUNICATION_LANGUAGE": "spanish",
+                "FIELD_LARGE_ANSWER": "Pequeña tienda local.",
+                "FIELD_VALUE_PROPOSITION": "Atención personal.",
+                "FIELD_TARGET_CUSTOMER_ANSWER": "Clientes del barrio.",
+                "FIELD_KEYWORDS_TAGS_INPUT": [
+                  "local"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "agent_sequence": {
+      "current": {},
+      "previous": {}
+    }
+  }
+}</pre>
+  </details>
+  <details class="acc">
+    <summary>Raw output callback (MARKETER → ROUTER)</summary>
+    <pre class="json">{
+  "status": "COMPLETED",
+  "output_data": {
+    "enrichment": {
+      "schema_version": "2.0",
+      "surface_format": "post",
+      "content_pillar": "community",
+      "title": "Felicitación Fin de Año Minimal SL",
+      "objective": "Agradecer la fidelidad de los clientes locales y fortalecer el vínculo comunitario al cierre del año.",
+      "brand_dna": "Bienvenidos a Minimal SL\nTu tienda local de confianza centrada en la atención personal.\n\nNuestra Historia\nSomos una pequeña tienda local que nació con el propósito de servir a los vecinos del barrio. Creemos en el valor de lo cercano y en el impacto positivo de elegir el comercio de proximidad.\n\nNuestra propuesta\nNos diferenciamos por ofrecer una atención personal y humana. No somos solo un punto de venta, sino un espacio donde conocemos a nuestros clientes y nos preocupamos por sus necesidades diarias.\n\nEspecialidades\n- Atención personalizada al cliente\n- Productos seleccionados para el día a día\n- Compromiso con el comercio de barrio\n\nEstilo visual\nBuscamos una estética limpia, minimalista y acogedora que refleje nuestra esencia de pequeña tienda local sin artificios.",
+      "strategic_decisions": {
+        "surface_format": {
+          "chosen": "post",
+          "alternatives_considered": [
+            "story"
+          ],
+          "rationale": "Un post en el feed ofrece una permanencia mayor para un mensaje de agradecimiento anual, permitiendo que la comunidad lo vea y comente durante los últimos días del año."
+        },
+        "angle": {
+          "chosen": "gratitud y cercanía local",
+          "alternatives_considered": [
+            "promoción de cierre de año"
+          ],
+          "rationale": "El usuario solicitó explícitamente evitar promociones agresivas. El ángulo de gratitud refuerza el valor de 'atención personal' del brief."
+        },
+        "voice": {
+          "chosen": "cercana y honesta",
+          "alternatives_considered": [
+            "formal corporativa"
+          ],
+          "rationale": "Para una tienda local que destaca la atención personal, una voz íntima y de vecindad es más coherente que un tono institucional."
+        }
+      },
+      "visual_style_notes": "Composición minimalista con iluminación cálida de interior. Encuadre cercano que sugiera intimidad. Evitar contrastes altos o colores estridentes.",
+      "narrative_connection": null,
+      "image": {
+        "concept": "Un detalle cálido de la tienda que evoca el cierre de un ciclo con gratitud.",
+        "generation_prompt": "Close-up of a small, cozy local shop window at dusk, warm golden light glowing from inside, a simple handmade sign that says 'Gracias' in elegant handwriting resting against the glass, soft bokeh of neighborhood street lights in the background, realistic photography, cinematic lighting, 4:5 aspect ratio.",
+        "alt_text": "Detalle de un escaparate acogedor con luces cálidas y un cartel de agradecimiento escrito a mano."
+      },
+      "caption": {
+        "hook": "Gracias por hacer que este año en el barrio haya sido especial. ✨",
+        "body": "Cerramos el año con el corazón lleno de gratitud. Para Minimal SL, lo mejor de estos meses no han sido los productos en las estanterías, sino cada charla y cada sonrisa compartida con vosotros.\n\nSois el motor de este pequeño rincón local. Gracias por elegir el comercio de proximidad y por confiar en nosotros día tras día.",
+        "cta_line": "¡Feliz año nuevo a todos nuestros vecinos!"
+      },
+      "cta": {
+        "channel": "none",
+        "url_or_handle": null,
+        "label": ""
+      },
+      "hashtag_strategy": {
+        "intent": "community",
+        "suggested_volume": 5,
+        "themes": [
+          "comercio local",
+          "gratitud",
+          "barrio",
+          "fin de año"
+        ]
+      },
+      "do_not": [
+        "no usar tipografía sobre la imagen",
+        "no incluir precios o descuentos",
+        "no usar lenguaje de venta directa",
+        "no aplicar filtros excesivamente saturados",
+        "no usar imágenes de stock genéricas de oficina"
+      ],
+      "visual_selection": {
+        "recommended_asset_urls": [],
+        "recommended_reference_urls": [],
+        "avoid_asset_urls": []
+      },
+      "confidence": {
+        "surface_format": "high",
+        "angle": "high",
+        "palette_match": "low",
+        "cta_channel": "high"
+      },
+      "brand_intelligence": {
+        "business_taxonomy": "retail_physical_local_shop",
+        "funnel_stage_target": "retention",
+        "voice_register": "cercano-agradecido",
+        "emotional_beat": "pertenencia",
+        "audience_persona": "Vecino del barrio que valora el trato humano y prefiere comprar en tiendas locales; su objeción suele ser la falta de conexión emocional con grandes marcas.",
+        "unfair_advantage": "La relación personal y directa con los vecinos que solo una tienda pequeña puede mantener.",
+        "risk_flags": [],
+        "rhetorical_device": "narración_origen"
+      }
+    },
+    "warnings": [
+      {
+        "code": "tone_unclear",
+        "message": "No tone signal in brief",
+        "field": "tone"
+      },
+      {
+        "code": "gallery_empty",
+        "message": "No images supplied",
+        "field": null
+      }
+    ],
+    "trace": {
+      "task_id": "11111111-1111-1111-1111-111111111111",
+      "action_code": "create_post",
+      "surface": "post",
+      "mode": "create",
+      "latency_ms": 14252,
+      "gemini_model": "gemini-3-flash-preview",
+      "repair_attempted": false,
+      "degraded": true,
+      "gallery_stats": {
+        "raw_count": 0,
+        "accepted_count": 0,
+        "rejected_count": 0,
+        "truncated": false
+      }
+    }
+  },
+  "error_message": null
+}</pre>
+  </details>
+</div>
+
+
+<div class="tab-panel" id="panel-5">
+  <div class="grid-3">
+    <div class="card"><h3>Status</h3><div class="v">COMPLETED <small>post / create</small></div></div>
+    <div class="card"><h3>Latency</h3><div class="v">16370 ms <small>repair: no</small></div></div>
+    <div class="card"><h3>Gallery</h3><div class="v">0 / 0 <small>degraded: yes</small></div></div>
+  </div>
+
+  <!-- POST CARD -->
+  <div class="post-card">
+    <div class="post-head">
+      <span class="surface-pill">POST</span>
+      <span class="pillar-pill">PRODUCT</span>
+      <h3 class="post-title">Lanzamiento Primavera Sostenible</h3>
+    </div>
+    <div class="post-grid">
+      <div class="post-col">
+        <div class="post-section">
+          <h4>🎯 Objective</h4>
+          <p>Presentar la nueva colección destacando el compromiso con la sostenibilidad y materiales reciclados para generar interés inicial.</p>
+        </div>
+        <div class="post-section">
+          <h4>⚔️ Strategic decisions</h4>
+          <div class="decision">  <div class="label">Surface format</div>  <div class="chosen">post</div>  <div class="alts"><span class="alt">carousel</span></div>  <div class="why">Se elige el formato post para crear un impacto visual único y centrado en el concepto de sostenibilidad de la nueva colección. Dado que no hay activos en la galería, una imagen potente generada es más efectiva que un carrusel sin variedad visual confirmada.</div></div><div class="decision">  <div class="label">Angle</div>  <div class="chosen">sostenibilidad y materiales reciclados para primavera</div>  <div class="alts"><span class="alt">tendencias de moda de temporada</span></div>  <div class="why">El usuario solicitó específicamente un enfoque en materiales reciclados y sostenibilidad, lo cual diferencia a la marca en un mercado saturado de fast-fashion primaveral.</div></div><div class="decision">  <div class="label">Voice</div>  <div class="chosen">honesta, natural y consciente</div>  <div class="alts"><span class="alt">comercial y directa</span></div>  <div class="why">Para comunicar sostenibilidad de forma creíble, el tono debe alejarse de lo puramente transaccional y adoptar una postura más reflexiva y transparente.</div></div>
+        </div>
+        <div class="post-section">
+          <h4>✨ Visual style notes</h4>
+          <p>Composición limpia con luz de mañana suave. Se sugieren tonos tierra, verdes musgo y texturas de lino o algodón orgánico para reforzar el mensaje de sostenibilidad.</p>
+        </div>
+        <div class="post-section">
+          <h4>🚫 Do not</h4>
+          <div class="pill-row"><span class="chip ghost">no usar filtros saturados o artificiales</span><span class="chip ghost">no incluir texto promocional sobre la imagen</span><span class="chip ghost">no usar lenguaje de venta agresiva</span><span class="chip ghost">no utilizar tipografías decorativas complejas</span></div>
+        </div>
+      </div>
+      <div class="post-col">
+        <div class="post-section">
+          <h4>🖼️ Image brief</h4>
+          <div class="img-brief"><div class="lbl">Concept</div><div class="body">Primer plano de una prenda de tejido sostenible bajo una luz solar suave de primavera.</div></div>
+          <div class="img-brief gen"><div class="lbl">Generation prompt</div><div class="body">Close-up of a high-quality sustainable fabric garment with visible recycled texture, soft spring sunlight filtering through leaves, natural linen beige and soft green tones, outdoor garden background blurred, realistic photography, 4:5 aspect ratio.</div></div>
+          <div class="img-brief alt"><div class="lbl">Alt text</div><div class="body">Detalle de textura de tejido reciclado de la nueva colección de primavera bajo luz natural.</div></div>
+        </div>
+        <div class="post-section">
+          <h4>📝 Caption</h4>
+          <div class="cap hook"><div class="lbl"><span>Hook</span><span class="len">45 ch</span></div><div class="txt">La primavera llega con una nueva consciencia.</div></div>
+          <div class="cap body"><div class="lbl"><span>Body</span><span class="len">337 ch</span></div><div class="txt">Presentamos nuestra nueva colección, donde el diseño se encuentra con el respeto por el planeta. Cada pieza ha sido creada utilizando materiales reciclados, transformando lo que ya existe en algo nuevo, bello y duradero.
+
+Creemos en una moda que no solo se ve bien, sino que hace el bien. Es momento de vestir el cambio que queremos ver.</div></div>
+          <div class="cap cta"><div class="lbl"><span>CTA line</span><span class="len">48 ch</span></div><div class="txt">Disponible esta semana en nuestra tienda online.</div></div>
+        </div>
+        <div class="post-section">
+          <h4>👉 Call to action</h4>
+          <div class="cta-card">  <span class="ch">NONE</span>  <span class="lbl"></span>  </div>
+        </div>
+        <div class="post-section">
+          <h4>🏷️ Hashtag strategy</h4>
+          <div class="pill-row"><span class="chip">intent · brand_awareness</span><span class="chip">volume · 10</span></div>
+          <div class="pill-row"><span class="chip">#moda sostenible</span><span class="chip">#materiales reciclados</span><span class="chip">#primavera consciente</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BRAND DNA (NEW · public) -->
+  <div class="card-block">
+    <div class="card-block-head"><h3>🧬 Brand DNA</h3><span class="tag-public">public · viaja a Content Factory</span></div>
+    <p class="lead">Narrativa destilada del brief. El copywriter de CONTENT_FACTORY la lee antes de redactar.</p>
+    <pre class="dna">Bienvenidos a No Brief Brand
+Moda consciente diseñada para perdurar.
+
+Nuestra propuesta
+Nos centramos en la creación de prendas que respetan el medio ambiente, utilizando procesos que minimizan el impacto ecológico y priorizan la circularidad de los materiales. Nuestra nueva colección de primavera es el reflejo de este compromiso, integrando texturas naturales y componentes recuperados.
+
+Especialidades
+- Prendas de primavera en materiales reciclados
+- Diseño sostenible y funcional
+
+Estilo visual
+La marca se identifica con una estética limpia y orgánica, priorizando la luz natural y texturas que evocan la materia prima original. No se han definido códigos de color específicos en el manual de identidad actual.</pre>
+  </div>
+
+  <!-- BRAND INTELLIGENCE (NEW · internal) -->
+  <div class="card-block">
+    <div class="card-block-head"><h3>🧠 Brand Intelligence</h3><span class="tag-internal">internal · solo subagentes</span></div>
+    <p class="lead">Razonamiento interno del agente. Nunca aparece en el post; informa a specialists downstream.</p>
+    <div class="bi-grid"><div class="bi-row"><div class="bi-label">Business taxonomy</div><div class="bi-value">b2c_ecom_fashion</div></div><div class="bi-row"><div class="bi-label">Funnel stage</div><div class="bi-value">awareness</div></div><div class="bi-row"><div class="bi-label">Voice register</div><div class="bi-value">natural-transparente</div></div><div class="bi-row"><div class="bi-label">Emotional beat</div><div class="bi-value">tranquilidad</div></div><div class="bi-row"><div class="bi-label">Audience persona</div><div class="bi-value">Consumidor de 25-45 años interesado en el consumo ético y la moda lenta; su mayor objeción es si la ropa reciclada mantiene la calidad y el diseño.</div></div><div class="bi-row"><div class="bi-label">Unfair advantage</div><div class="bi-value">dato insuficiente en el brief</div></div><div class="bi-row"><div class="bi-label">Rhetorical device</div><div class="bi-value">especificidad_concreta</div></div><div class="bi-row"><div class="bi-label">Risk flags</div><div class="bi-value"><span class="chip ghost">none</span></div></div></div>
+  </div>
+
+  <div class="split-2">
+    <div class="card-block">
+      <h3>Visual selection</h3>
+      <div class="pill-row" style="margin:6px 0 10px;">
+        <span class="chip good">use · 0</span>
+        <span class="chip">reference · 0</span>
+        <span class="chip bad">avoid · 0</span>
+      </div>
+      <div class="bi-empty">No gallery recommendations.</div>
+    </div>
+    <div class="card-block">
+      <h3>Confidence</h3>
+      <div class="conf-row">
+        <div class="conf"><b>surface_format</b><span class="lvl high">high</span></div>
+        <div class="conf"><b>angle</b><span class="lvl high">high</span></div>
+        <div class="conf"><b>palette_match</b><span class="lvl low">low</span></div>
+        <div class="conf"><b>cta_channel</b><span class="lvl low">low</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-block">
+    <h3>Warnings</h3>
+    <div class="pill-row"><span class="chip warn" title="Brief gate did not pass or data absent">brief_missing</span><span class="chip warn" title="No images supplied">gallery_empty</span><span class="chip bad" title="cta.channel='none' but caption.cta_line references channel(s) ['website']. Use non-actionable language when no CTA channel exists.">cta_caption_channel_mismatch</span></div>
+  </div>
+
+  <details class="acc">
+    <summary>Raw input envelope (ROUTER → MARKETER)</summary>
+    <pre class="json">{
+  "task_id": "33333333-3333-3333-3333-333333333333",
+  "job_id": "44444444-4444-4444-4444-444444444444",
+  "action_code": "create_post",
+  "correlation_id": "no-brief-001",
+  "callback_url": "https://example.com/api/v1/tasks/33333333-3333-3333-3333-333333333333/callback",
+  "payload": {
+    "client_request": {
+      "description": "Necesitamos un post sobre la nueva colección de primavera con enfoque en sostenibilidad y materiales reciclados, incluyendo un llamado suave a visitar la tienda online esta semana.",
+      "attachments": []
+    },
+    "context": {
+      "account_uuid": "bbbbbbbb-cccc-dddd-eeee-ffffffffffff",
+      "client_name": "No Brief Brand",
+      "platform": "instagram"
+    },
+    "action_execution_gates": {
+      "brief": {
+        "passed": false,
+        "reason": "brief_not_ready",
+        "status_code": 412,
+        "response": {
+          "status": "error",
+          "message": "Brief incomplete"
+        }
+      }
+    },
+    "agent_sequence": {
+      "current": {},
+      "previous": {}
+    }
+  }
+}</pre>
+  </details>
+  <details class="acc">
+    <summary>Raw output callback (MARKETER → ROUTER)</summary>
+    <pre class="json">{
+  "status": "COMPLETED",
+  "output_data": {
+    "enrichment": {
+      "schema_version": "2.0",
+      "surface_format": "post",
+      "content_pillar": "product",
+      "title": "Lanzamiento Primavera Sostenible",
+      "objective": "Presentar la nueva colección destacando el compromiso con la sostenibilidad y materiales reciclados para generar interés inicial.",
+      "brand_dna": "Bienvenidos a No Brief Brand\nModa consciente diseñada para perdurar.\n\nNuestra propuesta\nNos centramos en la creación de prendas que respetan el medio ambiente, utilizando procesos que minimizan el impacto ecológico y priorizan la circularidad de los materiales. Nuestra nueva colección de primavera es el reflejo de este compromiso, integrando texturas naturales y componentes recuperados.\n\nEspecialidades\n- Prendas de primavera en materiales reciclados\n- Diseño sostenible y funcional\n\nEstilo visual\nLa marca se identifica con una estética limpia y orgánica, priorizando la luz natural y texturas que evocan la materia prima original. No se han definido códigos de color específicos en el manual de identidad actual.",
+      "strategic_decisions": {
+        "surface_format": {
+          "chosen": "post",
+          "alternatives_considered": [
+            "carousel"
+          ],
+          "rationale": "Se elige el formato post para crear un impacto visual único y centrado en el concepto de sostenibilidad de la nueva colección. Dado que no hay activos en la galería, una imagen potente generada es más efectiva que un carrusel sin variedad visual confirmada."
+        },
+        "angle": {
+          "chosen": "sostenibilidad y materiales reciclados para primavera",
+          "alternatives_considered": [
+            "tendencias de moda de temporada"
+          ],
+          "rationale": "El usuario solicitó específicamente un enfoque en materiales reciclados y sostenibilidad, lo cual diferencia a la marca en un mercado saturado de fast-fashion primaveral."
+        },
+        "voice": {
+          "chosen": "honesta, natural y consciente",
+          "alternatives_considered": [
+            "comercial y directa"
+          ],
+          "rationale": "Para comunicar sostenibilidad de forma creíble, el tono debe alejarse de lo puramente transaccional y adoptar una postura más reflexiva y transparente."
+        }
+      },
+      "visual_style_notes": "Composición limpia con luz de mañana suave. Se sugieren tonos tierra, verdes musgo y texturas de lino o algodón orgánico para reforzar el mensaje de sostenibilidad.",
+      "narrative_connection": null,
+      "image": {
+        "concept": "Primer plano de una prenda de tejido sostenible bajo una luz solar suave de primavera.",
+        "generation_prompt": "Close-up of a high-quality sustainable fabric garment with visible recycled texture, soft spring sunlight filtering through leaves, natural linen beige and soft green tones, outdoor garden background blurred, realistic photography, 4:5 aspect ratio.",
+        "alt_text": "Detalle de textura de tejido reciclado de la nueva colección de primavera bajo luz natural."
+      },
+      "caption": {
+        "hook": "La primavera llega con una nueva consciencia.",
+        "body": "Presentamos nuestra nueva colección, donde el diseño se encuentra con el respeto por el planeta. Cada pieza ha sido creada utilizando materiales reciclados, transformando lo que ya existe en algo nuevo, bello y duradero.\n\nCreemos en una moda que no solo se ve bien, sino que hace el bien. Es momento de vestir el cambio que queremos ver.",
+        "cta_line": "Disponible esta semana en nuestra tienda online."
+      },
+      "cta": {
+        "channel": "none",
+        "url_or_handle": null,
+        "label": ""
+      },
+      "hashtag_strategy": {
+        "intent": "brand_awareness",
+        "suggested_volume": 10,
+        "themes": [
+          "moda sostenible",
+          "materiales reciclados",
+          "primavera consciente"
+        ]
+      },
+      "do_not": [
+        "no usar filtros saturados o artificiales",
+        "no incluir texto promocional sobre la imagen",
+        "no usar lenguaje de venta agresiva",
+        "no utilizar tipografías decorativas complejas"
+      ],
+      "visual_selection": {
+        "recommended_asset_urls": [],
+        "recommended_reference_urls": [],
+        "avoid_asset_urls": []
+      },
+      "confidence": {
+        "surface_format": "high",
+        "angle": "high",
+        "palette_match": "low",
+        "cta_channel": "low"
+      },
+      "brand_intelligence": {
+        "business_taxonomy": "b2c_ecom_fashion",
+        "funnel_stage_target": "awareness",
+        "voice_register": "natural-transparente",
+        "emotional_beat": "tranquilidad",
+        "audience_persona": "Consumidor de 25-45 años interesado en el consumo ético y la moda lenta; su mayor objeción es si la ropa reciclada mantiene la calidad y el diseño.",
+        "unfair_advantage": "dato insuficiente en el brief",
+        "risk_flags": [],
+        "rhetorical_device": "especificidad_concreta"
+      }
+    },
+    "warnings": [
+      {
+        "code": "brief_missing",
+        "message": "Brief gate did not pass or data absent",
+        "field": null
+      },
+      {
+        "code": "gallery_empty",
+        "message": "No images supplied",
+        "field": null
+      },
+      {
+        "code": "cta_caption_channel_mismatch",
+        "message": "cta.channel='none' but caption.cta_line references channel(s) ['website']. Use non-actionable language when no CTA channel exists.",
+        "field": "caption.cta_line"
+      }
+    ],
+    "trace": {
+      "task_id": "33333333-3333-3333-3333-333333333333",
+      "action_code": "create_post",
+      "surface": "post",
+      "mode": "create",
+      "latency_ms": 16370,
+      "gemini_model": "gemini-3-flash-preview",
+      "repair_attempted": false,
+      "degraded": true,
+      "gallery_stats": {
+        "raw_count": 0,
+        "accepted_count": 0,
+        "rejected_count": 0,
+        "truncated": false
+      }
+    }
+  },
+  "error_message": null
+}</pre>
+  </details>
+</div>
+
+
+  <footer>Generated with scripts/build_multi_demo_html.py · one call per fixture through <code>reason()</code></footer>
+</div>
+
+<script>
+  const btns = document.querySelectorAll('.tab-btn');
+  const panels = document.querySelectorAll('.tab-panel');
+  // Initialize: show first panel
+  if (panels[0]) panels[0].classList.add('active');
+  btns.forEach((b) => {
+    b.addEventListener('click', () => {
+      const idx = b.getAttribute('data-tab');
+      btns.forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      panels.forEach((p, i) => {
+        p.classList.toggle('active', String(i) === idx);
+      });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+</script>
+</body>
+</html>

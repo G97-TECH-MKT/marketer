@@ -35,6 +35,7 @@ from marketer.config import load_settings  # noqa: E402
 from marketer.llm.gemini import serialize_for_prompt  # noqa: E402
 from marketer.llm.prompts.create_post import CREATE_POST_OVERLAY  # noqa: E402
 from marketer.llm.prompts.system import SYSTEM_PROMPT  # noqa: E402
+from marketer.llm.prompts.vision_dna import VISION_DNA_PROMPT  # noqa: E402
 from marketer.normalizer import normalize  # noqa: E402
 from marketer.schemas.enrichment import (  # noqa: E402
     CallbackBody,
@@ -270,7 +271,7 @@ def build_envelope(cfg: dict, run_idx: int, image_urls: list[str], image_sizes: 
 # ─── Prompt + Gemini call (with vision) ──────────────────────────────────────
 
 
-VISION_NOTE = """
+VISION_NOTE = f"""
 
 # Visual evidence
 
@@ -290,6 +291,14 @@ When populating `visual_selection`:
 
 Cross-reference the text tags and descriptions when present, but trust the
 pixels when they disagree.
+
+# Design DNA analysis (for brand_dna.style_reference_analysis)
+
+When you observe the images, apply the following blueprint to generate the
+style_reference_analysis block inside brand_dna. Use what you SEE — lighting,
+composition, depth, subject treatment — not the brief text.
+
+{VISION_DNA_PROMPT}
 """
 
 

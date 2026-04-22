@@ -251,8 +251,10 @@ class PostEnrichment(BaseModel):
         default="",
         description=(
             "Ready-to-use post instruction for Content Factory. Format: "
-            "(1) editorial image note starting with 'El hook es...', explaining "
-            "the visual concept and WHY it works for this brand; "
+            "(1) CONCEPT block: 'CONCEPT — {subject}', visual description (1 sentence), "
+            "brand reasoning tied to emotional_beat (1-2 sentences), "
+            "'Imagen:' with gallery file name or 'AI-generated', "
+            "'Tipo:' with foto_galeria|ai_generada|captura_reels; "
             "(2) 'Caption:' block with caption.hook + caption.body + caption.cta_line "
             "assembled verbatim; (3) 'Hashtags:' block with hashtag_strategy.tags. "
             "Compose this LAST. This is the direct instruction CF designer and "
@@ -284,9 +286,25 @@ class TraceInfo(BaseModel):
     repair_attempted: bool = False
     degraded: bool = False
     gallery_stats: GalleryStats = Field(default_factory=GalleryStats)
+    input_tokens: int = 0
+    output_tokens: int = 0
+    thoughts_tokens: int = 0
+
+
+class CFPayload(BaseModel):
+    """Ready-to-use Content Factory payload, assembled from enrichment fields."""
+
+    total_items: int = 1
+    client_dna: str = Field(description="Brand DNA (maps from enrichment.brand_dna).")
+    client_request: str = Field(description="Post/carousel brief for CF (maps from enrichment.cf_post_brief).")
+    resources: list[str] = Field(
+        default_factory=list,
+        description="Selected asset URLs (maps from enrichment.visual_selection.recommended_asset_urls).",
+    )
 
 
 class CallbackOutputData(BaseModel):
+    data: CFPayload
     enrichment: PostEnrichment
     warnings: list[Warning] = Field(default_factory=list)
     trace: TraceInfo

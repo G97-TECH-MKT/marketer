@@ -1,0 +1,127 @@
+{
+  "task_id": "nubiex-0001-0000-0000-000000000001",
+  "job_id": "nubiex-job1-0000-0000-000000000001",
+  "action_code": "create_post",
+  "action_id": "nubiex-act1-0000-0000-000000000001",
+  "correlation_id": "ig-nubiex-20260421-001",
+  "callback_url": "https://d1lwu6lioovdrb.cloudfront.net/api/v1/tasks/nubiex-0001/callback",
+  "payload": {
+    "client_request": {
+      "description": "Crea un post para Instagram presentando el servicio de masaje holístico y tántrico de Nubiex, destacando el espacio exclusivo, seguro y transformador para hombres en Barcelona.",
+      "attachments": []
+    },
+    "context": {
+      "account_uuid": "nubiex-acct-0000-0000-000000000001",
+      "client_name": "Nubiex Men's Massage by Bruno",
+      "platform": "instagram"
+    },
+    "action_execution_gates": {
+      "brief": {
+        "passed": true,
+        "reason": "ok",
+        "status_code": 200,
+        "response": {
+          "status": "success",
+          "message": "Account with brief retrieved successfully",
+          "data": {
+            "uuid": "nubiex-acct-0000-0000-000000000001",
+            "profile": {
+              "business_name": "Nubiex Men's Massage by Bruno",
+              "tone": "amigable, inspirador"
+            },
+            "brief": {
+              "uuid": "nubiex-brief-0000-0000-000000000001",
+              "form_values": {
+                "FIELD_COMPANY_NAME": "Nubiex Men's Massage by Bruno",
+                "FIELD_COMPANY_CATEGORY": "Wellness / Masaje masculino",
+                "FIELD_COUNTRY": "España",
+                "FIELD_LARGE_ANSWER": "Nubiex Men's Massage by Bruno nació a partir de un proceso de transformación personal y profesional, enfocado en la necesidad de comprender la conexión profunda entre el cuerpo, la mente, la energía y el bienestar emocional. A lo largo de mi trayectoria y experiencia en el masaje holístico, tántrico y consciente, observé que muchos hombres buscaban algo más que relajación física: necesitaban un espacio seguro, discreto y respetuoso donde poder liberar tensiones, reconectar con su cuerpo, expandir su energía y encontrar equilibrio interior. La motivación principal fue crear un espacio exclusivo dedicado al bienestar masculino, donde el toque consciente, la presencia plena y la energía vital se integran de forma auténtica.",
+                "FIELD_PRODUCTS_SERVICES_ANSWER": "En Nubiex Men's Massage by Bruno ofrecemos masajes exclusivos para hombres, combinando técnicas holísticas, tántricas, Lomi Lomi, quiromasaje y conscientes. Creamos un espacio seguro, discreto y respetuoso donde puedes liberar tensiones, reconectar con tu cuerpo y expandir tu energía. Nuestro enfoque va más allá del masaje tradicional: con toque consciente, presencia plena y trabajo energético, ayudamos a restaurar el equilibrio, despertar vitalidad y potenciar tu bienestar emocional.",
+                "FIELD_TARGET_CUSTOMER_ANSWER": "Hombres que viven o visitan Barcelona y alrededores hasta 40 km, en Cataluña. Edad de 23 a 60 años, con un enfoque en hombres adultos que buscan bienestar físico y emocional. Nivel socioeconómico medio-alto, con capacidad de invertir en servicios de bienestar premium y experiencias personalizadas. Buscan calidad, discreción y exclusividad. Están abiertos a terapias alternativas y conscientes de la importancia de la salud emocional y energética.",
+                "FIELD_VALUE_PROPOSITION": "Un espacio exclusivo para hombres donde el toque consciente, la presencia plena y el trabajo energético restauran el equilibrio, despiertan la vitalidad y potencian el bienestar emocional. Seguro, discreto y transformador.",
+                "FIELD_COMMUNICATION_LANGUAGE": "spanish",
+                "FIELD_COMMUNICATION_STYLE": ["friendly", "inspirational"],
+                "FIELD_COLOR_LIST_PICKER": ["#5e204d", "#9c7945", "#edd494", "#8d3db4"],
+                "FIELD_FONT_STYLE": "sans",
+                "FIELD_DESIGN_STYLE": "aesthetic",
+                "FIELD_POST_CONTENT_STYLE": "image_text",
+                "FIELD_INSTAGRAM_URL": "@nubiex.mens.massage",
+                "FIELD_TIKTOK_URL": "@bruno_nbxmasaje",
+                "FIELD_BUSINESS_PHONE": "+34664421717",
+                "FIELD_BUSINESS_EMAIL": "nubiexmensmassage@gmail.com",
+                "FIELD_KEYWORDS_TAGS_INPUT": ["Nubiex Therapy", "Massage Therapy Barcelona", "Nubiex Masaje", "bienestar masculino Barcelona"],
+                "FIELD_HAS_BRAND_MATERIAL": false,
+                "FIELD_RELEVANT_DATES_ANSWER": "N/A"
+              }
+            }
+          }
+        }
+      },
+      "image_catalog": {
+        "passed": true,
+        "reason": "ok",
+        "status_code": 200,
+        "response": {
+          "status": "success",
+          "data": [
+            {
+              "url": "https://cdn.nubiex.es/brand/nubiex_valores_1.jpg",
+              "name": "nubiex_valores_1.jpg",
+              "extension": "jpg",
+              "size": 920000,
+              "tags": ["conexión", "abrazo", "holístico", "tántrico", "presencia", "calor"],
+              "description": "Abrazo consciente entre terapeuta y cliente, toque holístico de reconexión corporal, fondo bohemio con cojines coloridos e iluminación cálida de velas, tonos tierra y dorados",
+              "category": "treatment_photo",
+              "used_previously": false
+            },
+            {
+              "url": "https://cdn.nubiex.es/brand/nubiex_valores_2.jpg",
+              "name": "nubiex_valores_2.jpg",
+              "extension": "jpg",
+              "size": 870000,
+              "tags": ["manos", "pecho", "consciente", "presencia", "energía", "velas"],
+              "description": "Manos del terapeuta sobre el pecho del cliente con collar, toque consciente y presencia plena, velas al fondo creando luz cálida íntima, trabajo energético y emocional",
+              "category": "treatment_photo",
+              "used_previously": false
+            },
+            {
+              "url": "https://cdn.nubiex.es/brand/nubiex_valores_3.jpg",
+              "name": "nubiex_valores_3.jpg",
+              "extension": "jpg",
+              "size": 890000,
+              "tags": ["masaje", "técnica", "brazo", "pierna", "camilla", "detalle"],
+              "description": "Terapeuta en tonos naranjas aplicando técnica precisa de masaje en el brazo y pierna del cliente sobre camilla, trabajo corporal consciente y cuidadoso",
+              "category": "treatment_photo",
+              "used_previously": false
+            },
+            {
+              "url": "https://cdn.nubiex.es/brand/nubiex_valores_4.jpg",
+              "name": "nubiex_valores_4.jpg",
+              "extension": "jpg",
+              "size": 840000,
+              "tags": ["meditación", "namaste", "bienestar", "serenidad", "Bruno", "presencia"],
+              "description": "Hombre en postura de meditación con manos en namaste, ojos cerrados, expresión serena e introspectiva, collar de cuentas, imagen del fundador Bruno en estado de presencia plena",
+              "category": "lifestyle",
+              "used_previously": false
+            }
+          ]
+        }
+      }
+    },
+    "agent_sequence": {
+      "current": {
+        "step_code": "marketing_enrichment",
+        "step_order": 1,
+        "task_id": "nubiex-0001-0000-0000-000000000001",
+        "agent_id": "nubiex-agnt-0000-0000-000000000001",
+        "agent_name": "marketer",
+        "endpoint": "https://marketer.internal/tasks",
+        "http_method": "POST",
+        "is_mandatory": true,
+        "timeout_seconds": 120,
+        "retry_count": 0
+      },
+      "previous": {}
+    }
+  }
+}

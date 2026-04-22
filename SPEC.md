@@ -25,7 +25,7 @@ ROUTER (orquestador)
 
 **Propiedades clave:**
 - Async por diseño. ACK 202 inmediato; resultado asíncrono vía PATCH.
-- **Persistencia activa**: cada run se guarda en `marketer_runs`; memory por cliente en `marketer_client_memory`; actions configurables en `marketer_actions`. Ver `docs/PERSISTENCE.md` para schema + flujo. Un restart pierde tasks en-vuelo (sin queue durable); ROUTER retry cubre.
+- **Persistencia activa**: cada run se guarda en `jobs`; brand intelligence en `strategies`; catalog de actions en `action_types`. Schema autoritativo: `alembic/versions/001_initial_schema.py` (5 tablas: `users`, `action_types`, `raw_briefs`, `strategies`, `jobs`). Un restart pierde tasks en-vuelo (sin queue durable); ROUTER retry cubre.
 - Outbound: Gemini + callback_url al router + PostgreSQL (pool interno).
 - Stack: Python 3.11+, FastAPI, Pydantic v2, `google-genai` SDK, httpx async para callback, SQLAlchemy 2 async + asyncpg + Alembic para persistencia.
 
@@ -53,17 +53,20 @@ src/marketer/
     envelope.py              # RouterEnvelope (extra="allow")
     internal_context.py      # InternalContext + FlatBrief + GalleryItem + ...
     enrichment.py            # PostEnrichment + BrandIntelligence + CallbackBody + ...
-  db/                        # Persistence layer (pending implementation; see docs/PERSISTENCE.md)
-    engine.py                # SQLAlchemy async engine
-    models.py                # ORM: MarketerAction, MarketerRun, MarketerClientMemory
-    repositories/            # actions, runs, client_memory — inyectados en reasoner
-    migrations/              # Alembic (versions/001_initial.py seed + schema)
+  db/
+    engine.py                # SQLAlchemy async engine + session_scope
+    models.py                # ORM: User, ActionType, RawBrief, Strategy, Job
+    actions_cache.py         # In-memory TTL cache for action_types catalog (60s)
+  persistence.py             # persist_on_ingest / persist_on_complete wiring
+alembic/
+  versions/
+    001_initial_schema.py    # 5 tables: users, action_types, raw_briefs, strategies, jobs
 tests/
   test_normalizer.py         # 14 offline
   test_validator.py          # 10 offline
   test_main_async.py         # 12 offline (TestClient + mocks)
   test_golden_casa_maruja.py # 26 live (MARKETER_RUN_LIVE=1)
-fixtures/envelopes/          # 9 fixtures cubriendo briefs ricos/pobres/ausentes
+fixtures/envelopes/          # 10 fixtures cubriendo briefs ricos/pobres/ausentes (post only; web en legacy/)
 golden/posts/                # 3 baselines v2 (casa_maruja, minimal, missing_brief)
 scripts/
   smoke_async_roundtrip.py   # E2E real con uvicorn + mock callback

@@ -172,13 +172,14 @@ Colors
 Design Style
 json{
   "style_reference_analysis": {
-    "visual_mood": "{2-3 words label + 1 sentence atmosphere. Derive from brand_tokens.design_style, post_content_style, and palette character.}",
-    "compositional_strategy": "{How visual elements are arranged — depth planes, hierarchy, balance. 1-2 sentences.}",
-    "imagery_and_framing": "{Photography/visual style — cropping, depth of field, lighting character, texture preference. 1-2 sentences.}",
-    "spatial_distribution": "{Use of negative/positive space, alignment logic. 1-2 sentences.}",
-    "graphic_interventions": "{Frames, overlays, graphic treatments, accent color application. Reference palette hex codes literally where relevant.}",
-    "typographic_architecture": "{Type hierarchy — which faces at which scale, caps/lowercase rules, tracking, color use on type. Ground in brand_tokens.font_style.}",
-    "narrative_direction": "{The emotional posture of the design in one sentence — what it holds, what it refuses to do.}"
+    "atmospheric_logic": "{Concept-level design personality name + 1 sentence atmosphere, e.g. 'Intimate Masculine Sanctum. Warmth through darkness — private, grounded, energetically charged.'}",
+    "compositional_physics": "{1 sentence: stable/centered vs. diagonal tension, and how elements anchor to the frame.}",
+    "depth_stack": "{1 sentence: where type lives relative to the subject — behind, overlapping with a translucent band, or isolated in negative space.}",
+    "imagery_lighting_standards": "{1 sentence: focal depth, cropping logic, and lighting quality.}",
+    "spatial_ratio": "{1 sentence: minimum negative space ratio and whether that space is dark or light.}",
+    "graphic_scaffolding": "{1 sentence: non-photographic layer elements (frames, bands, overlays) and their role.}",
+    "typographic_hierarchy": "{1 sentence: scale relationship Hook/Body/Fine-Print and alignment strategy.}",
+    "variability_directive": "{1 sentence: what CAN shift per layout and what MUST stay fixed.}"
   }
 }
 
@@ -196,11 +197,18 @@ Contact
 ## Rules
 
 - Every hex code in brand_dna MUST be from brand_tokens.palette. Never invent.
+- Hex codes belong ONLY in the Colors section. Do NOT reference hex codes or
+  specific font names inside style_reference_analysis — describe contrast,
+  weight, and behavior instead.
 - The style_reference_analysis JSON values are in English even for Spanish-language
   briefs — it is a technical design spec, not copy.
 - If brand_tokens.design_style is sparse, synthesize from palette character,
   post_content_style, and communication_style. This synthesis IS the marketer's
   job — commit to it, don't hedge.
+- atmospheric_logic must name a design personality concept ("Intimate Masculine
+  Sanctum", "Brutalist Utility") — not just list moods ("warm, inviting").
+- variability_directive must give CF a concrete flexing rule, not a vague
+  encouragement ("feel free to vary layouts").
 - Length: aim 200-400 words total. Concise beats padded.
 - The JSON block in Design Style is the ONLY JSON allowed inside this field.
   No markdown asterisks, no # headers outside the JSON.
@@ -212,14 +220,20 @@ Contact
 It must be ready to hand to a designer + copywriter without further processing.
 Compose it LAST, after all other fields are set.
 
-## Format (write it EXACTLY like this, in the brief's communication_language)
+## Format — post / story / reel (write EXACTLY like this)
 
 ```
-El hook es {subject}: {what the image shows — concrete and specific, 1 sentence}.
-{Why this visual works for THIS brand — editorial reasoning tied to
-brand_intelligence.emotional_beat and the angle chosen, 1-2 sentences.}
-[Only if the CTA is visible/referenced in the image: "CTA apunta a {target}."]
-[Only if a design constraint applies: e.g. "Imagen sin texto." or "Sin copy superpuesto."]
+CONCEPT — {subject}
+{what the image shows — concrete and specific, 1 sentence. Describe what a viewer
+sees: people, objects, light, gesture — not what the image "represents".}
+{Why this visual unlocks THIS post — write in editorial language what the image
+DOES to the viewer before any word is read. Do NOT name JSON fields or schema
+values (forbidden: "activa el emotional_beat de X", "refuerza el funnel_stage",
+"según el voice_register"). Good example: "el abrazo en penumbra transmite
+amparo antes de que hable cualquier titular — el hombre ya se siente dentro
+del espacio antes de leer una palabra". 1-2 sentences.}
+Imagen: {gallery file name OR "AI-generated"}
+Tipo: {foto_galeria | ai_generada | captura_reels}
 Caption:
 {caption.hook verbatim}
 {caption.body verbatim, preserving all line breaks and emojis}
@@ -228,11 +242,50 @@ Hashtags:
 {hashtag_strategy.tags joined by single space, all on one line}
 ```
 
+## Format — carousel (write EXACTLY like this)
+
+```
+Carrusel — {title}
+{1 paragraph: strategic purpose, narrative arc slide to slide, what the hook is,
+ what transformation the reader experiences, which slide is the CTA.}
+
+Slide 1 — Cover ({gallery file name OR "AI-generated"})
+{what the image shows, 1 sentence}
+Copy: {slide headline — short, punchy, no full caption}
+
+Slide 2 ({gallery file name OR "AI-generated"})
+{what the image shows + why this beat matters, 1-2 sentences}
+Copy: {slide headline}
+
+{Continue Slide N for each conceptual beat — minimum 3 slides, maximum 6.}
+
+Caption:
+{caption.hook verbatim}
+{caption.body verbatim — shorter than a post; the slides carry the story}
+{caption.cta_line verbatim — only if non-empty}
+Hashtags:
+{hashtag_strategy.tags joined by single space, all on one line}
+```
+
 ## Rules
 
-- The editorial image note (before "Caption:") must ADD reasoning not already
-  explicit in the caption. It tells CF's designer WHY this visual choice activates
-  brand_intelligence.emotional_beat — not just what the image shows.
+- The CONCEPT block (before "Caption:") must ADD reasoning not already explicit
+  in the caption. It tells CF's designer WHICH image asset to use (Imagen line)
+  and WHY this visual choice activates the chosen emotional tone.
+  Write the visual reasoning in editorial language — describe what the image
+  DOES to the viewer, not what schema field it satisfies. NEVER quote JSON
+  field names verbatim in the prose (wrong: "activa el 'emotional_beat' de
+  tranquilidad"; right: "el abrazo transmite calma antes de que hable cualquier
+  titular"). The CONCEPT prose should read like a creative director's note.
+  If a gallery asset was selected, Imagen must name the file from gallery[].
+  If no gallery asset fits, write "AI-generated" and rely on image.generation_prompt.
+
+  Quality reference (service brand, founder-led):
+  ✓ "El hook es Bruno: el fundador, en posición de namaste, ojos cerrados,
+     presente. Esta imagen es el activo de mayor confianza que tiene la marca —
+     una persona real detrás de todo."
+  ✗ "La imagen activa el emotional_beat de confianza y refuerza el funnel
+     de awareness al mostrar al fundador meditando."
 - Caption block: paste caption.hook, caption.body, caption.cta_line verbatim.
   Do NOT paraphrase. The validator will cross-check against those fields.
 - Hashtags line: paste hashtag_strategy.tags verbatim. If tags is empty, omit
@@ -279,11 +332,37 @@ lower the corresponding `confidence` to "low".
 
 - Language: the brief's `communication_language` (default "spanish"). All
   text fields use that language. Schema keys stay English.
-- Hook: 1-2 sentences. Sensory, specific. No stock openers
-  ("¿Sabías que…?", "No hemos podido resistirnos…").
-- Body: 1-3 short paragraphs. Use brand voice. Bind to brief facts: when you
-  mention a price, quote `brief_facts.prices` verbatim. When you mention a
-  URL/phone/email, copy from `brief_facts` literally.
+- Hook: 1-2 sentences. Open with a specific sensory moment, an unexpected
+  behavior detail, or a sharp contrast that could ONLY belong to this brand.
+  Forbidden patterns (will be rejected):
+    "¿Sabías que…?", "No hemos podido resistirnos…", "En el corazón de…",
+    "Más que un X, un Y", "Descubre el secreto de…", "Te presentamos…",
+    "Bienvenido a…", "¿Buscas…?", any opener that could copy-paste to a
+    competitor's account without changing a word.
+  A great hook earns a re-read because it is specific, not because it is clever.
+  Quality reference (founder-led service brand):
+  ✓ "Soy Bruno. Llevo años acompañando a hombres en su proceso de reconexión —
+     con el cuerpo, con la energía, con ellos mismos."
+  ✓ "El cuerpo guarda historias que el silencio no siempre sabe contar."
+  ✗ "¿Buscas un espacio exclusivo para tu bienestar?"
+- Body: 1-3 short paragraphs. Open with a scene, a behavioral detail, or a
+  specific sensory moment — NOT with any of these:
+    "X nace como un espacio de…", "X nació para ser…",
+    "Desde YEAR…", "En el corazón de…", "hemos creado un refugio…",
+    "muchos [persona] buscan algo más que…", "va más allá de la relajación…",
+    "un espacio diseñado por y para…", "donde el toque consciente y la
+    presencia plena se unen…" — these are category clichés that apply to
+    any wellness brand.
+  The client's history and values can be felt through what the post shows,
+  not stated as introductory facts. Additionally, do NOT transcribe the brief's
+  own phrases into copy — FIELD_LARGE_ANSWER and FIELD_PRODUCTS_SERVICES_ANSWER
+  are background context, not caption sentences. Writing "liberar tensiones,
+  reconectar con tu cuerpo, expandir tu energía vital" is copying the brief;
+  writing "la tensión de la semana se disuelve antes de que llegues a la
+  camilla" is using it as source material.
+  After the scene-opener, develop the value using brand voice. Bind to brief
+  facts: when you mention a price, quote `brief_facts.prices` verbatim. When
+  you mention a URL/phone/email, copy from `brief_facts` literally.
 - cta_line: one line, action verb first. Reference the chosen `cta.channel`
   and ONLY that channel ("Reserva por DM", "Pide cita en el enlace de la bio",
   "Descubre la carta en nuestra web"). Do not mention a second channel as a

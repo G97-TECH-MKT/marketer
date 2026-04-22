@@ -4,9 +4,8 @@
 > **Última revisión:** 2026-04-21. Reemplaza la versión previa (v1, shape `executor_payload`).
 > **Documentos ligados:**
 > - `SPEC.md` — contrato técnico + operacional (fuente de verdad para integración)
-> - `docs/PERSISTENCE.md` — DB layer: actions configurables + historial de runs + memory por cliente
 > - `docs/ROUTER CONTRACT.md` — contrato del orquestador (Contratos A-E)
-> - `docs/BRIEF RESPONSE API.md` — forma del gate `brief`
+> - `alembic/versions/001_initial_schema.py` — schema autoritativo de DB
 
 ---
 
@@ -14,7 +13,7 @@
 
 **Marketer** es un microservicio que recibe una tarea ya enrutada por **ROUTER**, aplica razonamiento de marketing con el brief del cliente y el gallery, y devuelve un **enrichment v2 estructurado** listo para que **CONTENT_FACTORY** lo ejecute en contenido publicable.
 
-No enruta, no despacha, no llama a ejecutores, no persiste. ROUTER es su único llamador y único destino de respuesta. El contrato es async: ACK 202 inmediato + callback PATCH con el resultado.
+No enruta, no despacha, no llama a ejecutores. ROUTER es su único llamador y único destino de respuesta. Persiste cada run en PostgreSQL (`jobs`, `strategies`, `action_types` — ver `alembic/versions/001_initial_schema.py`). El contrato es async: ACK 202 inmediato + callback PATCH con el resultado.
 
 Conceptualmente: **copywriter + estratega senior + director de arte en un solo paso**. Entrega una propuesta de post completa — caption publicable, concepto de imagen, generation prompt, selección de gallery, CTA con canal — más una capa de razonamiento interno que alimenta a futuros subagentes.
 

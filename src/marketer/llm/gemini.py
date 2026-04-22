@@ -32,10 +32,11 @@ class GeminiClient:
         user_prompt: str,
         temperature: float = 0.4,
         max_output_tokens: int = 8192,
-    ) -> tuple[PostEnrichment | None, str, Exception | None]:
+    ) -> tuple[PostEnrichment | None, str, Exception | None, dict]:
         """Run a single structured-output call.
 
-        Returns (parsed_model_or_None, raw_text, error_or_None).
+        Returns (parsed_model_or_None, raw_text, error_or_None, usage_dict).
+        usage_dict keys: input_tokens, output_tokens, thoughts_tokens.
         If parsing fails, parsed is None but raw_text carries what the model returned.
         """
         config = types.GenerateContentConfig(
@@ -53,20 +54,26 @@ class GeminiClient:
             )
         except Exception as exc:
             logger.exception("Gemini call failed")
-            return None, "", exc
+            return None, "", exc, {}
 
         raw_text = getattr(response, "text", "") or ""
+        um = getattr(response, "usage_metadata", None)
+        usage: dict = {
+            "input_tokens":   getattr(um, "prompt_token_count", 0) or 0,
+            "output_tokens":  getattr(um, "candidates_token_count", 0) or 0,
+            "thoughts_tokens": getattr(um, "thoughts_token_count", 0) or 0,
+        }
 
         # Preferred path: google-genai parses into the Pydantic model when response_schema is set
         parsed = getattr(response, "parsed", None)
         if isinstance(parsed, PostEnrichment):
-            return parsed, raw_text, None
+            return parsed, raw_text, None, usage
 
         # Fallback: parse the raw text ourselves
         try:
-            return PostEnrichment.model_validate_json(raw_text), raw_text, None
+            return PostEnrichment.model_validate_json(raw_text), raw_text, None, usage
         except Exception as exc:
-            return None, raw_text, exc
+            return None, raw_text, exc, usage
 
     def repair(
         self,
@@ -74,7 +81,7 @@ class GeminiClient:
         repair_prompt: str,
         temperature: float = 0.2,
         max_output_tokens: int = 8192,
-    ) -> tuple[PostEnrichment | None, str, Exception | None]:
+    ) -> tuple[PostEnrichment | None, str, Exception | None, dict]:
         """Schema-repair round-trip. Same shape as generate_structured."""
         return self.generate_structured(
             system_prompt=system_prompt,

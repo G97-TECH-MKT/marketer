@@ -18,6 +18,7 @@ from marketer.llm.prompts.repair import REPAIR_PROMPT_TEMPLATE
 from marketer.llm.prompts.system import SYSTEM_PROMPT
 from marketer.normalizer import normalize
 from marketer.schemas.enrichment import (
+    CFPayload,
     CallbackBody,
     CallbackOutputData,
     GalleryStats,
@@ -79,6 +80,7 @@ def reason(
     envelope_data: dict[str, Any],
     gemini: GeminiClient,
     extras_truncation: int = 10,
+    max_output_tokens: int = 16384,
 ) -> CallbackBody:
     started = time.time()
     warnings: list[Warning] = []
@@ -111,8 +113,9 @@ def reason(
 
     # --- Build prompt and call Gemini ---
     user_prompt = _build_user_prompt(ctx, extras_truncation)
-    enrichment, raw_text, err = gemini.generate_structured(
-        system_prompt=SYSTEM_PROMPT, user_prompt=user_prompt
+    enrichment, raw_text, err, usage = gemini.generate_structured(
+        system_prompt=SYSTEM_PROMPT, user_prompt=user_prompt,
+        max_output_tokens=max_output_tokens,
     )
 
     repair_attempted = False
@@ -123,9 +126,10 @@ def reason(
             error=str(err) if err else "schema validation failed",
             previous_output=raw_text,
         )
-        enrichment, _, err2 = gemini.repair(
+        enrichment, _, err2, repair_usage = gemini.repair(
             system_prompt=SYSTEM_PROMPT, repair_prompt=repair_prompt
         )
+        usage = {k: usage.get(k, 0) + repair_usage.get(k, 0) for k in ("input_tokens", "output_tokens", "thoughts_tokens")}
         if enrichment is None:
             return CallbackBody(
                 status="FAILED",
@@ -144,9 +148,10 @@ def reason(
             error="; ".join(blocking),
             previous_output=enrichment.model_dump_json(),
         )
-        enrichment_new, _, err2 = gemini.repair(
+        enrichment_new, _, err2, repair_usage2 = gemini.repair(
             system_prompt=SYSTEM_PROMPT, repair_prompt=repair_prompt
         )
+        usage = {k: usage.get(k, 0) + repair_usage2.get(k, 0) for k in ("input_tokens", "output_tokens", "thoughts_tokens")}
         if enrichment_new is None:
             return CallbackBody(
                 status="FAILED",
@@ -189,10 +194,22 @@ def reason(
             rejected_count=ctx.gallery_rejected_count,
             truncated=ctx.gallery_truncated,
         ),
+        input_tokens=usage.get("input_tokens", 0),
+        output_tokens=usage.get("output_tokens", 0),
+        thoughts_tokens=usage.get("thoughts_tokens", 0),
+    )
+    resources = enrichment.visual_selection.recommended_asset_urls or []
+    total_items = len(resources) if enrichment.surface_format == "carousel" and resources else 1
+    cf_payload = CFPayload(
+        total_items=total_items,
+        client_dna=enrichment.brand_dna,
+        client_request=enrichment.cf_post_brief,
+        resources=resources,
     )
     return CallbackBody(
         status="COMPLETED",
         output_data=CallbackOutputData(
+            data=cf_payload,
             enrichment=enrichment,
             warnings=warnings,
             trace=trace,

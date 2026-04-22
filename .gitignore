@@ -35,3 +35,7 @@ images/
 # Keep examples, never commit real tfvars
 !**/terraform.tfvars.example
 *.tfplan*
+
+# Local agent/editor state
+.agents/
+.claude/

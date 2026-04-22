@@ -1,0 +1,137 @@
+{
+  "task_id": "b3c7a2f1-4d89-4e20-9f5a-1e2b3c4d5e6f",
+  "job_id": "d5e6f7a8-b9c0-4d1e-8f2a-3b4c5d6e7f80",
+  "action_code": "create_post",
+  "action_id": "e6f7a8b9-c0d1-4e2f-9a3b-4c5d6e7f8091",
+  "correlation_id": "ig-20260421-wellness-001",
+  "callback_url": "https://d1lwu6lioovdrb.cloudfront.net/api/v1/tasks/b3c7a2f1-4d89-4e20-9f5a-1e2b3c4d5e6f/callback",
+  "payload": {
+    "client_request": {
+      "description": "Crea un post sobre los beneficios del masaje consciente y holístico para el bienestar masculino. Tono íntimo, seguro y que transmita confianza. Queremos atraer a hombres que buscan algo más que relajación física.",
+      "attachments": []
+    },
+    "context": {
+      "account_uuid": "f7a8b9c0-d1e2-4f3a-ab4b-5c6d7e8f9012",
+      "client_name": "Nubiex Men's Massage by Bruno",
+      "platform": "instagram"
+    },
+    "action_execution_gates": {
+      "brief": {
+        "passed": true,
+        "reason": "ok",
+        "status_code": 200,
+        "response": {
+          "status": "success",
+          "message": "Account with brief retrieved successfully",
+          "data": {
+            "uuid": "f7a8b9c0-d1e2-4f3a-ab4b-5c6d7e8f9012",
+            "profile": {
+              "business_name": "Nubiex Men's Massage by Bruno",
+              "website_url": "",
+              "tone": "íntimo, inspirador, elegante",
+              "logo_url": "https://production-user-media-48622f3941fa2779.s3.amazonaws.com/accounts/f7a8b9c0-d1e2-4f3a-ab4b-5c6d7e8f9012/profile",
+              "contact_phone": "+34664421717",
+              "instagram": "nubiex.mens.massage"
+            },
+            "brief": {
+              "uuid": "a8b9c0d1-e2f3-4a4b-bc5c-6d7e8f901234",
+              "is_completed": true,
+              "brief_started_at": "2025-11-10T10:00:00.000000Z",
+              "created_at": "2025-11-10T10:00:00.000000Z",
+              "updated_at": "2026-04-21T09:00:00.000000Z",
+              "form_values": {
+                "FIELD_TO": "Tú",
+                "FIELD_FROM": "Nosotros",
+                "FIELD_COUNTRY": "España",
+                "FIELD_FONT_STYLE": "sans",
+                "FIELD_HAS_WEBSITE": true,
+                "FIELD_WEBSITE_URL": "",
+                "FIELD_COMPANY_NAME": "Nubiex Men's Massage by Bruno",
+                "FIELD_DESIGN_STYLE": "aesthetic",
+                "FIELD_INSTAGRAM_URL": "nubiex.mens.massage",
+                "FIELD_TIKTOK_URL": "",
+                "FIELD_FACEBOOK_URL": "",
+                "FIELD_LINKEDIN_URL": "",
+                "FIELD_BUSINESS_EMAIL": "nubiexmensmassage@gmail.com",
+                "FIELD_BUSINESS_PHONE": "+34664421717",
+                "FIELD_BILLING_ADDRESS": "Carrer de Guàrdia, 08001 Barcelona, España",
+                "FIELD_LOCATION_ADDRESS": "Carrer de Guàrdia, 08001 Barcelona, España",
+                "FIELD_LOCATION_COUNTRY": "España",
+                "FIELD_IS_PHYSICAL_STORE": true,
+                "FIELD_HAS_SOCIAL_NETWORKS": true,
+                "FIELD_COMPANY_CATEGORY": "Bienestar y salud",
+                "FIELD_COMPANY_SUBCATEGORY": "Masajes y terapias",
+                "FIELD_COLOR_LIST_PICKER": ["#5E204D", "#9C7945", "#EDD494", "#8D3DB4"],
+                "FIELD_POST_CONTENT_STYLE": "image_text",
+                "FIELD_COMMUNICATION_STYLE": ["friendly", "inspirational"],
+                "FIELD_COMMUNICATION_LANGUAGE": "spanish",
+                "FIELD_VALUE_PROPOSITION": "Espacio exclusivo y seguro para el bienestar masculino donde el toque consciente, la presencia plena y la energía vital se integran de forma auténtica.",
+                "FIELD_LARGE_ANSWER": "Nubiex Men's Massage by Bruno nació a partir de un proceso de transformación personal y profesional, enfocado en la necesidad de comprender la conexión profunda entre el cuerpo, la mente, la energía y el bienestar emocional. A lo largo de mi trayectoria y experiencia en el masaje holístico, tántrico y consciente, observé que muchos hombres buscaban algo más que relajación física: necesitaban un espacio seguro, discreto y respetuoso donde poder liberar tensiones, reconectar con su cuerpo, expandir su energía y encontrar equilibrio interior. La motivación principal fue crear un espacio exclusivo y especial, dedicado al bienestar masculino, donde el toque consciente, la presencia plena y la energía vital se integraran de forma auténtica.",
+                "FIELD_PRODUCTS_SERVICES_ANSWER": "Masajes exclusivos para hombres combinando técnicas holísticas, tántricas, Lomi Lomi, quiromasaje y conscientes. Creamos un espacio seguro, discreto y respetuoso donde puedes liberar tensiones, reconectar con tu cuerpo y expandir tu energía. Nuestro enfoque va más allá del masaje tradicional: con toque consciente, presencia plena y trabajo energético, ayudamos a restaurar el equilibrio, despertar vitalidad y potenciar el bienestar emocional.",
+                "FIELD_TARGET_CUSTOMER_ANSWER": "Hombres de 23 a 60 años que viven o visitan Barcelona y alrededores. Nivel socioeconómico medio-alto, abiertos a terapias alternativas y conscientes de la importancia de la salud emocional y energética. Buscan calidad, discreción y exclusividad en sus experiencias de bienestar.",
+                "FIELD_KEYWORDS_TAGS_INPUT": ["Nubiex Therapy", "Nubiex Men's Massage by Bruno", "Massage Therapy Barcelona", "Nubiex Masaje"],
+                "FIELD_RELEVANT_DATES_ANSWER": "N/A",
+                "FIELD_HAS_BRAND_MATERIAL": false
+              }
+            }
+          }
+        }
+      },
+      "image_catalog": {
+        "passed": true,
+        "reason": "ok",
+        "status_code": 200,
+        "response": {
+          "status": "success",
+          "data": [
+            {
+              "url": "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=800&q=80",
+              "name": "masaje_manos_espalda.jpg",
+              "extension": "jpg",
+              "size": 920000,
+              "tags": ["masaje", "manos", "espalda", "bienestar"],
+              "description": "Manos en masaje sobre la espalda de un hombre en ambiente íntimo y cálido",
+              "category": "service_photo",
+              "used_previously": false
+            },
+            {
+              "url": "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=800&q=80",
+              "name": "sala_masaje_velas.jpg",
+              "extension": "jpg",
+              "size": 780000,
+              "tags": ["sala", "velas", "ambiente", "zen"],
+              "description": "Sala de masaje con luz cálida y velas encendidas, atmósfera íntima",
+              "category": "ambient_photo",
+              "used_previously": false
+            },
+            {
+              "url": "https://images.unsplash.com/photo-1600334369850-6e2a6b7c36b6?w=800&q=80",
+              "name": "piedras_calientes_spa.jpg",
+              "extension": "jpg",
+              "size": 850000,
+              "tags": ["piedras", "spa", "relajacion", "calor"],
+              "description": "Piedras calientes sobre fondo oscuro, estética premium de spa masculino",
+              "category": "product_photo",
+              "used_previously": true
+            }
+          ]
+        }
+      }
+    },
+    "agent_sequence": {
+      "current": {
+        "step_code": "marketing_enrichment",
+        "step_order": 1,
+        "task_id": "b3c7a2f1-4d89-4e20-9f5a-1e2b3c4d5e6f",
+        "agent_id": "5a258d4e-b01d-48dc-95b1-0e67d81b7f4c",
+        "agent_name": "marketer",
+        "endpoint": "https://marketer.internal/tasks",
+        "http_method": "POST",
+        "is_mandatory": true,
+        "timeout_seconds": 60,
+        "retry_count": 0
+      },
+      "previous": {}
+    }
+  }
+}
