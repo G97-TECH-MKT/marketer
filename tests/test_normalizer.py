@@ -9,10 +9,15 @@ from marketer.normalizer import normalize
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE_ENVELOPES = ROOT / "fixtures" / "envelopes"
+FIXTURE_LEGACY = ROOT / "legacy" / "fixtures" / "envelopes"
 
 
 def _load(name: str) -> dict:
     return json.loads((FIXTURE_ENVELOPES / name).read_text(encoding="utf-8"))
+
+
+def _load_legacy(name: str) -> dict:
+    return json.loads((FIXTURE_LEGACY / name).read_text(encoding="utf-8"))
 
 
 def test_casa_maruja_spanish_fields_and_gallery_roles():
@@ -30,7 +35,7 @@ def test_casa_maruja_spanish_fields_and_gallery_roles():
 
 
 def test_fontaneria_top_level_brief_string_and_extras():
-    data = _load("fontaneria_web.json")
+    data = _load_legacy("fontaneria_web.json")
     ctx, _warnings = normalize(data)
     assert ctx.brief is not None
     assert ctx.brief.business_name == "Fontaneria Rodriguez"
@@ -44,7 +49,7 @@ def test_fontaneria_top_level_brief_string_and_extras():
 
 
 def test_rich_web_reviews_special_requests_reference_urls_in_extras():
-    data = _load("rich_web_with_extras.json")
+    data = _load_legacy("rich_web_with_extras.json")
     ctx, _warnings = normalize(data)
     assert ctx.brief is not None
     ex = ctx.brief.extras
