@@ -18,7 +18,10 @@ logger = logging.getLogger(__name__)
 
 class GeminiClient:
     def __init__(self, api_key: str, model: str, timeout_seconds: int = 30):
-        self._client = genai.Client(api_key=api_key)
+        self._client = genai.Client(
+            api_key=api_key,
+            http_options=types.HttpOptions(timeout=timeout_seconds * 1000),
+        )
         self._model = model
         self._timeout = timeout_seconds
 
@@ -31,18 +34,20 @@ class GeminiClient:
         system_prompt: str,
         user_prompt: str,
         temperature: float = 0.4,
-        max_output_tokens: int = 8192,
+        max_output_tokens: int = 16384,
     ) -> tuple[PostEnrichment | None, str, Exception | None, dict]:
         """Run a single structured-output call.
 
         Returns (parsed_model_or_None, raw_text, error_or_None, usage_dict).
         usage_dict keys: input_tokens, output_tokens, thoughts_tokens.
         If parsing fails, parsed is None but raw_text carries what the model returned.
+
+        Uses JSON mode (response_mime_type only, no response_schema) — constrained
+        generation with complex schemas causes Gemini to truncate output early.
         """
         config = types.GenerateContentConfig(
             system_instruction=system_prompt,
             response_mime_type="application/json",
-            response_schema=PostEnrichment,
             temperature=temperature,
             max_output_tokens=max_output_tokens,
         )
@@ -64,15 +69,29 @@ class GeminiClient:
             "thoughts_tokens": getattr(um, "thoughts_token_count", 0) or 0,
         }
 
-        # Preferred path: google-genai parses into the Pydantic model when response_schema is set
-        parsed = getattr(response, "parsed", None)
-        if isinstance(parsed, PostEnrichment):
-            return parsed, raw_text, None, usage
+        # Log finish reason so truncation/safety stops are diagnosable.
+        candidates = getattr(response, "candidates", None) or []
+        if candidates:
+            finish_reason = getattr(candidates[0], "finish_reason", None)
+            if finish_reason and str(finish_reason) not in (
+                "FinishReason.STOP",
+                "STOP",
+                "1",
+            ):
+                logger.warning(
+                    "Gemini finish_reason=%s output_tokens=%d",
+                    finish_reason,
+                    usage["output_tokens"],
+                )
 
-        # Fallback: parse the raw text ourselves
         try:
             return PostEnrichment.model_validate_json(raw_text), raw_text, None, usage
         except Exception as exc:
+            logger.warning(
+                "PostEnrichment parse failed len=%d preview=%r",
+                len(raw_text),
+                raw_text[:200],
+            )
             return None, raw_text, exc, usage
 
     def repair(
@@ -80,7 +99,7 @@ class GeminiClient:
         system_prompt: str,
         repair_prompt: str,
         temperature: float = 0.2,
-        max_output_tokens: int = 8192,
+        max_output_tokens: int = 16384,
     ) -> tuple[PostEnrichment | None, str, Exception | None, dict]:
         """Schema-repair round-trip. Same shape as generate_structured."""
         return self.generate_structured(

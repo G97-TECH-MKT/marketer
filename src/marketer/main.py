@@ -289,6 +289,7 @@ async def _run_and_callback(
             envelope,
             gemini=client,
             extras_truncation=settings.extras_list_truncation,
+            max_output_tokens=settings.llm_max_output_tokens,
             user_profile=user_profile,
             usp_warning=usp_warning,
             gallery_pool=gallery_pool,
@@ -409,6 +410,9 @@ async def run_task_sync(
 
     client = _get_gemini_client()
     callback = reason(
-        envelope, gemini=client, extras_truncation=settings.extras_list_truncation
+        envelope,
+        gemini=client,
+        extras_truncation=settings.extras_list_truncation,
+        max_output_tokens=settings.llm_max_output_tokens,
     )
     return callback.model_dump(mode="json")
