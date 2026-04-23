@@ -18,13 +18,14 @@ module "iam" {
 }
 
 module "secrets" {
-  source                = "../../modules/secrets"
-  environment           = "prod"
-  gemini_api_key        = var.gemini_api_key
-  inbound_token         = var.inbound_token
-  orch_callback_api_key = var.orch_callback_api_key
-  gemini_model          = var.gemini_model
-  log_level             = "INFO"
+  source                 = "../../modules/secrets"
+  environment            = "prod"
+  gemini_api_key         = var.gemini_api_key
+  inbound_token          = var.inbound_token
+  orch_callback_api_key  = var.orch_callback_api_key
+  agentic_dispatcher_url = var.agentic_dispatcher_url
+  gemini_model           = var.gemini_model
+  log_level              = "INFO"
 }
 
 module "alb" {
@@ -77,18 +78,19 @@ module "ecs" {
   alb_security_group_id = module.alb.security_group_id
   target_group_arn      = module.alb.target_group_arn
 
-  task_execution_role_arn     = module.iam.task_execution_role_arn
-  task_role_arn               = module.iam.task_role_arn
-  permission_boundary_arn     = var.permission_boundary_arn
-  ecr_repository_url          = module.ecr.repository_url
-  image_tag                   = var.image_tag
-  gemini_api_key_secret_arn   = module.secrets.gemini_api_key_arn
-  inbound_token_secret_arn    = module.secrets.inbound_token_arn
-  callback_api_key_secret_arn = module.secrets.callback_api_key_arn
-  database_url_secret_arn     = module.rds.database_url_secret_arn
-  rds_security_group_id       = module.rds.security_group_id
-  alb_arn_suffix              = module.alb.alb_arn_suffix
-  target_group_arn_suffix     = module.alb.target_group_arn_suffix
+  task_execution_role_arn           = module.iam.task_execution_role_arn
+  task_role_arn                     = module.iam.task_role_arn
+  permission_boundary_arn           = var.permission_boundary_arn
+  ecr_repository_url                = module.ecr.repository_url
+  image_tag                         = var.image_tag
+  gemini_api_key_secret_arn         = module.secrets.gemini_api_key_arn
+  inbound_token_secret_arn          = module.secrets.inbound_token_arn
+  callback_api_key_secret_arn       = module.secrets.callback_api_key_arn
+  agentic_dispatcher_url_secret_arn = module.secrets.agentic_dispatcher_url_arn
+  database_url_secret_arn           = module.rds.database_url_secret_arn
+  rds_security_group_id             = module.rds.security_group_id
+  alb_arn_suffix                    = module.alb.alb_arn_suffix
+  target_group_arn_suffix           = module.alb.target_group_arn_suffix
 
   gemini_model            = var.gemini_model
   task_cpu                = var.task_cpu

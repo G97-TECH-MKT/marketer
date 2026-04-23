@@ -32,3 +32,8 @@ variable "log_level" {
   type        = string
   default     = "INFO"
 }
+
+variable "agentic_dispatcher_url" {
+  description = "Agentic dispatcher callback endpoint"
+  type        = string
+}

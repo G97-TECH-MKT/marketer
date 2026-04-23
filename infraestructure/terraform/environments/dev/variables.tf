@@ -59,6 +59,11 @@ variable "orch_callback_api_key" {
   sensitive   = true
 }
 
+variable "agentic_dispatcher_url" {
+  description = "Agentic dispatcher URL"
+  type        = string
+}
+
 variable "gemini_model" {
   description = "Gemini model identifier"
   type        = string

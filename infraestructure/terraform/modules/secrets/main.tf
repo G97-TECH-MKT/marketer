@@ -45,6 +45,21 @@ resource "aws_secretsmanager_secret_version" "callback_api_key" {
   }
 }
 
+resource "aws_secretsmanager_secret" "agentic_dispatcher_url" {
+  name                    = "marketer/${var.environment}/agentic-dispatcher-url"
+  description             = "Agentic dispatcher URL for Marketer ${var.environment}"
+  recovery_window_in_days = 7
+}
+
+resource "aws_secretsmanager_secret_version" "agentic_dispatcher_url" {
+  secret_id     = aws_secretsmanager_secret.agentic_dispatcher_url.id
+  secret_string = var.agentic_dispatcher_url
+
+  lifecycle {
+    ignore_changes = [secret_string]
+  }
+}
+
 # ─── SSM Parameter Store (non-sensitive config) ───────────────────────────────
 
 resource "aws_ssm_parameter" "gemini_model" {

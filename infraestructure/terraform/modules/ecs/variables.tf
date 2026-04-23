@@ -69,6 +69,11 @@ variable "callback_api_key_secret_arn" {
   type        = string
 }
 
+variable "agentic_dispatcher_url_secret_arn" {
+  description = "Secrets Manager ARN for AGENTIC_DISPATCHER_URL"
+  type        = string
+}
+
 variable "gemini_model" {
   description = "Gemini model identifier"
   type        = string

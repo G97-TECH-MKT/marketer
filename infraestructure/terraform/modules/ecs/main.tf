@@ -94,6 +94,7 @@ resource "aws_ecs_task_definition" "marketer" {
         { name = "GEMINI_API_KEY", valueFrom = var.gemini_api_key_secret_arn },
         { name = "INBOUND_TOKEN", valueFrom = var.inbound_token_secret_arn },
         { name = "ORCH_CALLBACK_API_KEY", valueFrom = var.callback_api_key_secret_arn },
+        { name = "AGENTIC_DISPATCHER_URL", valueFrom = var.agentic_dispatcher_url_secret_arn },
         { name = "DATABASE_URL", valueFrom = "${var.database_url_secret_arn}:url::" },
       ]
       healthCheck = {
