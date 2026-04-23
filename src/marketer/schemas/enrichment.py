@@ -8,9 +8,9 @@ downstream agents, and an explicit content pillar.
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 SurfaceFormat = Literal["post", "story", "reel", "carousel"]
@@ -45,6 +45,189 @@ HashtagIntent = Literal[
     "engagement",
     "none",
 ]
+
+
+# ---------------------------------------------------------------------------
+# LLM output coercion helpers
+# Gemini sometimes emits Spanish labels, informal aliases, or capitalized
+# variants for enum fields. These maps normalise before Pydantic's Literal
+# check runs, avoiding unnecessary repair LLM calls.
+# ---------------------------------------------------------------------------
+
+
+def _coerce(v: Any, aliases: dict[str, str]) -> Any:
+    """Lowercase-strip v and return the canonical value if found in aliases."""
+    if not isinstance(v, str):
+        return v
+    key = v.strip().lower()
+    return aliases.get(key, v)
+
+
+_SURFACE_FORMAT_ALIASES: dict[str, str] = {
+    "post": "post",
+    "instagram_post": "post",
+    "ig_post": "post",
+    "publicacion": "post",
+    "publicación": "post",
+    "foto": "post",
+    "feed": "post",
+    "story": "story",
+    "stories": "story",
+    "historia": "story",
+    "instagram_story": "story",
+    "ig_story": "story",
+    "reel": "reel",
+    "reels": "reel",
+    "video": "reel",
+    "instagram_reel": "reel",
+    "ig_reel": "reel",
+    "carousel": "carousel",
+    "carrusel": "carousel",
+    "carrusel_post": "carousel",
+    "album": "carousel",
+    "álbum": "carousel",
+    "multi_image": "carousel",
+    "multi-image": "carousel",
+}
+
+_CONTENT_PILLAR_ALIASES: dict[str, str] = {
+    "product": "product",
+    "producto": "product",
+    "productos": "product",
+    "servicio": "product",
+    "servicios": "product",
+    "behind_the_scenes": "behind_the_scenes",
+    "behind the scenes": "behind_the_scenes",
+    "detras_de_escenas": "behind_the_scenes",
+    "detrás de escenas": "behind_the_scenes",
+    "detras de escenas": "behind_the_scenes",
+    "backstage": "behind_the_scenes",
+    "bts": "behind_the_scenes",
+    "customer": "customer",
+    "cliente": "customer",
+    "clientes": "customer",
+    "testimonio": "customer",
+    "testimonios": "customer",
+    "education": "education",
+    "educacion": "education",
+    "educación": "education",
+    "educativo": "education",
+    "tutorial": "education",
+    "tips": "education",
+    "consejo": "education",
+    "consejos": "education",
+    "promotion": "promotion",
+    "promocion": "promotion",
+    "promoción": "promotion",
+    "oferta": "promotion",
+    "descuento": "promotion",
+    "venta": "promotion",
+    "community": "community",
+    "comunidad": "community",
+    "community_building": "community",
+}
+
+_CHANNEL_KIND_ALIASES: dict[str, str] = {
+    "website": "website",
+    "web": "website",
+    "sitio_web": "website",
+    "sitio web": "website",
+    "url": "website",
+    "link": "website",
+    "instagram_profile": "instagram_profile",
+    "instagram": "instagram_profile",
+    "ig": "instagram_profile",
+    "perfil_instagram": "instagram_profile",
+    "facebook": "facebook",
+    "fb": "facebook",
+    "facebook_page": "facebook",
+    "tiktok": "tiktok",
+    "tik_tok": "tiktok",
+    "tik-tok": "tiktok",
+    "tt": "tiktok",
+    "linkedin": "linkedin",
+    "linkedin_profile": "linkedin",
+    "phone": "phone",
+    "telefono": "phone",
+    "teléfono": "phone",
+    "llamada": "phone",
+    "call": "phone",
+    "whatsapp": "whatsapp",
+    "wa": "whatsapp",
+    "email": "email",
+    "correo": "email",
+    "mail": "email",
+    "correo_electronico": "email",
+    "dm": "dm",
+    "direct": "dm",
+    "direct_message": "dm",
+    "mensaje_directo": "dm",
+    "link_sticker": "link_sticker",
+    "sticker": "link_sticker",
+    "link_in_bio": "link_sticker",
+    "none": "none",
+    "ninguno": "none",
+    "n/a": "none",
+    "no_cta": "none",
+}
+
+_CONFIDENCE_LEVEL_ALIASES: dict[str, str] = {
+    "high": "high",
+    "alto": "high",
+    "alta": "high",
+    "medium": "medium",
+    "medio": "medium",
+    "media": "medium",
+    "moderate": "medium",
+    "moderado": "medium",
+    "low": "low",
+    "bajo": "low",
+    "baja": "low",
+}
+
+_SELECTED_IMAGE_ROLE_ALIASES: dict[str, str] = {
+    "hero": "hero",
+    "main": "hero",
+    "principal": "hero",
+    "primary": "hero",
+    "supporting": "supporting",
+    "soporte": "supporting",
+    "support": "supporting",
+    "secondary": "supporting",
+    "secundario": "supporting",
+    "background": "background",
+    "fondo": "background",
+    "bg": "background",
+    "reference_only": "reference_only",
+    "reference": "reference_only",
+    "referencia": "reference_only",
+    "ref": "reference_only",
+}
+
+_FUNNEL_STAGE_ALIASES: dict[str, str] = {
+    "awareness": "awareness",
+    "conciencia": "awareness",
+    "conocimiento": "awareness",
+    "descubrimiento": "awareness",
+    "consideration": "consideration",
+    "consideracion": "consideration",
+    "consideración": "consideration",
+    "conversion": "conversion",
+    "conversión": "conversion",
+    "compra": "conversion",
+    "retention": "retention",
+    "retencion": "retention",
+    "retención": "retention",
+    "fidelizacion": "retention",
+    "fidelización": "retention",
+    "loyalty": "retention",
+    "advocacy": "advocacy",
+    "abogacia": "advocacy",
+    "abogacía": "advocacy",
+    "recomendacion": "advocacy",
+    "recomendación": "advocacy",
+    "referral": "advocacy",
+}
 
 
 class StrategicChoice(BaseModel):
@@ -98,6 +281,101 @@ class CallToAction(BaseModel):
         description="Button/CTA copy in communication_language (e.g. 'Reserva tu mesa')."
     )
 
+    @field_validator("channel", mode="before")
+    @classmethod
+    def _coerce_channel(cls, v: Any) -> Any:
+        return _coerce(v, _CHANNEL_KIND_ALIASES)
+
+
+_HASHTAG_INTENT_ALIASES: dict[str, str] = {
+    "awareness": "brand_awareness",
+    "brand": "brand_awareness",
+    "local": "local_discovery",
+    "discovery": "local_discovery",
+    "promo": "promotion",
+    "engage": "engagement",
+    "edu": "education",
+    "community_building": "community",
+}
+
+# Keyword fragments (lowercase) → intent. Checked in order; first match wins.
+_HASHTAG_INTENT_KEYWORDS: list[tuple[str, str]] = [
+    ("local_discovery", "local_discovery"),
+    ("brand_awareness", "brand_awareness"),
+    ("local", "local_discovery"),
+    ("descubr", "local_discovery"),
+    ("brand", "brand_awareness"),
+    ("awareness", "brand_awareness"),
+    ("marca", "brand_awareness"),
+    ("comunidad", "community"),
+    ("community", "community"),
+    ("promoc", "promotion"),
+    ("promo", "promotion"),
+    ("venta", "promotion"),
+    ("educac", "education"),
+    ("educati", "education"),
+    ("aprendiz", "education"),
+    ("engag", "engagement"),
+    ("interacci", "engagement"),
+    ("participaci", "engagement"),
+]
+
+_VOLUME_WORDS: dict[str, int] = {
+    "none": 0,
+    "low": 5,
+    "bajo": 5,
+    "medium": 8,
+    "medio": 8,
+    "moderate": 8,
+    "high": 12,
+    "alto": 12,
+    "very high": 15,
+    "muy alto": 15,
+}
+
+
+def _coerce_hashtag_intent(v: Any) -> Any:
+    if not isinstance(v, str):
+        return v
+    normalized = v.strip().lower()
+    # Exact alias match first
+    if normalized in _HASHTAG_INTENT_ALIASES:
+        return _HASHTAG_INTENT_ALIASES[normalized]
+    # Already a valid value
+    valid = {
+        "local_discovery",
+        "brand_awareness",
+        "community",
+        "promotion",
+        "education",
+        "engagement",
+        "none",
+    }
+    if normalized in valid:
+        return normalized
+    # Keyword scan for free-form / multilingual values
+    for keyword, intent in _HASHTAG_INTENT_KEYWORDS:
+        if keyword in normalized:
+            return intent
+    # Unrecognised — let Pydantic raise so repair can fix it
+    return v
+
+
+def _coerce_suggested_volume(v: Any) -> Any:
+    if isinstance(v, int):
+        return v
+    if isinstance(v, float):
+        return int(v)
+    if isinstance(v, str):
+        normalized = v.strip().lower()
+        if normalized in _VOLUME_WORDS:
+            return _VOLUME_WORDS[normalized]
+        try:
+            return int(normalized)
+        except ValueError:
+            return 0
+    return v
+
 
 class HashtagStrategy(BaseModel):
     """Hashtag direction plus the actual strings that go into cf_post_brief."""
@@ -121,6 +399,16 @@ class HashtagStrategy(BaseModel):
         ),
     )
 
+    @field_validator("intent", mode="before")
+    @classmethod
+    def _coerce_intent(cls, v: Any) -> Any:
+        return _coerce_hashtag_intent(v)
+
+    @field_validator("suggested_volume", mode="before")
+    @classmethod
+    def _coerce_volume(cls, v: Any) -> Any:
+        return _coerce_suggested_volume(v)
+
 
 class Confidence(BaseModel):
     """Per-choice confidence so downstream can decide where to escalate."""
@@ -129,6 +417,13 @@ class Confidence(BaseModel):
     angle: ConfidenceLevel = "medium"
     palette_match: ConfidenceLevel = "medium"
     cta_channel: ConfidenceLevel = "medium"
+
+    @field_validator(
+        "surface_format", "angle", "palette_match", "cta_channel", mode="before"
+    )
+    @classmethod
+    def _coerce_level(cls, v: Any) -> Any:
+        return _coerce(v, _CONFIDENCE_LEVEL_ALIASES)
 
 
 class VisualSelection(BaseModel):
@@ -153,6 +448,11 @@ class SelectedImage(BaseModel):
     )
     role: SelectedImageRole = Field(description="Creative role in the final post.")
     usage_note: str = Field(description="One-sentence rationale for this selection.")
+
+    @field_validator("role", mode="before")
+    @classmethod
+    def _coerce_role(cls, v: Any) -> Any:
+        return _coerce(v, _SELECTED_IMAGE_ROLE_ALIASES)
 
 
 FunnelStage = Literal[
@@ -188,6 +488,12 @@ class BrandIntelligence(BaseModel):
             "whole funnel — THIS post's contribution."
         ),
     )
+
+    @field_validator("funnel_stage_target", mode="before")
+    @classmethod
+    def _coerce_funnel(cls, v: Any) -> Any:
+        return _coerce(v, _FUNNEL_STAGE_ALIASES)
+
     voice_register: str = Field(
         description=(
             "Tonal register in 2-5 words, richer than friendly/professional. "
@@ -298,6 +604,16 @@ class PostEnrichment(BaseModel):
             "copywriter consume — maps to client_request_posts in CF payload."
         ),
     )
+
+    @field_validator("surface_format", mode="before")
+    @classmethod
+    def _coerce_surface(cls, v: Any) -> Any:
+        return _coerce(v, _SURFACE_FORMAT_ALIASES)
+
+    @field_validator("content_pillar", mode="before")
+    @classmethod
+    def _coerce_pillar(cls, v: Any) -> Any:
+        return _coerce(v, _CONTENT_PILLAR_ALIASES)
 
 
 class Warning(BaseModel):

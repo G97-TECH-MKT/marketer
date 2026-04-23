@@ -27,6 +27,7 @@ RUN pip install --no-cache-dir --upgrade pip \
 COPY src/ ./src/
 COPY alembic/ ./alembic/
 COPY alembic.ini ./alembic.ini
+COPY entrypoint.sh ./entrypoint.sh
 
 # Env defaults (override at run time)
 ENV PYTHONPATH=/app/src \
@@ -34,12 +35,14 @@ ENV PYTHONPATH=/app/src \
     PYTHONUNBUFFERED=1 \
     LOG_LEVEL=INFO \
     GEMINI_MODEL=gemini-3-flash-preview \
-    LLM_TIMEOUT_SECONDS=60 \
+    LLM_TIMEOUT_SECONDS=200 \
     LLM_MAX_OUTPUT_TOKENS=8192 \
     PROMPT_TEXT_TRUNCATION_CHARS=600 \
     CALLBACK_HTTP_TIMEOUT_SECONDS=30 \
     CALLBACK_RETRY_ATTEMPTS=2 \
     EXTRAS_LIST_TRUNCATION=10
+
+RUN chmod +x /app/entrypoint.sh
 
 USER marketer
 
@@ -49,4 +52,5 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD curl -fsS http://127.0.0.1:8080/ready || exit 1
 
+ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["uvicorn", "marketer.main:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "1"]

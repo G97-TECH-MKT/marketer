@@ -9,18 +9,21 @@
 #   POSTGRES_DB             (default: marketer)
 #   POSTGRES_HOST_PORT      (default: 5433 — kept off 5432 to avoid colliding
 #                            with a locally installed Postgres)
+#   MARKETER_HOST_PORT      (default: 8000)
 #
 # See .env.example for the block to copy into .env.
 #
-# Currently brings up only Postgres. The app is not in compose yet (no DB wiring
-# there to test against); add it here once the app deploys via this file.
-#
 # Usage:
-#   docker compose up -d postgres      # start in background
-#   docker compose logs -f postgres    # tail logs
-#   docker compose ps                  # status
-#   docker compose down                # stop (data preserved in volume)
-#   docker compose down -v             # stop AND delete all data
+#   docker compose up -d                   # start both services
+#   docker compose up -d postgres          # postgres only
+#   docker compose logs -f marketer        # tail app logs
+#   docker compose logs -f postgres        # tail DB logs
+#   docker compose ps                      # status
+#   docker compose down                    # stop (data preserved in volume)
+#   docker compose down -v                 # stop AND delete all data
+#
+# Hot-reload: src/ and tests/ are mounted into the container. uvicorn runs
+# with --reload so code changes are picked up without rebuilding the image.
 #
 # To run alembic against this container instead of a locally installed Postgres:
 #   DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:${POSTGRES_HOST_PORT}/${POSTGRES_DB} \
@@ -46,6 +49,45 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
+  marketer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: marketer-app
+    restart: unless-stopped
+    ports:
+      - "${MARKETER_HOST_PORT:-8000}:8080"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-marketer}:${POSTGRES_PASSWORD:-marketer_dev}@postgres:5432/${POSTGRES_DB:-marketer}
+    volumes:
+      - ./src:/app/src
+      - ./tests:/app/tests
+      - ./alembic:/app/alembic
+      - ./alembic.ini:/app/alembic.ini
+    command:
+      - uvicorn
+      - marketer.main:app
+      - --host
+      - "0.0.0.0"
+      - --port
+      - "8080"
+      - --workers
+      - "1"
+      - --reload
+      - --reload-dir
+      - /app/src
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
 
 volumes:
   marketer_pgdata:

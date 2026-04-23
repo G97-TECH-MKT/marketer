@@ -543,7 +543,7 @@ class TestSelectedImages:
             SelectedImage(
                 uuid="test",
                 content_url="https://s3.example.com/img.png",
-                role="main",  # not a valid role
+                role="totally_unknown_role",  # not a valid role or alias
                 usage_note="Bad role.",
             )
 
