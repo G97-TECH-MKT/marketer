@@ -284,6 +284,14 @@ async def _run_and_callback(
     else:
         gallery_pool, gallery_warning = gallery_result
 
+    worker.info(
+        '"task_id=%s fetch_done usp=%s gallery=%s gallery_items=%d"',
+        task_id,
+        usp_warning or "ok",
+        gallery_warning or "ok",
+        len(gallery_pool.shortlist) if gallery_pool else 0,
+    )
+
     if pctx is not None and user_profile is not None:
         await persist_user_profile(pctx.raw_brief_id, user_profile)
 

@@ -261,6 +261,12 @@ def reason(
     warnings: list[Warning] = []
 
     # --- Normalize ---
+    task_id = envelope_data.get("task_id", "unknown")
+    logger.info(
+        '"task_id=%s reason_start action_code=%s"',
+        task_id,
+        envelope_data.get("action_code"),
+    )
     try:
         ctx, normalizer_warnings = normalize(
             envelope_data,
@@ -270,9 +276,16 @@ def reason(
             gallery_warning=gallery_warning,
         )
     except ValueError as exc:
-        # Unsupported action_code or missing required field → FAIL the task
+        logger.warning('"task_id=%s normalize_failed error=%s"', task_id, exc)
         return CallbackBody(status="FAILED", error_message=str(exc))
     warnings.extend(normalizer_warnings)
+    logger.info(
+        '"task_id=%s normalize_ok brief=%s gallery=%d warnings=%d"',
+        ctx.task_id,
+        "yes" if ctx.brief else "no",
+        len(ctx.gallery),
+        len(normalizer_warnings),
+    )
 
     # --- create_web is out of scope in this iteration (edit_web is supported) ---
     if ctx.action_code == "create_web":
@@ -296,12 +309,26 @@ def reason(
     user_prompt = _build_user_prompt(
         ctx, extras_truncation, prompt_text_truncation_chars
     )
+    logger.info(
+        '"task_id=%s llm_call_start model=%s max_tokens=%d"',
+        ctx.task_id,
+        gemini.model_name,
+        max_output_tokens,
+    )
     enrichment, raw_text, err, usage = gemini.generate_structured(
         system_prompt=SYSTEM_PROMPT,
         user_prompt=user_prompt,
         max_output_tokens=max_output_tokens,
     )
     _dump_prompt(ctx.task_id, SYSTEM_PROMPT, user_prompt, raw_text)
+    logger.info(
+        '"task_id=%s llm_call_done ok=%s tokens_in=%d tokens_out=%d len=%d"',
+        ctx.task_id,
+        enrichment is not None,
+        usage.get("input_tokens", 0),
+        usage.get("output_tokens", 0),
+        len(raw_text),
+    )
 
     repair_attempted = False
     if enrichment is None:
@@ -550,6 +577,8 @@ def reason_multi(
     warnings: list[Warning] = []
 
     # --- Normalize ---
+    task_id = envelope_data.get("task_id", "unknown")
+    logger.info('"task_id=%s reason_multi_start"', task_id)
     try:
         ctx, normalizer_warnings = normalize(
             envelope_data,
@@ -559,8 +588,17 @@ def reason_multi(
             gallery_warning=gallery_warning,
         )
     except ValueError as exc:
+        logger.warning('"task_id=%s normalize_failed error=%s"', task_id, exc)
         return [(CallbackBody(status="FAILED", error_message=str(exc)), None)]
     warnings.extend(normalizer_warnings)
+    logger.info(
+        '"task_id=%s normalize_ok subscription_jobs=%d brief=%s gallery=%d warnings=%d"',
+        ctx.task_id,
+        len(ctx.subscription_jobs or []),
+        "yes" if ctx.brief else "no",
+        len(ctx.gallery),
+        len(normalizer_warnings),
+    )
 
     if not ctx.subscription_jobs:
         return [
@@ -583,12 +621,27 @@ def reason_multi(
     # Scale max_output_tokens for multi-job (more items = more tokens needed)
     scaled_tokens = min(max_output_tokens * total_jobs, 65536)
 
+    logger.info(
+        '"task_id=%s llm_call_start model=%s max_tokens=%d items=%d"',
+        ctx.task_id,
+        gemini.model_name,
+        scaled_tokens,
+        total_jobs,
+    )
     _single_parse, raw_text, err, usage = gemini.generate_structured(
         system_prompt=SYSTEM_PROMPT,
         user_prompt=user_prompt,
         max_output_tokens=scaled_tokens,
     )
     _dump_prompt(ctx.task_id, SYSTEM_PROMPT, user_prompt, raw_text)
+    logger.info(
+        '"task_id=%s llm_call_done ok=%s tokens_in=%d tokens_out=%d len=%d"',
+        ctx.task_id,
+        err is None,
+        usage.get("input_tokens", 0),
+        usage.get("output_tokens", 0),
+        len(raw_text),
+    )
 
     # For multi-job, we need to parse as MultiEnrichmentOutput, not PostEnrichment.
     # The generate_structured call tries PostEnrichment first — ignore that parse.
