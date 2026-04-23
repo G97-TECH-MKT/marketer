@@ -226,7 +226,9 @@ async def persist_on_complete_multi(
             first_bi: dict[str, Any] | None = None
             for callback, _job in results:
                 if callback.status == "COMPLETED" and callback.output_data is not None:
-                    first_bi = callback.output_data.enrichment.brand_intelligence.model_dump()
+                    first_bi = (
+                        callback.output_data.enrichment.brand_intelligence.model_dump()
+                    )
                     break
 
             strategy = None
@@ -300,6 +302,7 @@ async def update_dispatch_status(job_id: UUID, status: str) -> None:
     try:
         async with session_scope() as session:
             from marketer.db.repositories import update_dispatch_status as _repo_update
+
             await _repo_update(session, job_id=job_id, dispatch_status=status)
     except Exception:
         logger.warning('"update_dispatch_status_failed job_id=%s"', job_id)

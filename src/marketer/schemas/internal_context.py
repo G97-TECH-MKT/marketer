@@ -21,7 +21,14 @@ from pydantic import BaseModel, Field
 Surface = Literal["post", "web", "other"]
 GalleryPoolSource = Literal["gallery_api", "router_gate", "empty"]
 Mode = Literal["create", "edit"]
-ActionCode = Literal["create_post", "edit_post", "create_web", "edit_web", "subscription_strategy", "create_prod_line"]
+ActionCode = Literal[
+    "create_post",
+    "edit_post",
+    "create_web",
+    "edit_web",
+    "subscription_strategy",
+    "create_prod_line",
+]
 ImageRole = Literal["brand_asset", "content", "reference", "unknown"]
 SurfaceFormat = Literal["post", "story", "reel", "carousel"]
 ChannelKind = Literal[

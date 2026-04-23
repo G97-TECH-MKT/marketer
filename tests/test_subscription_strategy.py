@@ -39,7 +39,9 @@ class TestNormalizerSubscriptionStrategy:
         # First two share action_key from the same original job
         assert ctx.subscription_jobs[0].action_key == "create_post"
         assert ctx.subscription_jobs[1].action_key == "create_post"
-        assert ctx.subscription_jobs[0].description == ctx.subscription_jobs[1].description
+        assert (
+            ctx.subscription_jobs[0].description == ctx.subscription_jobs[1].description
+        )
 
     def test_router_fields_captured(self):
         data = _load("subscription_strategy.json")
@@ -177,7 +179,13 @@ class TestQuantityExpansion:
         ctx, _ = normalize(data)
         assert len(ctx.subscription_jobs) == 5
         assert [j.index for j in ctx.subscription_jobs] == [0, 1, 2, 3, 4]
-        assert [j.description for j in ctx.subscription_jobs] == ["A", "A", "B", "B", "B"]
+        assert [j.description for j in ctx.subscription_jobs] == [
+            "A",
+            "A",
+            "B",
+            "B",
+            "B",
+        ]
 
 
 # ---------------------------------------------------------------------------
@@ -241,7 +249,12 @@ class TestMultiEnrichmentOutput:
         }
 
     def test_parse_valid_multi_output(self):
-        data = {"items": [self._make_enrichment_dict("Post 1"), self._make_enrichment_dict("Post 2")]}
+        data = {
+            "items": [
+                self._make_enrichment_dict("Post 1"),
+                self._make_enrichment_dict("Post 2"),
+            ]
+        }
         result = MultiEnrichmentOutput.model_validate(data)
         assert len(result.items) == 2
         assert result.items[0].title == "Post 1"

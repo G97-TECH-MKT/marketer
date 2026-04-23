@@ -120,7 +120,9 @@ async def _patch_callback(
 
     worker.info(
         '"task_id=%s callback_request url=%s status=%s"',
-        task_id, callback_url, body.get("status"),
+        task_id,
+        callback_url,
+        body.get("status"),
     )
     attempts = max(1, settings.callback_retry_attempts)
     last_error: str | None = None
@@ -290,8 +292,15 @@ async def _run_and_callback(
     # --- subscription_strategy: multi-job branch ---
     if action_code == "subscription_strategy":
         await _run_multi_and_callback(
-            envelope, pctx, callback_url, correlation_id, task_id,
-            user_profile, usp_warning, gallery_pool, gallery_warning,
+            envelope,
+            pctx,
+            callback_url,
+            correlation_id,
+            task_id,
+            user_profile,
+            usp_warning,
+            gallery_pool,
+            gallery_warning,
         )
         return
 
@@ -355,7 +364,9 @@ async def _post_dispatcher(
     body = {"product_uuid": product_uuid, "account_uuid": account_uuid}
     worker.info(
         '"task_id=%s dispatcher_request url=%s body=%s"',
-        task_id, url, body,
+        task_id,
+        url,
+        body,
     )
     attempts = max(1, settings.callback_retry_attempts)
     last_error: str | None = None
@@ -368,7 +379,10 @@ async def _post_dispatcher(
                 resp = await client.post(url, json=body)
             worker.info(
                 '"task_id=%s dispatcher_response status=%s body=%s attempt=%d"',
-                task_id, resp.status_code, resp.text[:500], attempt,
+                task_id,
+                resp.status_code,
+                resp.text[:500],
+                attempt,
             )
             if 200 <= resp.status_code < 300:
                 return True
@@ -377,14 +391,18 @@ async def _post_dispatcher(
             last_error = f"{type(exc).__name__}: {exc}"
             worker.warning(
                 '"task_id=%s dispatcher_error attempt=%d error=%s"',
-                task_id, attempt, last_error,
+                task_id,
+                attempt,
+                last_error,
             )
         if attempt < attempts:
             await asyncio.sleep(min(2**attempt, 8))
 
     worker.error(
         '"task_id=%s dispatcher_failed_after_%d_attempts error=%s"',
-        task_id, attempts, last_error,
+        task_id,
+        attempts,
+        last_error,
     )
     return False
 
@@ -423,7 +441,9 @@ async def _run_multi_and_callback(
 
     worker.info(
         '"task_id=%s jobs_split llm=%d passthrough=%d"',
-        task_id, len(llm_jobs), len(passthrough_jobs),
+        task_id,
+        len(llm_jobs),
+        len(passthrough_jobs),
     )
 
     # --- LLM path: only for job-router enrichable jobs ---
@@ -436,9 +456,14 @@ async def _run_multi_and_callback(
         llm_payload = {**payload}
         llm_cr = {**client_request}
         llm_cr["jobs"] = [
-            {"action_key": j.action_key, "description": j.description,
-             "quantity": 1, "orchestrator_agent": j.orchestrator_agent or "job-router",
-             "slug": j.slug or "", "product_uuid": j.product_uuid or ""}
+            {
+                "action_key": j.action_key,
+                "description": j.description,
+                "quantity": 1,
+                "orchestrator_agent": j.orchestrator_agent or "job-router",
+                "slug": j.slug or "",
+                "product_uuid": j.product_uuid or "",
+            }
             for j in llm_jobs
         ]
         llm_payload["client_request"] = llm_cr
@@ -468,7 +493,13 @@ async def _run_multi_and_callback(
         except Exception as exc:  # noqa: BLE001
             worker.exception('"task_id=%s reason_multi_failed"', task_id)
             results = [
-                (CallbackBody(status="FAILED", error_message=f"internal_error: {type(exc).__name__}: {exc}"), None)
+                (
+                    CallbackBody(
+                        status="FAILED",
+                        error_message=f"internal_error: {type(exc).__name__}: {exc}",
+                    ),
+                    None,
+                )
             ]
         latency_ms = int((time.time() - started) * 1000)
 
@@ -483,6 +514,7 @@ async def _run_multi_and_callback(
         elif llm_jobs and not valid_results:
             from marketer.db import is_configured, session_scope
             from marketer.db.repositories import mark_raw_brief
+
             if is_configured():
                 try:
                     async with session_scope() as session:
@@ -496,7 +528,12 @@ async def _run_multi_and_callback(
     passthrough_db_jobs: list[tuple[Any, SubscriptionJob]] = []
     if pctx is not None and passthrough_jobs:
         from marketer.db import is_configured, session_scope
-        from marketer.db.repositories import ensure_strategy, get_active_strategy, create_job
+        from marketer.db.repositories import (
+            ensure_strategy,
+            get_active_strategy,
+            create_job,
+        )
+
         if is_configured():
             try:
                 async with session_scope() as session:
@@ -507,7 +544,9 @@ async def _run_multi_and_callback(
                             if cb.status == "COMPLETED" and cb.output_data:
                                 bi = cb.output_data.enrichment.brand_intelligence.model_dump()
                                 strategy = await ensure_strategy(
-                                    session, user_id=pctx.user_id, brand_intelligence_if_new=bi
+                                    session,
+                                    user_id=pctx.user_id,
+                                    brand_intelligence_if_new=bi,
                                 )
                                 break
                     if strategy is not None:
@@ -536,9 +575,9 @@ async def _run_multi_and_callback(
                 worker.exception('"persist_passthrough_failed"')
 
     # --- Dispatch: PATCH to router for LLM jobs, POST to dispatcher for passthrough ---
-    account_uuid = (
-        (envelope.get("payload") or {}).get("context", {}).get("account_uuid") or ""
-    )
+    account_uuid = (envelope.get("payload") or {}).get("context", {}).get(
+        "account_uuid"
+    ) or ""
 
     # LLM job callbacks → PATCH to router
     job_index_to_db_id: dict[int, Any] = {
@@ -573,13 +612,13 @@ async def _run_multi_and_callback(
             product_uuid=job.product_uuid or "",
             task_id=str(task_id),
         )
-        await update_dispatch_status(
-            db_job_id, "ok" if dispatch_ok else "failed"
-        )
+        await update_dispatch_status(db_job_id, "ok" if dispatch_ok else "failed")
 
     worker.info(
         '"task_id=%s subscription_strategy_done llm_items=%d passthrough_items=%d"',
-        task_id, len(results), len(passthrough_db_jobs),
+        task_id,
+        len(results),
+        len(passthrough_db_jobs),
     )
 
 
@@ -686,9 +725,14 @@ async def run_task_sync(
             llm_payload = {**payload}
             llm_cr = {**cr}
             llm_cr["jobs"] = [
-                {"action_key": j.action_key, "description": j.description,
-                 "quantity": 1, "orchestrator_agent": j.orchestrator_agent or "job-router",
-                 "slug": j.slug or "", "product_uuid": j.product_uuid or ""}
+                {
+                    "action_key": j.action_key,
+                    "description": j.description,
+                    "quantity": 1,
+                    "orchestrator_agent": j.orchestrator_agent or "job-router",
+                    "slug": j.slug or "",
+                    "product_uuid": j.product_uuid or "",
+                }
                 for j in llm_jobs
             ]
             llm_payload["client_request"] = llm_cr
@@ -705,15 +749,22 @@ async def run_task_sync(
         if pctx is not None:
             valid_results = [(cb, job) for cb, job in results if job is not None]
             if valid_results:
-                await persist_on_complete_multi(pctx, envelope, valid_results, latency_ms)
+                await persist_on_complete_multi(
+                    pctx, envelope, valid_results, latency_ms
+                )
 
         # Passthrough jobs: persist in DB + dispatch to agentic-task-dispatcher
-        account_uuid = (
-            (envelope.get("payload") or {}).get("context", {}).get("account_uuid") or ""
-        )
+        account_uuid = (envelope.get("payload") or {}).get("context", {}).get(
+            "account_uuid"
+        ) or ""
         if pctx is not None and passthrough_jobs:
             from marketer.db import is_configured, session_scope
-            from marketer.db.repositories import ensure_strategy, get_active_strategy, create_job as _create_job
+            from marketer.db.repositories import (
+                ensure_strategy,
+                get_active_strategy,
+                create_job as _create_job,
+            )
+
             if is_configured():
                 try:
                     async with session_scope() as session:
@@ -723,7 +774,9 @@ async def run_task_sync(
                                 if cb.status == "COMPLETED" and cb.output_data:
                                     bi = cb.output_data.enrichment.brand_intelligence.model_dump()
                                     strategy = await ensure_strategy(
-                                        session, user_id=pctx.user_id, brand_intelligence_if_new=bi
+                                        session,
+                                        user_id=pctx.user_id,
+                                        brand_intelligence_if_new=bi,
                                     )
                                     break
                         if strategy is not None:
@@ -735,10 +788,12 @@ async def run_task_sync(
                                     strategy_id=strategy.id,
                                     action_code=j.action_key,
                                     job_input={
-                                        "action_code": j.action_key, "slug": j.slug,
+                                        "action_code": j.action_key,
+                                        "slug": j.slug,
                                         "product_uuid": j.product_uuid,
                                         "orchestrator_agent": j.orchestrator_agent,
-                                        "job_index": j.index, "description": j.description,
+                                        "job_index": j.index,
+                                        "description": j.description,
                                     },
                                     status="done",
                                     latency_ms=0,
@@ -746,7 +801,9 @@ async def run_task_sync(
                                     dispatch_status="pending",
                                 )
                 except Exception:
-                    logging.getLogger("marketer.worker").exception('"sync_persist_passthrough_failed"')
+                    logging.getLogger("marketer.worker").exception(
+                        '"sync_persist_passthrough_failed"'
+                    )
 
         passthrough_responses = []
         for j in passthrough_jobs:
@@ -755,17 +812,19 @@ async def run_task_sync(
                 product_uuid=j.product_uuid or "",
                 task_id=str(envelope.get("task_id", "unknown")),
             )
-            passthrough_responses.append({
-                "status": "COMPLETED" if dispatch_ok else "FAILED",
-                "output_data": None,
-                "passthrough": True,
-                "job_index": j.index,
-                "action_key": j.action_key,
-                "slug": j.slug,
-                "orchestrator_agent": j.orchestrator_agent,
-                "product_uuid": j.product_uuid,
-                "dispatch_status": "ok" if dispatch_ok else "failed",
-            })
+            passthrough_responses.append(
+                {
+                    "status": "COMPLETED" if dispatch_ok else "FAILED",
+                    "output_data": None,
+                    "passthrough": True,
+                    "job_index": j.index,
+                    "action_key": j.action_key,
+                    "slug": j.slug,
+                    "orchestrator_agent": j.orchestrator_agent,
+                    "product_uuid": j.product_uuid,
+                    "dispatch_status": "ok" if dispatch_ok else "failed",
+                }
+            )
 
         llm_responses = [cb.model_dump(mode="json") for cb, _job in results]
         return llm_responses + passthrough_responses

@@ -99,7 +99,14 @@ def _first_non_empty(*values: Any) -> str | None:
     return None
 
 
-_KNOWN_ACTIONS = {"create_post", "edit_post", "create_web", "edit_web", "subscription_strategy", "create_prod_line"}
+_KNOWN_ACTIONS = {
+    "create_post",
+    "edit_post",
+    "create_web",
+    "edit_web",
+    "subscription_strategy",
+    "create_prod_line",
+}
 
 
 def _parse_action_code(raw: str) -> tuple[ActionCode, Surface, Mode]:
