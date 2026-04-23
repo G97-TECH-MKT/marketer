@@ -45,6 +45,81 @@ def _format_reasoning_error(prefix: str, err: Any) -> str:
     return f"{prefix}: {err}"
 
 
+def _is_truncated_json_error(err: Exception | None) -> bool:
+    if err is None:
+        return False
+    text = str(err).lower()
+    markers = (
+        "json_invalid",
+        "eof while parsing",
+        "unterminated string",
+        "unexpected end of json input",
+    )
+    return any(marker in text for marker in markers)
+
+
+def _compact_prior_step_outputs(
+    prior_step_outputs: dict[str, dict[str, Any]] | None,
+) -> dict[str, dict[str, Any]] | None:
+    """Keep only compact, high-signal metadata from previous steps.
+
+    Full previous outputs can carry large blobs (brand_dna, cf_post_brief, etc.).
+    Sending all of that back to the LLM inflates token usage and latency.
+    """
+    if not prior_step_outputs:
+        return None
+
+    compact: dict[str, dict[str, Any]] = {}
+    for step_code, output_data in prior_step_outputs.items():
+        if not isinstance(output_data, dict):
+            continue
+
+        step_summary: dict[str, Any] = {}
+
+        data = output_data.get("data")
+        if isinstance(data, dict):
+            resources = data.get("resources")
+            if isinstance(resources, list):
+                step_summary["resources_count"] = len(resources)
+            total_items = data.get("total_items")
+            if isinstance(total_items, int):
+                step_summary["total_items"] = total_items
+
+        enrichment = output_data.get("enrichment")
+        if isinstance(enrichment, dict):
+            for key in ("surface_format", "content_pillar", "title", "objective"):
+                value = enrichment.get(key)
+                if isinstance(value, str) and value:
+                    step_summary[key] = value
+            cta = enrichment.get("cta")
+            if isinstance(cta, dict) and isinstance(cta.get("channel"), str):
+                step_summary["cta_channel"] = cta["channel"]
+
+        trace = output_data.get("trace")
+        if isinstance(trace, dict):
+            trace_summary: dict[str, Any] = {}
+            for key in ("action_code", "surface", "mode", "latency_ms"):
+                value = trace.get(key)
+                if isinstance(value, (str, int)):
+                    trace_summary[key] = value
+            if trace_summary:
+                step_summary["trace"] = trace_summary
+
+        warnings = output_data.get("warnings")
+        if isinstance(warnings, list):
+            warning_codes: list[str] = []
+            for warning in warnings:
+                if isinstance(warning, dict) and isinstance(warning.get("code"), str):
+                    warning_codes.append(warning["code"])
+            if warning_codes:
+                step_summary["warning_codes"] = warning_codes[:5]
+
+        if step_summary:
+            compact[step_code] = step_summary
+
+    return compact or None
+
+
 def _build_prompt_context(
     ctx: InternalContext, extras_truncation: int, text_truncation_chars: int
 ) -> str:
@@ -90,7 +165,7 @@ def _build_prompt_context(
         "user_attachments": ctx.attachments if ctx.attachments else None,
         "gallery_pool": gallery_pool_shortlist,
         "gallery": [item.model_dump() for item in ctx.gallery],
-        "prior_step_outputs": ctx.prior_step_outputs or None,
+        "prior_step_outputs": _compact_prior_step_outputs(ctx.prior_step_outputs),
         "user_insights": ctx.user_insights or None,
     }
     return serialize_for_prompt(
@@ -113,7 +188,7 @@ def reason(
     gemini: GeminiClient,
     extras_truncation: int = 10,
     prompt_text_truncation_chars: int = 600,
-    max_output_tokens: int = 8192,
+    max_output_tokens: int = 16384,
     user_profile: UserProfile | None = None,
     usp_warning: str | None = None,
     gallery_pool: GalleryPool | None = None,
@@ -180,12 +255,35 @@ def reason(
             previous_output=raw_text,
         )
         enrichment, _, err2, repair_usage = gemini.repair(
-            system_prompt=SYSTEM_PROMPT, repair_prompt=repair_prompt
+            system_prompt=SYSTEM_PROMPT,
+            repair_prompt=repair_prompt,
+            max_output_tokens=max_output_tokens,
         )
         usage = {
             k: usage.get(k, 0) + repair_usage.get(k, 0)
             for k in ("input_tokens", "output_tokens", "thoughts_tokens")
         }
+        if enrichment is None and _is_truncated_json_error(err2 or err):
+            logger.warning(
+                "Repair output appears truncated; retrying with compact repair"
+            )
+            compact_repair_prompt = (
+                repair_prompt
+                + "\n\nYour previous output was truncated. Rewrite the full JSON from "
+                "scratch. Be concise in all long text fields, keep strings short, and "
+                "close all JSON objects and strings."
+            )
+            enrichment, _, err3, repair_usage2 = gemini.repair(
+                system_prompt=SYSTEM_PROMPT,
+                repair_prompt=compact_repair_prompt,
+                max_output_tokens=max(max_output_tokens, 16384),
+            )
+            usage = {
+                k: usage.get(k, 0) + repair_usage2.get(k, 0)
+                for k in ("input_tokens", "output_tokens", "thoughts_tokens")
+            }
+            if enrichment is None:
+                err2 = err3
         if enrichment is None:
             return CallbackBody(
                 status="FAILED",
@@ -210,7 +308,9 @@ def reason(
             previous_output=enrichment.model_dump_json(),
         )
         enrichment_new, _, err2, repair_usage2 = gemini.repair(
-            system_prompt=SYSTEM_PROMPT, repair_prompt=repair_prompt
+            system_prompt=SYSTEM_PROMPT,
+            repair_prompt=repair_prompt,
+            max_output_tokens=max_output_tokens,
         )
         usage = {
             k: usage.get(k, 0) + repair_usage2.get(k, 0)

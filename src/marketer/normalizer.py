@@ -33,8 +33,8 @@ from marketer.user_profile import UserProfile
 logger = logging.getLogger(__name__)
 
 EMPTY_SENTINELS = {"", "ninguno", "ninguna", "none", "n/a", "-", "null"}
-ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
-ALLOWED_MIME_TYPES = {"image/jpeg", "image/png", "image/webp"}
+ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png"}
+ALLOWED_MIME_TYPES = {"image/jpeg", "image/png"}
 MAX_SIZE_BYTES = 20 * 1024 * 1024
 MAX_GALLERY_ITEMS = 20
 IMAGE_CATALOG_GATE_HINTS = {"image_catalog", "gallery", "images", "media"}
@@ -123,9 +123,7 @@ def _is_allowed_image(
     if ext in ALLOWED_EXTENSIONS:
         return True, ext
     if mime_type in ALLOWED_MIME_TYPES:
-        derived = {"image/jpeg": "jpeg", "image/png": "png", "image/webp": "webp"}[
-            mime_type
-        ]
+        derived = {"image/jpeg": "jpeg", "image/png": "png"}[mime_type]
         return True, derived
     suffix = _extension_from_url(url)
     if suffix in ALLOWED_EXTENSIONS:

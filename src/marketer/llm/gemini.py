@@ -142,9 +142,7 @@ def serialize_for_prompt(
 
 def _truncate_lists_and_text(obj, list_cap: int, text_cap: int):
     if isinstance(obj, list):
-        return [
-            _truncate_lists_and_text(x, list_cap, text_cap) for x in obj[:list_cap]
-        ]
+        return [_truncate_lists_and_text(x, list_cap, text_cap) for x in obj[:list_cap]]
     if isinstance(obj, dict):
         return {
             k: _truncate_lists_and_text(v, list_cap, text_cap) for k, v in obj.items()

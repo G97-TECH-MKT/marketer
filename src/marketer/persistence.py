@@ -182,13 +182,13 @@ async def persist_on_complete(
                 # strategy and we don't have brand_intelligence to seed one).
                 # If an active strategy already exists, persist a failed job for
                 # observability while still marking raw_brief terminal.
-                strategy = await get_active_strategy(session, pctx.user_id)
-                if strategy is not None:
+                active_strategy = await get_active_strategy(session, pctx.user_id)
+                if active_strategy is not None:
                     await create_job(
                         session,
                         user_id=pctx.user_id,
                         raw_brief_id=pctx.raw_brief_id,
-                        strategy_id=strategy.id,
+                        strategy_id=active_strategy.id,
                         action_code=pctx.action_code,
                         job_input=_distill_job_input(envelope),
                         output=callback.model_dump(mode="json"),
