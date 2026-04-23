@@ -45,6 +45,19 @@ def _format_reasoning_error(prefix: str, err: Any) -> str:
     return f"{prefix}: {err}"
 
 
+def _is_truncated_json_error(err: Exception | None) -> bool:
+    if err is None:
+        return False
+    text = str(err).lower()
+    markers = (
+        "json_invalid",
+        "eof while parsing",
+        "unterminated string",
+        "unexpected end of json input",
+    )
+    return any(marker in text for marker in markers)
+
+
 def _build_prompt_context(
     ctx: InternalContext, extras_truncation: int, text_truncation_chars: int
 ) -> str:
@@ -113,7 +126,7 @@ def reason(
     gemini: GeminiClient,
     extras_truncation: int = 10,
     prompt_text_truncation_chars: int = 600,
-    max_output_tokens: int = 8192,
+    max_output_tokens: int = 16384,
     user_profile: UserProfile | None = None,
     usp_warning: str | None = None,
     gallery_pool: GalleryPool | None = None,
@@ -180,12 +193,33 @@ def reason(
             previous_output=raw_text,
         )
         enrichment, _, err2, repair_usage = gemini.repair(
-            system_prompt=SYSTEM_PROMPT, repair_prompt=repair_prompt
+            system_prompt=SYSTEM_PROMPT,
+            repair_prompt=repair_prompt,
+            max_output_tokens=max_output_tokens,
         )
         usage = {
             k: usage.get(k, 0) + repair_usage.get(k, 0)
             for k in ("input_tokens", "output_tokens", "thoughts_tokens")
         }
+        if enrichment is None and _is_truncated_json_error(err2 or err):
+            logger.warning("Repair output appears truncated; retrying with compact repair")
+            compact_repair_prompt = (
+                repair_prompt
+                + "\n\nYour previous output was truncated. Rewrite the full JSON from "
+                "scratch. Be concise in all long text fields, keep strings short, and "
+                "close all JSON objects and strings."
+            )
+            enrichment, _, err3, repair_usage2 = gemini.repair(
+                system_prompt=SYSTEM_PROMPT,
+                repair_prompt=compact_repair_prompt,
+                max_output_tokens=max(max_output_tokens, 16384),
+            )
+            usage = {
+                k: usage.get(k, 0) + repair_usage2.get(k, 0)
+                for k in ("input_tokens", "output_tokens", "thoughts_tokens")
+            }
+            if enrichment is None:
+                err2 = err3
         if enrichment is None:
             return CallbackBody(
                 status="FAILED",
@@ -210,7 +244,9 @@ def reason(
             previous_output=enrichment.model_dump_json(),
         )
         enrichment_new, _, err2, repair_usage2 = gemini.repair(
-            system_prompt=SYSTEM_PROMPT, repair_prompt=repair_prompt
+            system_prompt=SYSTEM_PROMPT,
+            repair_prompt=repair_prompt,
+            max_output_tokens=max_output_tokens,
         )
         usage = {
             k: usage.get(k, 0) + repair_usage2.get(k, 0)
