@@ -110,10 +110,11 @@ class TestNormalizerSubscriptionStrategy:
         assert ctx.subscription_jobs[0].action_key == "create_prod_line"
 
     def test_all_jobs_missing_description_raises(self):
+        # LLM-path jobs (create_post) without description are skipped → no valid jobs → ValueError
         data = _load("subscription_strategy.json")
         data["payload"]["client_request"]["jobs"] = [
             {"action_key": "create_post"},
-            {"action_key": ""},
+            {"action_key": "edit_post"},
         ]
         with pytest.raises(ValueError, match="subscription_strategy requires"):
             normalize(data)

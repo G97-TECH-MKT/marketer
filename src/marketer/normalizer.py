@@ -868,7 +868,8 @@ def _extract_subscription_jobs(
             continue
         action_key = _clean_string(item.get("action_key")) or "create_prod_line"
         description = _clean_string(item.get("description"))
-        if not description:
+        _llm_keys = {"create_post", "edit_post"}
+        if not description and action_key in _llm_keys:
             warnings.append(
                 Warning(
                     code="job_missing_description",

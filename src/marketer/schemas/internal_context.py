@@ -154,7 +154,7 @@ class SubscriptionJob(BaseModel):
     """
 
     action_key: str
-    description: str
+    description: str | None = None
     index: int
     quantity: int = 1
     slug: str | None = None
