@@ -71,6 +71,7 @@ jobs:
           --health-timeout=5s
           --health-retries=5
     env:
+      PYTHONPATH: src
       DATABASE_URL: postgresql+asyncpg://marketer:marketer@localhost:5432/marketer_test
       GEMINI_API_KEY: test-key
       INBOUND_TOKEN: test-token
