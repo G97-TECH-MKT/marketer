@@ -25,6 +25,7 @@ from sqlalchemy.orm import Session
 from marketer import main as main_module
 from marketer.config import load_settings
 from marketer.db.models import ActionType, Job, RawBrief, Strategy, User
+from marketer.pg_url import normalize_sync_psycopg_url
 from marketer.schemas.enrichment import (
     BrandIntelligence,
     CallbackBody,
@@ -52,12 +53,7 @@ pytestmark = pytest.mark.skipif(
 
 def _sync_engine():
     """psycopg-driven sync engine for test-side reads."""
-    url = _SETTINGS.database_url
-    if url.startswith("postgresql+asyncpg://"):
-        url = "postgresql+psycopg://" + url[len("postgresql+asyncpg://") :]
-    elif url.startswith("postgresql://"):
-        url = "postgresql+psycopg://" + url[len("postgresql://") :]
-    return create_engine(url)
+    return create_engine(normalize_sync_psycopg_url(_SETTINGS.database_url))
 
 
 def _fake_callback() -> CallbackBody:

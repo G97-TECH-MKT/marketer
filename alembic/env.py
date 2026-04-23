@@ -14,6 +14,8 @@ from pathlib import Path
 from alembic import context
 from sqlalchemy import create_engine, pool
 
+from marketer.pg_url import normalize_sync_psycopg_url
+
 config = context.config
 
 if config.config_file_name is not None:
@@ -42,11 +44,7 @@ def _resolve_database_url() -> str:
             "DATABASE_URL is not set. Export it or add to .env before running alembic.\n"
             "Example: postgresql+asyncpg://marketer:password@localhost:5432/marketer"
         )
-    if url.startswith("postgresql+asyncpg://"):
-        url = "postgresql+psycopg://" + url[len("postgresql+asyncpg://") :]
-    elif url.startswith("postgresql://"):
-        url = "postgresql+psycopg://" + url[len("postgresql://") :]
-    return url
+    return normalize_sync_psycopg_url(url)
 
 
 # No declarative metadata — migrations are hand-written DDL.

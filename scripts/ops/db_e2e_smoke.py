@@ -31,14 +31,7 @@ from sqlalchemy.orm import Session  # noqa: E402
 from marketer import main as main_module  # noqa: E402
 from marketer.config import load_settings  # noqa: E402
 from marketer.db.models import Job, RawBrief, Strategy  # noqa: E402
-
-
-def _sync_url(url: str) -> str:
-    if url.startswith("postgresql+asyncpg://"):
-        return "postgresql+psycopg://" + url[len("postgresql+asyncpg://") :]
-    if url.startswith("postgresql://"):
-        return "postgresql+psycopg://" + url[len("postgresql://") :]
-    return url
+from marketer.pg_url import normalize_sync_psycopg_url  # noqa: E402
 
 
 def main() -> int:
@@ -88,7 +81,7 @@ def main() -> int:
     if resp.status_code != 202:
         return 2
 
-    engine = create_engine(_sync_url(settings.database_url))
+    engine = create_engine(normalize_sync_psycopg_url(settings.database_url))
     with Session(engine) as session:
         raw_brief = session.execute(
             select(RawBrief).where(RawBrief.router_task_id == task_uuid)

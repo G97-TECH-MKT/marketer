@@ -18,18 +18,10 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.pool import NullPool
 
 from marketer.config import load_settings
+from marketer.pg_url import coerce_asyncpg_query, coerce_plain_postgresql_to_asyncpg_scheme
 
 _engine: AsyncEngine | None = None
 _sessionmaker: async_sessionmaker[AsyncSession] | None = None
-
-
-def _normalize_url(url: str) -> str:
-    """Coerce a plain postgresql:// URL to the asyncpg driver. Leave +asyncpg as-is."""
-    if url.startswith("postgresql+asyncpg://"):
-        return url
-    if url.startswith("postgresql://"):
-        return "postgresql+asyncpg://" + url[len("postgresql://") :]
-    return url
 
 
 def is_configured() -> bool:
@@ -40,7 +32,9 @@ def _build_engine() -> AsyncEngine:
     settings = load_settings()
     if not settings.database_url:
         raise RuntimeError("DATABASE_URL is not set; persistence disabled")
-    url = _normalize_url(settings.database_url)
+    url = coerce_asyncpg_query(
+        coerce_plain_postgresql_to_asyncpg_scheme(settings.database_url)
+    )
     if settings.db_use_null_pool:
         return create_async_engine(url, poolclass=NullPool)
     return create_async_engine(

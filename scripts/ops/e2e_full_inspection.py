@@ -438,18 +438,12 @@ def _print_db(task_uuid: Any, account_uuid: Any, db_url: str) -> None:
     from sqlalchemy import create_engine, select
     from sqlalchemy.orm import Session
     from marketer.db.models import Job, RawBrief, Strategy
-
-    def _sync_url(url: str) -> str:
-        if url.startswith("postgresql+asyncpg://"):
-            return "postgresql+psycopg://" + url[len("postgresql+asyncpg://") :]
-        if url.startswith("postgresql://"):
-            return "postgresql+psycopg://" + url[len("postgresql://") :]
-        return url
+    from marketer.pg_url import normalize_sync_psycopg_url
 
     try:
         from uuid import UUID
 
-        engine = create_engine(_sync_url(db_url))
+        engine = create_engine(normalize_sync_psycopg_url(db_url))
         with Session(engine) as session:
             raw_brief = session.execute(
                 select(RawBrief).where(RawBrief.router_task_id == task_uuid)

@@ -21,16 +21,14 @@ resource "aws_security_group" "ecs" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-}
 
-resource "aws_security_group_rule" "egress_postgres" {
-  type                     = "egress"
-  from_port                = 5432
-  to_port                  = 5432
-  protocol                 = "tcp"
-  security_group_id        = aws_security_group.ecs.id
-  source_security_group_id = var.rds_security_group_id
-  description              = "Postgres egress to RDS"
+  egress {
+    description     = "Postgres egress to RDS"
+    from_port       = 5432
+    to_port         = 5432
+    protocol        = "tcp"
+    security_groups = [var.rds_security_group_id]
+  }
 }
 
 resource "aws_cloudwatch_log_group" "marketer" {
