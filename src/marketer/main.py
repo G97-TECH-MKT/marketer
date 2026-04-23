@@ -547,7 +547,7 @@ async def _run_multi_and_callback(
                 async with session_scope() as session:
                     strategy = await get_active_strategy(session, pctx.user_id)
                     if strategy is None:
-                        # Try to get strategy from LLM results
+                        # Try to get strategy from LLM results first
                         for cb, _j in results:
                             if cb.status == "COMPLETED" and cb.output_data:
                                 bi = cb.output_data.enrichment.brand_intelligence.model_dump()
@@ -557,6 +557,13 @@ async def _run_multi_and_callback(
                                     brand_intelligence_if_new=bi,
                                 )
                                 break
+                        # All-passthrough case: no LLM results — create empty strategy row
+                        if strategy is None:
+                            strategy = await ensure_strategy(
+                                session,
+                                user_id=pctx.user_id,
+                                brand_intelligence_if_new={},
+                            )
                     if strategy is not None:
                         for job in passthrough_jobs:
                             db_job = await create_job(
@@ -800,6 +807,12 @@ async def run_task_sync(
                                         brand_intelligence_if_new=bi,
                                     )
                                     break
+                            if strategy is None:
+                                strategy = await ensure_strategy(
+                                    session,
+                                    user_id=pctx.user_id,
+                                    brand_intelligence_if_new={},
+                                )
                         if strategy is not None:
                             for j in passthrough_jobs:
                                 await _create_job(
