@@ -257,6 +257,65 @@ class TestBuildPromptContextAttachments:
         assert "[truncated" in parsed["user_request"]
 
 
+class TestBuildPromptContextPriorStepOutputs:
+    def test_prior_step_outputs_are_compacted_and_drop_large_blobs(self):
+        ctx = _minimal_ctx(
+            prior_step_outputs={
+                "marketing": {
+                    "data": {
+                        "resources": [
+                            "https://cdn.example/a.jpg",
+                            "https://cdn.example/b.jpg",
+                        ],
+                        "total_items": 2,
+                        "client_dna": "X" * 2000,
+                        "client_request": "Y" * 1500,
+                    },
+                    "enrichment": {
+                        "surface_format": "post",
+                        "content_pillar": "product",
+                        "title": "Titulo breve",
+                        "objective": "Objetivo breve",
+                        "brand_dna": "B" * 3000,
+                        "cf_post_brief": "C" * 3000,
+                        "cta": {"channel": "dm", "url_or_handle": None, "label": "DM"},
+                    },
+                    "trace": {
+                        "action_code": "create_post",
+                        "surface": "post",
+                        "mode": "create",
+                        "latency_ms": 42000,
+                        "input_tokens": 17000,
+                    },
+                    "warnings": [
+                        {"code": "gallery_all_filtered"},
+                        {"code": "request_vague"},
+                    ],
+                }
+            }
+        )
+        output = _build_prompt_context(
+            ctx, extras_truncation=10, text_truncation_chars=600
+        )
+        parsed = json.loads(output)
+        compact = parsed["prior_step_outputs"]["marketing"]
+
+        assert compact["resources_count"] == 2
+        assert compact["total_items"] == 2
+        assert compact["surface_format"] == "post"
+        assert compact["content_pillar"] == "product"
+        assert compact["cta_channel"] == "dm"
+        assert compact["trace"]["latency_ms"] == 42000
+        assert compact["warning_codes"] == ["gallery_all_filtered", "request_vague"]
+
+        # Ensure large duplicated text blobs are not forwarded
+        serialized = json.dumps(parsed["prior_step_outputs"])
+        assert "client_dna" not in serialized
+        assert "client_request" not in serialized
+        assert "brand_dna" not in serialized
+        assert "cf_post_brief" not in serialized
+
+
 # ===========================================================================
 # Resources assembly — priority order and deduplication
 # ===========================================================================

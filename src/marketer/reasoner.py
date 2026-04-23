@@ -58,6 +58,68 @@ def _is_truncated_json_error(err: Exception | None) -> bool:
     return any(marker in text for marker in markers)
 
 
+def _compact_prior_step_outputs(
+    prior_step_outputs: dict[str, dict[str, Any]] | None,
+) -> dict[str, dict[str, Any]] | None:
+    """Keep only compact, high-signal metadata from previous steps.
+
+    Full previous outputs can carry large blobs (brand_dna, cf_post_brief, etc.).
+    Sending all of that back to the LLM inflates token usage and latency.
+    """
+    if not prior_step_outputs:
+        return None
+
+    compact: dict[str, dict[str, Any]] = {}
+    for step_code, output_data in prior_step_outputs.items():
+        if not isinstance(output_data, dict):
+            continue
+
+        step_summary: dict[str, Any] = {}
+
+        data = output_data.get("data")
+        if isinstance(data, dict):
+            resources = data.get("resources")
+            if isinstance(resources, list):
+                step_summary["resources_count"] = len(resources)
+            total_items = data.get("total_items")
+            if isinstance(total_items, int):
+                step_summary["total_items"] = total_items
+
+        enrichment = output_data.get("enrichment")
+        if isinstance(enrichment, dict):
+            for key in ("surface_format", "content_pillar", "title", "objective"):
+                value = enrichment.get(key)
+                if isinstance(value, str) and value:
+                    step_summary[key] = value
+            cta = enrichment.get("cta")
+            if isinstance(cta, dict) and isinstance(cta.get("channel"), str):
+                step_summary["cta_channel"] = cta["channel"]
+
+        trace = output_data.get("trace")
+        if isinstance(trace, dict):
+            trace_summary: dict[str, Any] = {}
+            for key in ("action_code", "surface", "mode", "latency_ms"):
+                value = trace.get(key)
+                if isinstance(value, (str, int)):
+                    trace_summary[key] = value
+            if trace_summary:
+                step_summary["trace"] = trace_summary
+
+        warnings = output_data.get("warnings")
+        if isinstance(warnings, list):
+            warning_codes: list[str] = []
+            for warning in warnings:
+                if isinstance(warning, dict) and isinstance(warning.get("code"), str):
+                    warning_codes.append(warning["code"])
+            if warning_codes:
+                step_summary["warning_codes"] = warning_codes[:5]
+
+        if step_summary:
+            compact[step_code] = step_summary
+
+    return compact or None
+
+
 def _build_prompt_context(
     ctx: InternalContext, extras_truncation: int, text_truncation_chars: int
 ) -> str:
@@ -103,7 +165,7 @@ def _build_prompt_context(
         "user_attachments": ctx.attachments if ctx.attachments else None,
         "gallery_pool": gallery_pool_shortlist,
         "gallery": [item.model_dump() for item in ctx.gallery],
-        "prior_step_outputs": ctx.prior_step_outputs or None,
+        "prior_step_outputs": _compact_prior_step_outputs(ctx.prior_step_outputs),
         "user_insights": ctx.user_insights or None,
     }
     return serialize_for_prompt(
