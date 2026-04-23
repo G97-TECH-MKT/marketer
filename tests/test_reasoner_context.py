@@ -146,7 +146,9 @@ class TestBuildPromptContextGalleryPool:
     def test_gallery_pool_key_present_when_pool_set(self):
         pool = GalleryPool(shortlist=[_pool_item()], total_fetched=5, total_eligible=1)
         ctx = _minimal_ctx(gallery_pool=pool)
-        output = _build_prompt_context(ctx, extras_truncation=10)
+        output = _build_prompt_context(
+            ctx, extras_truncation=10, text_truncation_chars=600
+        )
         parsed = json.loads(output)
         assert parsed["gallery_pool"] is not None
         assert len(parsed["gallery_pool"]) == 1
@@ -157,7 +159,9 @@ class TestBuildPromptContextGalleryPool:
         )
         pool = GalleryPool(shortlist=[item])
         ctx = _minimal_ctx(gallery_pool=pool)
-        output = _build_prompt_context(ctx, extras_truncation=10)
+        output = _build_prompt_context(
+            ctx, extras_truncation=10, text_truncation_chars=600
+        )
         parsed = json.loads(output)
 
         entry = parsed["gallery_pool"][0]
@@ -169,14 +173,18 @@ class TestBuildPromptContextGalleryPool:
 
     def test_gallery_pool_null_when_no_pool(self):
         ctx = _minimal_ctx(gallery_pool=None)
-        output = _build_prompt_context(ctx, extras_truncation=10)
+        output = _build_prompt_context(
+            ctx, extras_truncation=10, text_truncation_chars=600
+        )
         parsed = json.loads(output)
         assert parsed["gallery_pool"] is None
 
     def test_gallery_pool_null_when_empty_shortlist(self):
         pool = GalleryPool(shortlist=[], total_fetched=0, total_eligible=0)
         ctx = _minimal_ctx(gallery_pool=pool)
-        output = _build_prompt_context(ctx, extras_truncation=10)
+        output = _build_prompt_context(
+            ctx, extras_truncation=10, text_truncation_chars=600
+        )
         parsed = json.loads(output)
         assert parsed["gallery_pool"] is None
 
@@ -187,7 +195,9 @@ class TestBuildPromptContextGalleryPool:
         ]
         pool = GalleryPool(shortlist=items)
         ctx = _minimal_ctx(gallery_pool=pool)
-        output = _build_prompt_context(ctx, extras_truncation=10)
+        output = _build_prompt_context(
+            ctx, extras_truncation=10, text_truncation_chars=600
+        )
         parsed = json.loads(output)
         assert len(parsed["gallery_pool"]) == 3
         uuids = {e["uuid"] for e in parsed["gallery_pool"]}
@@ -202,20 +212,26 @@ class TestBuildPromptContextGalleryPool:
 class TestBuildPromptContextAttachments:
     def test_user_attachments_present_when_set(self):
         ctx = _minimal_ctx(attachments=["https://s3.example.com/user-img.jpg"])
-        output = _build_prompt_context(ctx, extras_truncation=10)
+        output = _build_prompt_context(
+            ctx, extras_truncation=10, text_truncation_chars=600
+        )
         parsed = json.loads(output)
         assert parsed["user_attachments"] == ["https://s3.example.com/user-img.jpg"]
 
     def test_user_attachments_null_when_empty(self):
         ctx = _minimal_ctx(attachments=[])
-        output = _build_prompt_context(ctx, extras_truncation=10)
+        output = _build_prompt_context(
+            ctx, extras_truncation=10, text_truncation_chars=600
+        )
         parsed = json.loads(output)
         assert parsed["user_attachments"] is None
 
     def test_user_attachments_multiple_urls(self):
         urls = ["https://s3.example.com/a.jpg", "https://s3.example.com/b.jpg"]
         ctx = _minimal_ctx(attachments=urls)
-        output = _build_prompt_context(ctx, extras_truncation=10)
+        output = _build_prompt_context(
+            ctx, extras_truncation=10, text_truncation_chars=600
+        )
         parsed = json.loads(output)
         assert parsed["user_attachments"] == urls
 
@@ -225,10 +241,20 @@ class TestBuildPromptContextAttachments:
             gallery_pool=pool,
             attachments=["https://s3.example.com/user-img.jpg"],
         )
-        output = _build_prompt_context(ctx, extras_truncation=10)
+        output = _build_prompt_context(
+            ctx, extras_truncation=10, text_truncation_chars=600
+        )
         parsed = json.loads(output)
         assert parsed["gallery_pool"] is not None
         assert parsed["user_attachments"] is not None
+
+    def test_long_text_fields_are_truncated_in_prompt_context(self):
+        ctx = _minimal_ctx(user_request="x" * 200)
+        output = _build_prompt_context(
+            ctx, extras_truncation=10, text_truncation_chars=40
+        )
+        parsed = json.loads(output)
+        assert "[truncated" in parsed["user_request"]
 
 
 # ===========================================================================
@@ -255,6 +281,7 @@ class TestResourcesAssembly:
             envelope,
             gemini,  # type: ignore[arg-type]
             extras_truncation=10,
+            prompt_text_truncation_chars=600,
             gallery_pool=gallery_pool,
         )
 

@@ -24,6 +24,8 @@ Required behavior:
 - Set `confidence.*` based on how strongly the brief supported each choice.
 - Fill `hashtag_strategy.tags` with 5-10 actual hashtag strings (# prefix)
   aligned to intent and platform. These land verbatim in cf_post_brief.
+- Set `hashtag_strategy.suggested_volume` as the hashtag count (0-30), aligned
+  to `len(tags)`. This is NOT popularity/search volume.
 - Compose `cf_post_brief` LAST. Choose the format from §cf_post_brief based on
   surface_format:
     post / story / reel → use the "post/story/reel" format (CONCEPT block +

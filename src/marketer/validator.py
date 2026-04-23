@@ -506,4 +506,19 @@ def validate_and_correct(
         )
         enrichment.do_not = enrichment.do_not[:5]
 
+    # hashtag_strategy.suggested_volume guardrail (count, not popularity metric)
+    if enrichment.hashtag_strategy.suggested_volume > 30:
+        warnings.append(
+            Warning(
+                code="hashtag_volume_clamped",
+                message=(
+                    "hashtag_strategy.suggested_volume exceeded 30 and was clamped "
+                    "to a safe count value"
+                ),
+                field="hashtag_strategy.suggested_volume",
+            )
+        )
+        safe_count = len(enrichment.hashtag_strategy.tags)
+        enrichment.hashtag_strategy.suggested_volume = min(max(safe_count, 0), 30)
+
     return enrichment, warnings, blocking

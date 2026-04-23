@@ -38,6 +38,11 @@ ALLOWED_MIME_TYPES = {"image/jpeg", "image/png", "image/webp"}
 MAX_SIZE_BYTES = 20 * 1024 * 1024
 MAX_GALLERY_ITEMS = 20
 IMAGE_CATALOG_GATE_HINTS = {"image_catalog", "gallery", "images", "media"}
+ALLOWED_FORM_EXTRAS = {
+    "FIELD_POST_CONTENT_STYLE",
+    "FIELD_DESIGN_STYLE",
+    "FIELD_FONT_STYLE",
+}
 
 
 def _nested_brief_dict(brief_data: dict[str, Any]) -> dict[str, Any]:
@@ -404,7 +409,7 @@ def _flatten_brief(
         if key not in extras:
             extras[key] = value
 
-    # Merge form_values we did not consume (useful for post-specific signals like FIELD_POST_CONTENT_STYLE)
+    # Merge only a safe subset of form_values extras to keep prompt context compact.
     consumed_form_keys = {
         "FIELD_COMPANY_NAME",
         "FIELD_COMPANY_CATEGORY",
@@ -420,7 +425,11 @@ def _flatten_brief(
         "FIELD_BRAND_MATERIAL",
         "FIELD_WEBSITE_URL",
     }
-    form_extras = {k: v for k, v in form_values.items() if k not in consumed_form_keys}
+    form_extras = {
+        k: v
+        for k, v in form_values.items()
+        if k not in consumed_form_keys and k in ALLOWED_FORM_EXTRAS
+    }
     if form_extras:
         extras["form_values"] = form_extras
 

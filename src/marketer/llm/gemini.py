@@ -35,7 +35,7 @@ class GeminiClient:
         system_prompt: str,
         user_prompt: str,
         temperature: float = 0.4,
-        max_output_tokens: int = 16384,
+        max_output_tokens: int = 8192,
     ) -> tuple[PostEnrichment | None, str, Exception | None, dict]:
         """Run a single structured-output call.
 
@@ -101,7 +101,7 @@ class GeminiClient:
         system_prompt: str,
         repair_prompt: str,
         temperature: float = 0.2,
-        max_output_tokens: int = 16384,
+        max_output_tokens: int = 8192,
     ) -> tuple[PostEnrichment | None, str, Exception | None, dict]:
         """Schema-repair round-trip. Same shape as generate_structured."""
         return self.generate_structured(
@@ -132,15 +132,23 @@ def is_timeout_exception(exc: Exception | None) -> bool:
     return any(marker in message for marker in timeout_markers)
 
 
-def serialize_for_prompt(ctx_json: dict, truncate_lists: int) -> str:
-    """Render the prompt context as compact JSON, truncating long list fields."""
-    truncated = _truncate_lists(ctx_json, truncate_lists)
+def serialize_for_prompt(
+    ctx_json: dict, truncate_lists: int, truncate_text: int = 600
+) -> str:
+    """Render prompt context JSON with bounded list and text sizes."""
+    truncated = _truncate_lists_and_text(ctx_json, truncate_lists, truncate_text)
     return json.dumps(truncated, ensure_ascii=False, indent=2)
 
 
-def _truncate_lists(obj, cap: int):
+def _truncate_lists_and_text(obj, list_cap: int, text_cap: int):
     if isinstance(obj, list):
-        return [_truncate_lists(x, cap) for x in obj[:cap]]
+        return [
+            _truncate_lists_and_text(x, list_cap, text_cap) for x in obj[:list_cap]
+        ]
     if isinstance(obj, dict):
-        return {k: _truncate_lists(v, cap) for k, v in obj.items()}
+        return {
+            k: _truncate_lists_and_text(v, list_cap, text_cap) for k, v in obj.items()
+        }
+    if isinstance(obj, str) and text_cap > 0 and len(obj) > text_cap:
+        return f"{obj[:text_cap]}… [truncated {len(obj) - text_cap} chars]"
     return obj

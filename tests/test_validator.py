@@ -248,6 +248,23 @@ def test_do_not_truncates_to_five():
     assert any(w.code == "do_not_truncated" for w in warnings)
 
 
+def test_hashtag_volume_clamped_to_tag_count_when_out_of_range():
+    ctx = _ctx()
+    e = _base(
+        hashtag_strategy=HashtagStrategy(
+            intent="local_discovery",
+            suggested_volume=30,
+            themes=["x"],
+            tags=["#a", "#b", "#c"],
+        )
+    )
+    # bypass model-level max check to simulate malformed LLM output
+    e.hashtag_strategy.suggested_volume = 50000
+    out, warnings, _ = validate_and_correct(e, ctx)
+    assert out.hashtag_strategy.suggested_volume == 3
+    assert any(w.code == "hashtag_volume_clamped" for w in warnings)
+
+
 # ---------------------------------------------------------------------------
 # _validate_cta — correction paths (lines 225-298)
 # ---------------------------------------------------------------------------

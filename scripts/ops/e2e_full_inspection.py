@@ -297,9 +297,13 @@ def _print_context(ctx: Any, warnings: list[Any]) -> None:
     _h("platform", ctx.platform)
 
 
-def _print_prompt(ctx: Any, extras_truncation: int = 10) -> None:
+def _print_prompt(
+    ctx: Any, extras_truncation: int = 10, text_truncation_chars: int = 600
+) -> None:
     _sep("4. GEMINI PROMPT CONTEXT (what the LLM sees)")
-    prompt_ctx = _build_prompt_context(ctx, extras_truncation)
+    prompt_ctx = _build_prompt_context(
+        ctx, extras_truncation, text_truncation_chars
+    )
     max_chars = 1500
     if len(prompt_ctx) > max_chars:
         print(f"  [Context JSON — {len(prompt_ctx)} chars, showing first {max_chars}]")

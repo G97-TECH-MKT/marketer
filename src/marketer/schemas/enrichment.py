@@ -103,7 +103,15 @@ class HashtagStrategy(BaseModel):
     """Hashtag direction plus the actual strings that go into cf_post_brief."""
 
     intent: HashtagIntent
-    suggested_volume: int = Field(default=0, ge=0, le=30)
+    suggested_volume: int = Field(
+        default=0,
+        ge=0,
+        le=30,
+        description=(
+            "Number of hashtags to publish (0-30). This is a count, not audience "
+            "or search popularity volume."
+        ),
+    )
     themes: list[str] = Field(default_factory=list)
     tags: list[str] = Field(
         default_factory=list,

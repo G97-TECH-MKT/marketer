@@ -23,6 +23,7 @@ from marketer.db import is_configured, session_scope
 from marketer.db.repositories import (
     create_job,
     ensure_strategy,
+    get_active_strategy,
     get_action_type,
     insert_raw_brief,
     mark_raw_brief,
@@ -179,7 +180,22 @@ async def persist_on_complete(
             else:
                 # Failed run — no strategy promotion, no jobs row (FK requires
                 # strategy and we don't have brand_intelligence to seed one).
-                # raw_brief captures the failure for audit.
+                # If an active strategy already exists, persist a failed job for
+                # observability while still marking raw_brief terminal.
+                strategy = await get_active_strategy(session, pctx.user_id)
+                if strategy is not None:
+                    await create_job(
+                        session,
+                        user_id=pctx.user_id,
+                        raw_brief_id=pctx.raw_brief_id,
+                        strategy_id=strategy.id,
+                        action_code=pctx.action_code,
+                        job_input=_distill_job_input(envelope),
+                        output=callback.model_dump(mode="json"),
+                        status="failed",
+                        latency_ms=latency_ms,
+                        error={"message": callback.error_message or "unknown_error"},
+                    )
                 await mark_raw_brief(
                     session, raw_brief_id=pctx.raw_brief_id, status="failed"
                 )

@@ -149,7 +149,7 @@ def _envelope(account_uuid: UUID, task_uuid: UUID) -> dict:
 def patched(monkeypatch):
     """Short-circuit LLM + callback PATCH so the test is offline."""
 
-    def fake_reason(envelope, gemini, extras_truncation=10):
+    def fake_reason(envelope, gemini, extras_truncation=10, **_kwargs):
         return _fake_callback()
 
     async def fake_patch(callback_url, body, correlation_id, task_id):

@@ -108,7 +108,10 @@ The schema groups fields into:
     - `tags[]`: actual hashtag strings with # prefix, 5-10 items. These land
                 verbatim in cf_post_brief. Match intent and themes. Generate
                 them here; paste them into cf_post_brief.
-    - intent, suggested_volume, themes[]: strategic direction (unchanged).
+    - `suggested_volume`: integer 0-30. It means how many hashtags to publish
+                          in this post (a count), NOT popularity/search volume.
+                          Keep it aligned to `len(tags)`.
+    - intent, themes[]: strategic direction.
 12. `do_not[]`           - up to 5 short anti-patterns for the executor
                           (e.g. "no usar tipografía sobre la imagen",
                           "no aplicar filtro desaturado").

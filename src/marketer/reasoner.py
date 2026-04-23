@@ -45,7 +45,9 @@ def _format_reasoning_error(prefix: str, err: Any) -> str:
     return f"{prefix}: {err}"
 
 
-def _build_prompt_context(ctx: InternalContext, extras_truncation: int) -> str:
+def _build_prompt_context(
+    ctx: InternalContext, extras_truncation: int, text_truncation_chars: int
+) -> str:
     """Render the InternalContext as compact JSON for the LLM.
 
     Strips raw_envelope and trims long list fields to the configured cap.
@@ -91,12 +93,18 @@ def _build_prompt_context(ctx: InternalContext, extras_truncation: int) -> str:
         "prior_step_outputs": ctx.prior_step_outputs or None,
         "user_insights": ctx.user_insights or None,
     }
-    return serialize_for_prompt(payload, truncate_lists=extras_truncation)
+    return serialize_for_prompt(
+        payload,
+        truncate_lists=extras_truncation,
+        truncate_text=text_truncation_chars,
+    )
 
 
-def _build_user_prompt(ctx: InternalContext, extras_truncation: int) -> str:
+def _build_user_prompt(
+    ctx: InternalContext, extras_truncation: int, text_truncation_chars: int
+) -> str:
     overlay = OVERLAYS[ctx.action_code]
-    rendered = _build_prompt_context(ctx, extras_truncation)
+    rendered = _build_prompt_context(ctx, extras_truncation, text_truncation_chars)
     return f"{overlay}\n\nContext:\n{rendered}\n\nReturn the PostEnrichment JSON now."
 
 
@@ -104,7 +112,8 @@ def reason(
     envelope_data: dict[str, Any],
     gemini: GeminiClient,
     extras_truncation: int = 10,
-    max_output_tokens: int = 16384,
+    prompt_text_truncation_chars: int = 600,
+    max_output_tokens: int = 8192,
     user_profile: UserProfile | None = None,
     usp_warning: str | None = None,
     gallery_pool: GalleryPool | None = None,
@@ -146,7 +155,9 @@ def reason(
         )
 
     # --- Build prompt and call Gemini ---
-    user_prompt = _build_user_prompt(ctx, extras_truncation)
+    user_prompt = _build_user_prompt(
+        ctx, extras_truncation, prompt_text_truncation_chars
+    )
     enrichment, raw_text, err, usage = gemini.generate_structured(
         system_prompt=SYSTEM_PROMPT,
         user_prompt=user_prompt,
@@ -289,7 +300,11 @@ def reason(
     )
 
 
-def dry_run_prompt(envelope_data: dict[str, Any], extras_truncation: int = 10) -> str:
+def dry_run_prompt(
+    envelope_data: dict[str, Any],
+    extras_truncation: int = 10,
+    prompt_text_truncation_chars: int = 600,
+) -> str:
     """Build and return the prompt that WOULD be sent — for debugging without burning LLM calls."""
     ctx, _ = normalize(envelope_data)
-    return _build_user_prompt(ctx, extras_truncation)
+    return _build_user_prompt(ctx, extras_truncation, prompt_text_truncation_chars)

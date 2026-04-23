@@ -289,6 +289,7 @@ async def _run_and_callback(
             envelope,
             gemini=client,
             extras_truncation=settings.extras_list_truncation,
+            prompt_text_truncation_chars=settings.prompt_text_truncation_chars,
             max_output_tokens=settings.llm_max_output_tokens,
             user_profile=user_profile,
             usp_warning=usp_warning,
@@ -413,6 +414,7 @@ async def run_task_sync(
         envelope,
         gemini=client,
         extras_truncation=settings.extras_list_truncation,
+        prompt_text_truncation_chars=settings.prompt_text_truncation_chars,
         max_output_tokens=settings.llm_max_output_tokens,
     )
     return callback.model_dump(mode="json")

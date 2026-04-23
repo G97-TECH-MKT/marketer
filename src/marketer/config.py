@@ -13,7 +13,8 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""
     gemini_model: str = "gemini-3-flash-preview"
     llm_timeout_seconds: int = 30
-    llm_max_output_tokens: int = 16384
+    llm_max_output_tokens: int = 8192
+    prompt_text_truncation_chars: int = 600
     log_level: str = "INFO"
     extras_list_truncation: int = 10
 
