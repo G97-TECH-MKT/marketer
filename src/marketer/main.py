@@ -410,7 +410,7 @@ async def _run_multi_and_callback(
     - prod-line: skip LLM, persist + POST to agentic-task-dispatcher
     """
     worker = logging.getLogger("marketer.worker")
-    from marketer.normalizer import _extract_subscription_jobs, _clean_string
+    from marketer.normalizer import _extract_subscription_jobs
     from marketer.schemas.internal_context import SubscriptionJob
 
     # --- Split jobs: LLM vs passthrough ---
@@ -577,7 +577,6 @@ async def _run_multi_and_callback(
             db_job_id, "ok" if dispatch_ok else "failed"
         )
 
-    total = len(results) + len(passthrough_db_jobs)
     worker.info(
         '"task_id=%s subscription_strategy_done llm_items=%d passthrough_items=%d"',
         task_id, len(results), len(passthrough_db_jobs),

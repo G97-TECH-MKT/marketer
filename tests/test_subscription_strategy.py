@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from marketer.normalizer import normalize
-from marketer.schemas.enrichment import MultiEnrichmentOutput, PostEnrichment
+from marketer.schemas.enrichment import MultiEnrichmentOutput
 from marketer.schemas.internal_context import SubscriptionJob
 
 ROOT = Path(__file__).resolve().parents[1]
