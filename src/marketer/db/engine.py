@@ -18,7 +18,10 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.pool import NullPool
 
 from marketer.config import load_settings
-from marketer.pg_url import coerce_asyncpg_query, coerce_plain_postgresql_to_asyncpg_scheme
+from marketer.pg_url import (
+    coerce_asyncpg_query,
+    coerce_plain_postgresql_to_asyncpg_scheme,
+)
 
 _engine: AsyncEngine | None = None
 _sessionmaker: async_sessionmaker[AsyncSession] | None = None
