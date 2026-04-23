@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from marketer.reasoner import reason
 
@@ -108,7 +108,7 @@ class _TruncatedThenRecoverGemini:
                 ),
                 {"input_tokens": 5, "output_tokens": 5, "thoughts_tokens": 0},
             )
-        payload = {
+        payload: dict[str, Any] = {
             "schema_version": "2.0",
             "surface_format": "post",
             "content_pillar": "product",
@@ -175,11 +175,16 @@ class _TruncatedThenRecoverGemini:
         from marketer.schemas.enrichment import PostEnrichment
 
         model = PostEnrichment.model_validate(payload)
-        return model, json.dumps(payload), None, {
-            "input_tokens": 8,
-            "output_tokens": 8,
-            "thoughts_tokens": 0,
-        }
+        return (
+            model,
+            json.dumps(payload),
+            None,
+            {
+                "input_tokens": 8,
+                "output_tokens": 8,
+                "thoughts_tokens": 0,
+            },
+        )
 
 
 def _load_fixture() -> dict[str, Any]:
@@ -188,7 +193,7 @@ def _load_fixture() -> dict[str, Any]:
 
 def test_reason_returns_llm_timeout_without_repair() -> None:
     gemini = _TimeoutGemini()
-    callback = reason(_load_fixture(), gemini=gemini)
+    callback = reason(_load_fixture(), gemini=cast(Any, gemini))
 
     assert callback.status == "FAILED"
     assert callback.error_message is not None
@@ -199,7 +204,7 @@ def test_reason_returns_llm_timeout_without_repair() -> None:
 
 def test_reason_keeps_schema_validation_failed_for_non_timeout_errors() -> None:
     gemini = _SchemaFailGemini()
-    callback = reason(_load_fixture(), gemini=gemini)
+    callback = reason(_load_fixture(), gemini=cast(Any, gemini))
 
     assert callback.status == "FAILED"
     assert callback.error_message is not None
@@ -209,7 +214,7 @@ def test_reason_keeps_schema_validation_failed_for_non_timeout_errors() -> None:
 
 def test_reason_recovers_from_truncated_json_with_compact_repair_retry() -> None:
     gemini = _TruncatedThenRecoverGemini()
-    callback = reason(_load_fixture(), gemini=gemini)
+    callback = reason(_load_fixture(), gemini=cast(Any, gemini))
 
     assert callback.status == "COMPLETED"
     assert callback.output_data is not None

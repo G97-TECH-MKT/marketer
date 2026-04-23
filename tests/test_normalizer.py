@@ -197,14 +197,43 @@ def test_attachments_string_list_maps_to_context_and_gallery():
     assert not any(w.code == "gallery_empty" for w in warnings)
 
 
-def test_attachments_legacy_object_list_is_tolerated():
+def test_attachments_legacy_object_list_tolerates_png_and_filters_webp():
     base = _load("minimal_post.json")
     base["payload"]["client_request"]["attachments"] = [
         {"url": "https://cdn.example/legacy-1.jpg", "name": "legacy-1"},
-        {"url": "https://cdn.example/legacy-2.webp"},
+        {"url": "https://cdn.example/legacy-2.png"},
+        {"url": "https://cdn.example/legacy-3.webp"},
     ]
-    ctx, _warnings = normalize(base)
+    ctx, warnings = normalize(base)
     assert ctx.attachments == [
         "https://cdn.example/legacy-1.jpg",
-        "https://cdn.example/legacy-2.webp",
+        "https://cdn.example/legacy-2.png",
+        "https://cdn.example/legacy-3.webp",
     ]
+    gallery_urls = [g.url for g in ctx.gallery]
+    assert "https://cdn.example/legacy-1.jpg" in gallery_urls
+    assert "https://cdn.example/legacy-2.png" in gallery_urls
+    assert "https://cdn.example/legacy-3.webp" not in gallery_urls
+    assert any(w.code == "gallery_partially_filtered" for w in warnings)
+
+
+def test_field_brand_material_pdf_is_filtered_out():
+    base = _load("minimal_post.json")
+    gate = base["payload"]["action_execution_gates"]["brief"]["response"]["data"]
+    gate["brief"]["form_values"]["FIELD_BRAND_MATERIAL"] = [
+        {
+            "url": "https://cdn.example/brand-guide.pdf",
+            "extension": "pdf",
+            "size": 200000,
+        },
+        {
+            "url": "https://cdn.example/logo-kit.jpg",
+            "extension": "jpg",
+            "size": 120000,
+        },
+    ]
+    ctx, warnings = normalize(base)
+    gallery_urls = [g.url for g in ctx.gallery]
+    assert "https://cdn.example/brand-guide.pdf" not in gallery_urls
+    assert "https://cdn.example/logo-kit.jpg" in gallery_urls
+    assert any(w.code == "gallery_partially_filtered" for w in warnings)

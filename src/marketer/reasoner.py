@@ -202,7 +202,9 @@ def reason(
             for k in ("input_tokens", "output_tokens", "thoughts_tokens")
         }
         if enrichment is None and _is_truncated_json_error(err2 or err):
-            logger.warning("Repair output appears truncated; retrying with compact repair")
+            logger.warning(
+                "Repair output appears truncated; retrying with compact repair"
+            )
             compact_repair_prompt = (
                 repair_prompt
                 + "\n\nYour previous output was truncated. Rewrite the full JSON from "
