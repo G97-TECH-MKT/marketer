@@ -31,6 +31,7 @@ from marketer.db.repositories import (
     upsert_user,
 )
 from marketer.schemas.enrichment import CallbackBody
+from marketer.schemas.internal_context import SubscriptionJob
 from marketer.user_profile import UserProfile
 
 logger = logging.getLogger("marketer.persistence")
@@ -203,3 +204,102 @@ async def persist_on_complete(
         logger.exception(
             '"persist_on_complete_failed raw_brief_id=%s"', pctx.raw_brief_id
         )
+
+
+async def persist_on_complete_multi(
+    pctx: PersistCtx,
+    envelope: dict[str, Any],
+    results: list[tuple[CallbackBody, SubscriptionJob]],
+    latency_ms: int,
+) -> list[tuple[UUID, SubscriptionJob]]:
+    """After reason_multi() returns: persist N jobs + mark raw_brief terminal.
+
+    Returns list of (job_db_id, SubscriptionJob) for dispatch status tracking.
+    """
+    if not is_configured():
+        return []
+
+    created_jobs: list[tuple[UUID, SubscriptionJob]] = []
+    try:
+        async with session_scope() as session:
+            # Find first successful enrichment for strategy seeding
+            first_bi: dict[str, Any] | None = None
+            for callback, _job in results:
+                if callback.status == "COMPLETED" and callback.output_data is not None:
+                    first_bi = callback.output_data.enrichment.brand_intelligence.model_dump()
+                    break
+
+            strategy = None
+            if first_bi is not None:
+                strategy = await ensure_strategy(
+                    session,
+                    user_id=pctx.user_id,
+                    brand_intelligence_if_new=first_bi,
+                )
+            else:
+                strategy = await get_active_strategy(session, pctx.user_id)
+
+            any_completed = False
+            for callback, job in results:
+                if strategy is None:
+                    break
+
+                job_input = _distill_job_input(envelope)
+                job_input["job_index"] = job.index
+                job_input["job_action_key"] = job.action_key
+                job_input["user_request"] = job.description
+
+                if callback.status == "COMPLETED":
+                    any_completed = True
+                    db_job = await create_job(
+                        session,
+                        user_id=pctx.user_id,
+                        raw_brief_id=pctx.raw_brief_id,
+                        strategy_id=strategy.id,
+                        action_code=job.action_key,
+                        job_input=job_input,
+                        output=callback.model_dump(mode="json"),
+                        status="done",
+                        latency_ms=latency_ms,
+                        orchestrator_agent=job.orchestrator_agent,
+                        dispatch_status="pending",
+                    )
+                    created_jobs.append((db_job.id, job))
+                else:
+                    db_job = await create_job(
+                        session,
+                        user_id=pctx.user_id,
+                        raw_brief_id=pctx.raw_brief_id,
+                        strategy_id=strategy.id,
+                        action_code=job.action_key,
+                        job_input=job_input,
+                        output=callback.model_dump(mode="json"),
+                        status="failed",
+                        latency_ms=latency_ms,
+                        error={"message": callback.error_message or "unknown_error"},
+                        orchestrator_agent=job.orchestrator_agent,
+                        dispatch_status="failed",
+                    )
+                    created_jobs.append((db_job.id, job))
+
+            final_status = "done" if any_completed else "failed"
+            await mark_raw_brief(
+                session, raw_brief_id=pctx.raw_brief_id, status=final_status
+            )
+    except Exception:
+        logger.exception(
+            '"persist_on_complete_multi_failed raw_brief_id=%s"', pctx.raw_brief_id
+        )
+    return created_jobs
+
+
+async def update_dispatch_status(job_id: UUID, status: str) -> None:
+    """Update dispatch_status on a job row. Best-effort, never blocks."""
+    if not is_configured():
+        return
+    try:
+        async with session_scope() as session:
+            from marketer.db.repositories import update_dispatch_status as _repo_update
+            await _repo_update(session, job_id=job_id, dispatch_status=status)
+    except Exception:
+        logger.warning('"update_dispatch_status_failed job_id=%s"', job_id)

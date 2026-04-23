@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     usp_api_key: str = ""
     usp_timeout_seconds: float = 5.0
 
+    # Agentic Task Dispatcher. Empty → dispatcher disabled (prod-line jobs skip POST).
+    agentic_dispatcher_url: str = ""
+
     # Gallery Image Pool. Both URL and key must be non-empty to activate.
     gallery_api_url: str = ""
     gallery_api_key: str = ""
