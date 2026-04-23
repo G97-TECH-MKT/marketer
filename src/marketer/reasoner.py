@@ -31,7 +31,11 @@ from marketer.schemas.enrichment import (
     TraceInfo,
     Warning,
 )
-from marketer.schemas.internal_context import GalleryPool, InternalContext, SubscriptionJob
+from marketer.schemas.internal_context import (
+    GalleryPool,
+    InternalContext,
+    SubscriptionJob,
+)
 from marketer.user_profile import UserProfile
 from marketer.validator import validate_and_correct
 
@@ -40,7 +44,9 @@ logger = logging.getLogger(__name__)
 PROMPTS_DIR = Path(os.environ.get("PROMPTS_DUMP_DIR", "reports/prompts"))
 
 
-def _dump_prompt(task_id: str, system_prompt: str, user_prompt: str, response: str = "") -> None:
+def _dump_prompt(
+    task_id: str, system_prompt: str, user_prompt: str, response: str = ""
+) -> None:
     """Write the full prompt exchange to reports/prompts/ when LOG_LEVEL=DEBUG."""
     if os.environ.get("LOG_LEVEL", "INFO").upper() != "DEBUG":
         return
@@ -218,7 +224,16 @@ def _build_user_prompt(
     rendered = _build_prompt_context(ctx, extras_truncation, text_truncation_chars)
     if ctx.action_code == "subscription_strategy" and ctx.subscription_jobs:
         jobs_json = serialize_for_prompt(
-            {"subscription_jobs": [{"action_key": j.action_key, "description": j.description, "index": j.index} for j in ctx.subscription_jobs]},
+            {
+                "subscription_jobs": [
+                    {
+                        "action_key": j.action_key,
+                        "description": j.description,
+                        "index": j.index,
+                    }
+                    for j in ctx.subscription_jobs
+                ]
+            },
             truncate_lists=extras_truncation,
             truncate_text=text_truncation_chars,
         )
@@ -548,13 +563,22 @@ def reason_multi(
     warnings.extend(normalizer_warnings)
 
     if not ctx.subscription_jobs:
-        return [(CallbackBody(status="FAILED", error_message="no valid subscription jobs"), None)]
+        return [
+            (
+                CallbackBody(
+                    status="FAILED", error_message="no valid subscription jobs"
+                ),
+                None,
+            )
+        ]
 
     jobs = ctx.subscription_jobs
     total_jobs = len(jobs)
 
     # --- Build prompt and call Gemini (single call for all jobs) ---
-    user_prompt = _build_user_prompt(ctx, extras_truncation, prompt_text_truncation_chars)
+    user_prompt = _build_user_prompt(
+        ctx, extras_truncation, prompt_text_truncation_chars
+    )
 
     # Scale max_output_tokens for multi-job (more items = more tokens needed)
     scaled_tokens = min(max_output_tokens * total_jobs, 65536)
@@ -583,10 +607,17 @@ def reason_multi(
     if multi_output is None:
         if is_timeout_exception(parse_err):
             return [
-                (CallbackBody(status="FAILED", error_message=f"llm_timeout: {parse_err}"), job)
+                (
+                    CallbackBody(
+                        status="FAILED", error_message=f"llm_timeout: {parse_err}"
+                    ),
+                    job,
+                )
                 for job in jobs
             ]
-        logger.warning("Multi-output LLM parse failed; attempting repair", exc_info=parse_err)
+        logger.warning(
+            "Multi-output LLM parse failed; attempting repair", exc_info=parse_err
+        )
         repair_attempted = True
         repair_prompt = REPAIR_PROMPT_TEMPLATE.format(
             error=str(parse_err) if parse_err else "schema validation failed",
@@ -607,13 +638,18 @@ def reason_multi(
             except Exception as exc2:
                 err2 = exc2
         if multi_output is None:
-            error_msg = _format_reasoning_error("schema_validation_failed", err2 or parse_err)
+            error_msg = _format_reasoning_error(
+                "schema_validation_failed", err2 or parse_err
+            )
             return [
                 (CallbackBody(status="FAILED", error_message=error_msg), job)
                 for job in jobs
             ]
         warnings.append(
-            Warning(code="schema_repair_used", message="Schema repair succeeded after initial failure")
+            Warning(
+                code="schema_repair_used",
+                message="Schema repair succeeded after initial failure",
+            )
         )
 
     # --- Validate each enrichment and assemble callbacks ---
@@ -623,13 +659,15 @@ def reason_multi(
     for idx, job in enumerate(jobs):
         if idx >= len(multi_output.items):
             # LLM returned fewer items than expected
-            results.append((
-                CallbackBody(
-                    status="FAILED",
-                    error_message=f"llm_returned_fewer_items: expected {total_jobs}, got {len(multi_output.items)}",
-                ),
-                job,
-            ))
+            results.append(
+                (
+                    CallbackBody(
+                        status="FAILED",
+                        error_message=f"llm_returned_fewer_items: expected {total_jobs}, got {len(multi_output.items)}",
+                    ),
+                    job,
+                )
+            )
             continue
 
         enrichment = multi_output.items[idx]
@@ -639,13 +677,15 @@ def reason_multi(
         item_warnings.extend(validator_warnings)
 
         if blocking:
-            results.append((
-                CallbackBody(
-                    status="FAILED",
-                    error_message=f"schema_validation_failed: {blocking}",
-                ),
-                job,
-            ))
+            results.append(
+                (
+                    CallbackBody(
+                        status="FAILED",
+                        error_message=f"schema_validation_failed: {blocking}",
+                    ),
+                    job,
+                )
+            )
             continue
 
         cb = _assemble_single_callback(
