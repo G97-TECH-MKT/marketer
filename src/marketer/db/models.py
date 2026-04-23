@@ -167,6 +167,8 @@ class Job(Base):
         Text, nullable=False, server_default="'pending'"
     )
     error: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    orchestrator_agent: Mapped[str | None] = mapped_column(Text, nullable=True)
+    dispatch_status: Mapped[str | None] = mapped_column(Text, nullable=True)
     latency_ms: Mapped[int | None] = mapped_column(Integer)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
@@ -178,5 +180,9 @@ class Job(Base):
         CheckConstraint(
             "status IN ('pending', 'running', 'done', 'failed')",
             name="jobs_status_check",
+        ),
+        CheckConstraint(
+            "orchestrator_agent IN ('job-router', 'prod-line')",
+            name="jobs_orchestrator_agent_check",
         ),
     )

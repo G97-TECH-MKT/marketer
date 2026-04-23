@@ -128,6 +128,8 @@ async def create_job(
     status: str = "pending",
     latency_ms: int | None = None,
     error: dict[str, Any] | None = None,
+    orchestrator_agent: str | None = None,
+    dispatch_status: str | None = None,
 ) -> Job:
     now = datetime.now(timezone.utc)
     row = Job(
@@ -139,6 +141,8 @@ async def create_job(
         output=output,
         status=status,
         error=error,
+        orchestrator_agent=orchestrator_agent,
+        dispatch_status=dispatch_status,
         latency_ms=latency_ms,
         started_at=now if status in ("running", "done", "failed") else None,
         completed_at=now if status in ("done", "failed") else None,
@@ -146,6 +150,14 @@ async def create_job(
     session.add(row)
     await session.flush()
     return row
+
+
+async def update_dispatch_status(
+    session: AsyncSession, *, job_id: UUID, dispatch_status: str
+) -> None:
+    await session.execute(
+        update(Job).where(Job.id == job_id).values(dispatch_status=dispatch_status)
+    )
 
 
 async def mark_raw_brief(

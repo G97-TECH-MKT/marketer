@@ -18,10 +18,10 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
-Surface = Literal["post", "web"]
+Surface = Literal["post", "web", "other"]
 GalleryPoolSource = Literal["gallery_api", "router_gate", "empty"]
 Mode = Literal["create", "edit"]
-ActionCode = Literal["create_post", "edit_post", "create_web", "edit_web"]
+ActionCode = Literal["create_post", "edit_post", "create_web", "edit_web", "subscription_strategy", "create_prod_line"]
 ImageRole = Literal["brand_asset", "content", "reference", "unknown"]
 SurfaceFormat = Literal["post", "story", "reel", "carousel"]
 ChannelKind = Literal[
@@ -139,6 +139,22 @@ class FlatBrief(BaseModel):
     extras: dict[str, Any] = Field(default_factory=dict)
 
 
+class SubscriptionJob(BaseModel):
+    """One job item inside a subscription_strategy envelope.
+
+    After quantity expansion, each original job with quantity=N produces N
+    SubscriptionJob entries with sequential indices.
+    """
+
+    action_key: str
+    description: str
+    index: int
+    quantity: int = 1
+    slug: str | None = None
+    orchestrator_agent: str | None = None
+    product_uuid: str | None = None
+
+
 class InternalContext(BaseModel):
     task_id: str
     correlation_id: str | None = None
@@ -176,5 +192,8 @@ class InternalContext(BaseModel):
     gallery_raw_count: int = 0
     gallery_rejected_count: int = 0
     gallery_truncated: bool = False
+
+    # subscription_strategy: per-job descriptors (None for single-job flows)
+    subscription_jobs: list[SubscriptionJob] | None = None
 
     raw_envelope: dict[str, Any] = Field(default_factory=dict)

@@ -44,8 +44,11 @@ The user prompt's `Context:` block carries:
 
 # Output contract
 
-Return ONLY a single JSON object matching the PostEnrichment schema. No prose,
-no markdown, no code fences.
+Return ONLY a JSON object matching the expected schema. No prose, no markdown,
+no code fences.
+
+- For single-job actions (create_post, edit_post, etc.): return one PostEnrichment object.
+- For multi-job actions (subscription_strategy): return `{"items": [PostEnrichment, ...]}` — one per job, in order.
 
 The schema groups fields into:
 

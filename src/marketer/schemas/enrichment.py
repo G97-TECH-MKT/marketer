@@ -296,6 +296,11 @@ _HASHTAG_INTENT_ALIASES: dict[str, str] = {
     "engage": "engagement",
     "edu": "education",
     "community_building": "community",
+    # Gemini sometimes confuses funnel stages with hashtag intents
+    "consideration": "brand_awareness",
+    "conversion": "promotion",
+    "retention": "community",
+    "advocacy": "community",
 }
 
 # Keyword fragments (lowercase) → intent. Checked in order; first match wins.
@@ -616,6 +621,12 @@ class PostEnrichment(BaseModel):
         return _coerce(v, _CONTENT_PILLAR_ALIASES)
 
 
+class MultiEnrichmentOutput(BaseModel):
+    """LLM response for subscription_strategy: one PostEnrichment per job."""
+
+    items: list[PostEnrichment]
+
+
 class Warning(BaseModel):
     code: str
     message: str
@@ -632,7 +643,7 @@ class GalleryStats(BaseModel):
 class TraceInfo(BaseModel):
     task_id: str
     action_code: str
-    surface: Literal["post", "web"]
+    surface: Literal["post", "web", "other"]
     mode: Literal["create", "edit"]
     latency_ms: int = 0
     gemini_model: str = ""
@@ -642,6 +653,10 @@ class TraceInfo(BaseModel):
     input_tokens: int = 0
     output_tokens: int = 0
     thoughts_tokens: int = 0
+    # Multi-job (subscription_strategy) fields — None for single-job flows
+    job_index: int | None = None
+    job_action_key: str | None = None
+    total_jobs: int | None = None
 
 
 class CFPayload(BaseModel):

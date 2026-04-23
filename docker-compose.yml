@@ -67,6 +67,7 @@ services:
       - ./tests:/app/tests
       - ./alembic:/app/alembic
       - ./alembic.ini:/app/alembic.ini
+      - ./reports:/app/reports
     command:
       - uvicorn
       - marketer.main:app

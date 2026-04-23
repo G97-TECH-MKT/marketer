@@ -25,6 +25,7 @@ from marketer.schemas.internal_context import (
     InternalContext,
     Mode,
     PriorPost,
+    SubscriptionJob,
     Surface,
     SurfaceFormat,
 )
@@ -98,9 +99,14 @@ def _first_non_empty(*values: Any) -> str | None:
     return None
 
 
+_KNOWN_ACTIONS = {"create_post", "edit_post", "create_web", "edit_web", "subscription_strategy", "create_prod_line"}
+
+
 def _parse_action_code(raw: str) -> tuple[ActionCode, Surface, Mode]:
-    if raw not in ("create_post", "edit_post", "create_web", "edit_web"):
+    if raw not in _KNOWN_ACTIONS:
         raise ValueError(f"unsupported_action_code: {raw}")
+    if raw == "subscription_strategy":
+        return raw, "other", "create"  # type: ignore[return-value]
     surface: Surface = "web" if raw.endswith("_web") else "post"
     mode: Mode = "edit" if raw.startswith("edit_") else "create"
     return raw, surface, mode  # type: ignore[return-value]
@@ -820,6 +826,78 @@ def _apply_user_profile(
     return flat_brief, brand_tokens, available_channels
 
 
+MAX_QUANTITY_PER_JOB = 10
+
+
+def _extract_subscription_jobs(
+    client_request: dict[str, Any],
+) -> tuple[list[SubscriptionJob], list[Warning]]:
+    """Parse ``client_request.jobs`` into a list of SubscriptionJob.
+
+    Each job is expanded by its ``quantity`` field: a job with quantity=2
+    produces 2 SubscriptionJob entries with sequential indices. This lets
+    the LLM see N separate items in the prompt and generate N varied
+    enrichments.
+
+    Returns (jobs, warnings). Jobs with missing required fields are skipped
+    with a warning.
+    """
+    raw_jobs = client_request.get("jobs")
+    warnings: list[Warning] = []
+    if not isinstance(raw_jobs, list) or not raw_jobs:
+        return [], warnings
+
+    expanded: list[SubscriptionJob] = []
+    seq_index = 0
+    for idx, item in enumerate(raw_jobs):
+        if not isinstance(item, dict):
+            warnings.append(
+                Warning(
+                    code="job_invalid",
+                    message=f"jobs[{idx}] is not an object — skipped",
+                    field=f"jobs[{idx}]",
+                )
+            )
+            continue
+        action_key = _clean_string(item.get("action_key")) or "create_prod_line"
+        description = _clean_string(item.get("description"))
+        if not description:
+            warnings.append(
+                Warning(
+                    code="job_missing_description",
+                    message=f"jobs[{idx}] has no description — skipped",
+                    field=f"jobs[{idx}].description",
+                )
+            )
+            continue
+
+        # Quantity: expand into N entries
+        raw_qty = item.get("quantity", 1)
+        quantity = max(1, int(raw_qty) if isinstance(raw_qty, (int, float)) else 1)
+        quantity = min(quantity, MAX_QUANTITY_PER_JOB)
+
+        # Router fields
+        slug = _clean_string(item.get("slug"))
+        orch_agent = _clean_string(item.get("orchestrator_agent"))
+        product_uuid = _clean_string(item.get("product_uuid"))
+
+        for _ in range(quantity):
+            expanded.append(
+                SubscriptionJob(
+                    action_key=action_key,
+                    description=description,
+                    index=seq_index,
+                    quantity=quantity,
+                    slug=slug,
+                    orchestrator_agent=orch_agent,
+                    product_uuid=product_uuid,
+                )
+            )
+            seq_index += 1
+
+    return expanded, warnings
+
+
 def normalize(
     envelope_data: dict[str, Any],
     user_profile: UserProfile | None = None,
@@ -1018,6 +1096,17 @@ def normalize(
         else None
     )
 
+    # subscription_strategy: extract per-job descriptors
+    subscription_jobs: list[SubscriptionJob] | None = None
+    if action_code == "subscription_strategy":
+        sub_jobs, sub_warnings = _extract_subscription_jobs(client_request)
+        warnings.extend(sub_warnings)
+        if not sub_jobs:
+            raise ValueError(
+                "subscription_strategy requires at least one valid job in client_request.jobs"
+            )
+        subscription_jobs = sub_jobs
+
     ctx = InternalContext(
         task_id=envelope.task_id,
         correlation_id=envelope.correlation_id,
@@ -1046,6 +1135,7 @@ def normalize(
         gallery_raw_count=raw_count,
         gallery_rejected_count=rejected,
         gallery_truncated=truncated,
+        subscription_jobs=subscription_jobs,
         raw_envelope=envelope_data,
     )
     return ctx, warnings
