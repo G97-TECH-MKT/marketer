@@ -218,7 +218,7 @@ def _build_user_prompt(
     rendered = _build_prompt_context(ctx, extras_truncation, text_truncation_chars)
     if ctx.action_code == "subscription_strategy" and ctx.subscription_jobs:
         jobs_json = serialize_for_prompt(
-            [{"action_key": j.action_key, "description": j.description, "index": j.index} for j in ctx.subscription_jobs],
+            {"subscription_jobs": [{"action_key": j.action_key, "description": j.description, "index": j.index} for j in ctx.subscription_jobs]},
             truncate_lists=extras_truncation,
             truncate_text=text_truncation_chars,
         )
@@ -618,7 +618,7 @@ def reason_multi(
 
     # --- Validate each enrichment and assemble callbacks ---
     latency_ms = int((time.time() - started) * 1000)
-    results: list[tuple[CallbackBody, SubscriptionJob]] = []
+    results: list[tuple[CallbackBody, SubscriptionJob | None]] = []
 
     for idx, job in enumerate(jobs):
         if idx >= len(multi_output.items):

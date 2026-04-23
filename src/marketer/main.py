@@ -544,8 +544,8 @@ async def _run_multi_and_callback(
     job_index_to_db_id: dict[int, Any] = {
         sub_job.index: db_id for db_id, sub_job in created_jobs
     }
-    for callback_body, job in results:
-        if job is None:
+    for callback_body, maybe_job in results:
+        if maybe_job is None:
             if callback_url:
                 await _patch_callback(
                     callback_url=callback_url,
@@ -562,7 +562,7 @@ async def _run_multi_and_callback(
                 correlation_id=correlation_id,
                 task_id=str(task_id),
             )
-        db_job_id = job_index_to_db_id.get(job.index)
+        db_job_id = job_index_to_db_id.get(maybe_job.index)
         if db_job_id is not None:
             await update_dispatch_status(db_job_id, "ok")
 
