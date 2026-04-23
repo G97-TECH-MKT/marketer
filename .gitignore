@@ -40,3 +40,5 @@ images/
 # Local agent/editor state
 *.agents/*
 *.claude/*
+
+coverage.xml
