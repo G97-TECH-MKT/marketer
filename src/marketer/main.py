@@ -655,6 +655,13 @@ async def run_task(
 
     task_id = envelope.get("task_id")
     callback_url = envelope.get("callback_url")
+    action_code = envelope.get("action_code")
+    logger.info(
+        '"inbound_request task_id=%s action_code=%s callback_url=%s"',
+        task_id,
+        action_code,
+        callback_url,
+    )
     if not task_id:
         raise HTTPException(status_code=400, detail="task_id is required")
     if not callback_url:
@@ -704,6 +711,12 @@ async def run_task_sync(
         raise HTTPException(status_code=400, detail=f"invalid_json: {exc}")
     if not isinstance(envelope, dict):
         raise HTTPException(status_code=400, detail="envelope must be an object")
+
+    logger.info(
+        '"inbound_request_sync task_id=%s action_code=%s"',
+        envelope.get("task_id"),
+        envelope.get("action_code"),
+    )
 
     client = _get_gemini_client()
     pctx = await persist_on_ingest(envelope)
