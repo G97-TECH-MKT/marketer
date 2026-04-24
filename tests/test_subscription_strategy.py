@@ -195,32 +195,71 @@ class TestQuantityExpansion:
 
 
 class TestMultiEnrichmentOutput:
-    def _make_enrichment_dict(self, surface_format: str = "post") -> dict:
-        """Minimal PostEnrichment dict for testing (slim schema)."""
+    def _make_enrichment_dict(self, title: str = "Test") -> dict:
+        """Minimal PostEnrichment dict for testing."""
         return {
-            "surface_format": surface_format,
+            "schema_version": "2.0",
+            "surface_format": "post",
             "content_pillar": "product",
+            "title": title,
+            "objective": "Test objective",
             "brand_dna": "Test DNA",
+            "strategic_decisions": {
+                "surface_format": {
+                    "chosen": "post",
+                    "alternatives_considered": ["story"],
+                    "rationale": "Test",
+                },
+                "angle": {
+                    "chosen": "product angle",
+                    "alternatives_considered": ["education"],
+                    "rationale": "Test",
+                },
+                "voice": {
+                    "chosen": "warm voice",
+                    "alternatives_considered": ["formal"],
+                    "rationale": "Test",
+                },
+            },
+            "visual_style_notes": "Test notes",
+            "image": {
+                "concept": "Test concept",
+                "generation_prompt": "Test prompt",
+                "alt_text": "Test alt",
+            },
             "caption": {"hook": "Hook", "body": "Body", "cta_line": "CTA"},
             "cta": {"channel": "none", "label": ""},
-            "hashtag_strategy": {"themes": ["test"], "tags": ["#test"]},
+            "hashtag_strategy": {
+                "intent": "brand_awareness",
+                "suggested_volume": 5,
+                "themes": ["test"],
+                "tags": ["#test"],
+            },
+            "do_not": [],
+            "brand_intelligence": {
+                "business_taxonomy": "test_business",
+                "funnel_stage_target": "awareness",
+                "voice_register": "test voice",
+                "emotional_beat": "test",
+                "audience_persona": "Test persona",
+                "unfair_advantage": "Test advantage",
+                "risk_flags": [],
+                "rhetorical_device": "contraste",
+            },
             "cf_post_brief": "Test brief",
-            "selected_asset_urls": [],
-            "voice_register": "test voice",
-            "audience_persona": "Test persona",
         }
 
     def test_parse_valid_multi_output(self):
         data = {
             "items": [
-                self._make_enrichment_dict("post"),
-                self._make_enrichment_dict("story"),
+                self._make_enrichment_dict("Post 1"),
+                self._make_enrichment_dict("Post 2"),
             ]
         }
         result = MultiEnrichmentOutput.model_validate(data)
         assert len(result.items) == 2
-        assert result.items[0].surface_format == "post"
-        assert result.items[1].surface_format == "story"
+        assert result.items[0].title == "Post 1"
+        assert result.items[1].title == "Post 2"
 
     def test_parse_from_json(self):
         data = {"items": [self._make_enrichment_dict()]}

@@ -461,10 +461,16 @@ def reason(
         output_tokens=usage.get("output_tokens", 0),
         thoughts_tokens=usage.get("thoughts_tokens", 0),
     )
-    # Build resources: attachments always first, then LLM-chosen URLs.
+    # Build resources in priority order — deduped, first-seen wins.
+    # 1. user_attachments: always forwarded to CF unconditionally (user explicitly chose them)
+    # 2. gallery_pool picks: LLM-selected items from the pre-scored shortlist
+    # 3. legacy visual_selection: ROUTER-gate images (fallback)
     attachment_urls: list[str] = list(ctx.attachments or [])
-    gallery_picks: list[str] = list(enrichment.selected_asset_urls or [])
-    resources = list(dict.fromkeys(attachment_urls + gallery_picks))
+    gallery_picks: list[str] = [
+        img.content_url for img in (enrichment.selected_images or [])
+    ]
+    legacy_urls: list[str] = enrichment.visual_selection.recommended_asset_urls or []
+    resources = list(dict.fromkeys(attachment_urls + gallery_picks + legacy_urls))
     total_items = (
         len(resources) if enrichment.surface_format == "carousel" and resources else 1
     )
@@ -525,8 +531,11 @@ def _assemble_single_callback(
         total_jobs=total_jobs,
     )
     attachment_urls: list[str] = list(ctx.attachments or [])
-    gallery_picks: list[str] = list(enrichment.selected_asset_urls or [])
-    resources = list(dict.fromkeys(attachment_urls + gallery_picks))
+    gallery_picks: list[str] = [
+        img.content_url for img in (enrichment.selected_images or [])
+    ]
+    legacy_urls: list[str] = enrichment.visual_selection.recommended_asset_urls or []
+    resources = list(dict.fromkeys(attachment_urls + gallery_picks + legacy_urls))
     total_items = (
         len(resources) if enrichment.surface_format == "carousel" and resources else 1
     )
