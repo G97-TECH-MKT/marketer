@@ -627,6 +627,23 @@ class MultiEnrichmentOutput(BaseModel):
     items: list[PostEnrichment]
 
 
+class BrandDNAOutput(BaseModel):
+    """LLM response for the brand_dna pre-extraction call.
+
+    Used by `extract_brand_dna()` in the fan-out path so all parallel single-job
+    reasoning calls share an identical brand_dna string and stay consistent
+    across the batch. The string follows the same CLIENT DNA format documented
+    in PostEnrichment.brand_dna.
+    """
+
+    brand_dna: str = Field(
+        description=(
+            "Distilled brand_dna document (CLIENT DNA — header, Colors, Design "
+            "Style JSON block, Typography, Logo, Contact). 200-400 words."
+        ),
+    )
+
+
 class Warning(BaseModel):
     code: str
     message: str

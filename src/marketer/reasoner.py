@@ -5,6 +5,8 @@ Sync pipeline for the MVP vertical slice. Returns CallbackBody shape.
 
 from __future__ import annotations
 
+import asyncio
+import copy
 import logging
 import os
 import time
@@ -13,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from marketer.llm.gemini import GeminiClient, is_timeout_exception, serialize_for_prompt
+from marketer.llm.prompts.brand_dna import SYSTEM_PROMPT_BRAND_DNA
 from marketer.llm.prompts.create_post import CREATE_POST_OVERLAY
 from marketer.llm.prompts.create_web import CREATE_WEB_OVERLAY
 from marketer.llm.prompts.edit_post import EDIT_POST_OVERLAY
@@ -22,6 +25,7 @@ from marketer.llm.prompts.subscription_strategy import SUBSCRIPTION_STRATEGY_OVE
 from marketer.llm.prompts.system import SYSTEM_PROMPT
 from marketer.normalizer import normalize
 from marketer.schemas.enrichment import (
+    BrandDNAOutput,
     CFPayload,
     CallbackBody,
     CallbackOutputData,
@@ -246,6 +250,130 @@ def _build_user_prompt(
     return f"{overlay}\n\nContext:\n{rendered}\n\nReturn the PostEnrichment JSON now."
 
 
+def _build_brand_dna_user_prompt(
+    ctx: InternalContext, extras_truncation: int, text_truncation_chars: int
+) -> str:
+    """Compact user prompt for the brand_dna pre-extraction call.
+
+    Strips everything irrelevant to brand_dna composition (gallery, jobs,
+    prior_step_outputs, channels, prior_post, attachments, user_insights) so
+    the input fits in ~1-2k tokens instead of ~10-12k.
+    """
+    payload: dict[str, Any] = {
+        "context": {
+            "client_name": ctx.client_name,
+            "platform": ctx.platform,
+        },
+        "brief": ctx.brief.model_dump() if ctx.brief else None,
+        "brand_tokens": ctx.brand_tokens.model_dump(),
+        "brief_facts": ctx.brief_facts.model_dump(),
+    }
+    rendered = serialize_for_prompt(
+        payload,
+        truncate_lists=extras_truncation,
+        truncate_text=text_truncation_chars,
+    )
+    return (
+        f"Brand inputs:\n{rendered}\n\n"
+        'Return the JSON object {"brand_dna": "..."} now. Do not output any other field.'
+    )
+
+
+def extract_brand_dna(
+    envelope_data: dict[str, Any],
+    gemini: GeminiClient,
+    extras_truncation: int = 10,
+    prompt_text_truncation_chars: int = 600,
+    max_output_tokens: int = 2048,
+    user_profile: UserProfile | None = None,
+    usp_warning: str | None = None,
+    gallery_pool: GalleryPool | None = None,
+    gallery_warning: str | None = None,
+) -> str | None:
+    """Pre-extract a single brand_dna string for fan-out consistency.
+
+    One small Gemini call (SYSTEM_PROMPT_BRAND_DNA, max_output_tokens=2048)
+    that returns BrandDNAOutput. The resulting string is then injected into
+    each of the N parallel single-job reason() calls so every PostEnrichment
+    in the batch carries the same brand_dna verbatim.
+
+    Returns None on any failure; callers must treat None as "skip pre-injection
+    and let each fan-out job compute its own brand_dna" (degraded but not fatal).
+    """
+    started = time.time()
+    task_id = envelope_data.get("task_id", "unknown")
+    logger.info('"task_id=%s fanout_brand_dna_start"', task_id)
+
+    try:
+        ctx, _ = normalize(
+            envelope_data,
+            user_profile=user_profile,
+            usp_warning=usp_warning,
+            gallery_pool=gallery_pool,
+            gallery_warning=gallery_warning,
+        )
+    except ValueError as exc:
+        logger.warning(
+            '"task_id=%s fanout_brand_dna_normalize_failed error=%s"', task_id, exc
+        )
+        return None
+
+    user_prompt = _build_brand_dna_user_prompt(
+        ctx, extras_truncation, prompt_text_truncation_chars
+    )
+
+    # generate_structured tries to parse as PostEnrichment which will fail here;
+    # we only care about raw_text and re-parse as BrandDNAOutput.
+    _, raw_text, err, usage = gemini.generate_structured(
+        system_prompt=SYSTEM_PROMPT_BRAND_DNA,
+        user_prompt=user_prompt,
+        max_output_tokens=max_output_tokens,
+    )
+    latency_ms = int((time.time() - started) * 1000)
+
+    if not raw_text:
+        logger.warning(
+            '"task_id=%s fanout_brand_dna_done ok=False latency_ms=%d error=%s tokens_in=%d tokens_out=%d"',
+            ctx.task_id,
+            latency_ms,
+            err,
+            usage.get("input_tokens", 0),
+            usage.get("output_tokens", 0),
+        )
+        return None
+
+    try:
+        parsed = BrandDNAOutput.model_validate_json(raw_text)
+    except Exception as exc:
+        logger.warning(
+            '"task_id=%s fanout_brand_dna_done ok=False latency_ms=%d parse_error=%s len=%d"',
+            ctx.task_id,
+            latency_ms,
+            exc,
+            len(raw_text),
+        )
+        return None
+
+    brand_dna = (parsed.brand_dna or "").strip()
+    if not brand_dna:
+        logger.warning(
+            '"task_id=%s fanout_brand_dna_done ok=False latency_ms=%d reason=empty_brand_dna"',
+            ctx.task_id,
+            latency_ms,
+        )
+        return None
+
+    logger.info(
+        '"task_id=%s fanout_brand_dna_done ok=True latency_ms=%d tokens_in=%d tokens_out=%d len=%d"',
+        ctx.task_id,
+        latency_ms,
+        usage.get("input_tokens", 0),
+        usage.get("output_tokens", 0),
+        len(brand_dna),
+    )
+    return brand_dna
+
+
 def reason(
     envelope_data: dict[str, Any],
     gemini: GeminiClient,
@@ -256,6 +384,7 @@ def reason(
     usp_warning: str | None = None,
     gallery_pool: GalleryPool | None = None,
     gallery_warning: str | None = None,
+    precomputed_brand_dna: str | None = None,
 ) -> CallbackBody:
     started = time.time()
     warnings: list[Warning] = []
@@ -436,6 +565,13 @@ def reason(
             error_message=f"schema_validation_failed: {blocking}",
         )
     warnings.extend(validator_warnings)
+
+    # --- Inject precomputed brand_dna (fan-out path) -----------------------
+    # When the caller pre-extracted brand_dna in a single call before fanning
+    # out, we overwrite the LLM-generated brand_dna here so all N parallel
+    # jobs in the batch carry an identical, consistent brand_dna document.
+    if precomputed_brand_dna:
+        enrichment.brand_dna = precomputed_brand_dna
 
     # --- Assemble CallbackBody ---
     degraded = any(
@@ -755,6 +891,197 @@ def reason_multi(
         )
         results.append((cb, job))
 
+    return results
+
+
+_KNOWN_FANOUT_ACTIONS: frozenset[str] = frozenset({"create_post", "edit_post"})
+
+
+def _clone_envelope_for_job(
+    envelope_data: dict[str, Any], job: SubscriptionJob
+) -> dict[str, Any]:
+    """Build a single-job envelope clone for one fan-out reason() call.
+
+    Rewrites action_code to the job's action_key (e.g. "create_post"), empties
+    client_request.jobs (so it's no longer a subscription_strategy), and
+    replaces client_request.description with the job's description (required
+    by normalize()).
+    """
+    cloned = copy.deepcopy(envelope_data)
+    cloned["action_code"] = job.action_key
+    payload = cloned.setdefault("payload", {})
+    client_request = payload.setdefault("client_request", {})
+    client_request["jobs"] = []
+    if job.description:
+        client_request["description"] = job.description
+    return cloned
+
+
+async def reason_multi_fanout(
+    envelope_data: dict[str, Any],
+    gemini: GeminiClient,
+    extras_truncation: int = 10,
+    prompt_text_truncation_chars: int = 600,
+    max_output_tokens: int = 16384,
+    user_profile: UserProfile | None = None,
+    usp_warning: str | None = None,
+    gallery_pool: GalleryPool | None = None,
+    gallery_warning: str | None = None,
+    concurrency: int = 5,
+    brand_dna_max_tokens: int = 2048,
+) -> list[tuple[CallbackBody, SubscriptionJob | None]]:
+    """Fan-out variant of reason_multi for subscription_strategy.
+
+    Replaces the single giant Gemini call (which exceeds Gemini's ~180s
+    server-side deadline for large batches) with:
+
+      1. One small `extract_brand_dna` call (~10-20s, ~2k output tokens).
+      2. N parallel `reason()` calls (one per SubscriptionJob), bounded by
+         a Semaphore. Each call carries `precomputed_brand_dna=brand_dna`
+         so all PostEnrichments in the batch share the same brand_dna.
+
+    Returns the same shape as `reason_multi`: one (CallbackBody, SubscriptionJob | None)
+    pair per valid job. Per-job exceptions are mapped to FAILED CallbackBodies
+    (partial-failure safe — one bad job does not poison the batch).
+    """
+    started = time.time()
+    task_id = envelope_data.get("task_id", "unknown")
+    logger.info(
+        '"task_id=%s reason_multi_fanout_start concurrency=%d"', task_id, concurrency
+    )
+
+    # --- Normalize once to discover the jobs --------------------------------
+    try:
+        ctx, _ = normalize(
+            envelope_data,
+            user_profile=user_profile,
+            usp_warning=usp_warning,
+            gallery_pool=gallery_pool,
+            gallery_warning=gallery_warning,
+        )
+    except ValueError as exc:
+        logger.warning('"task_id=%s normalize_failed error=%s"', task_id, exc)
+        return [(CallbackBody(status="FAILED", error_message=str(exc)), None)]
+
+    if not ctx.subscription_jobs:
+        return [
+            (
+                CallbackBody(
+                    status="FAILED", error_message="no valid subscription jobs"
+                ),
+                None,
+            )
+        ]
+
+    jobs = list(ctx.subscription_jobs)
+    total_jobs = len(jobs)
+
+    # --- Pre-extract brand_dna (1 small call) -------------------------------
+    brand_dna_str = extract_brand_dna(
+        envelope_data,
+        gemini=gemini,
+        extras_truncation=extras_truncation,
+        prompt_text_truncation_chars=prompt_text_truncation_chars,
+        max_output_tokens=brand_dna_max_tokens,
+        user_profile=user_profile,
+        usp_warning=usp_warning,
+        gallery_pool=gallery_pool,
+        gallery_warning=gallery_warning,
+    )
+    # If brand_dna fails, fan-out continues; each job will compute its own.
+
+    # --- Fan out: N parallel reason() calls ---------------------------------
+    sem = asyncio.Semaphore(max(1, concurrency))
+    fanout_started = time.time()
+    logger.info(
+        '"task_id=%s fanout_jobs_start total=%d concurrency=%d brand_dna_ok=%s"',
+        ctx.task_id,
+        total_jobs,
+        concurrency,
+        brand_dna_str is not None,
+    )
+
+    async def _run_one(idx: int, job: SubscriptionJob) -> CallbackBody:
+        if job.action_key not in _KNOWN_FANOUT_ACTIONS:
+            return CallbackBody(
+                status="FAILED",
+                error_message=(
+                    f"unsupported_action_key_in_fanout: {job.action_key} "
+                    "(only create_post and edit_post are supported)"
+                ),
+            )
+        single_envelope = _clone_envelope_for_job(envelope_data, job)
+        job_started = time.time()
+        async with sem:
+            cb = await asyncio.to_thread(
+                reason,
+                single_envelope,
+                gemini,
+                extras_truncation,
+                prompt_text_truncation_chars,
+                max_output_tokens,
+                user_profile,
+                usp_warning,
+                gallery_pool,
+                gallery_warning,
+                brand_dna_str,
+            )
+        latency = int((time.time() - job_started) * 1000)
+        logger.info(
+            '"task_id=%s fanout_job_done idx=%d action_key=%s ok=%s latency_ms=%d"',
+            ctx.task_id,
+            idx,
+            job.action_key,
+            cb.status == "COMPLETED",
+            latency,
+        )
+        return cb
+
+    coros = [_run_one(idx, job) for idx, job in enumerate(jobs)]
+    raw_results = await asyncio.gather(*coros, return_exceptions=True)
+
+    # --- Stitch (CallbackBody, SubscriptionJob) pairs -----------------------
+    results: list[tuple[CallbackBody, SubscriptionJob | None]] = []
+    ok_count = 0
+    failed_count = 0
+    for job, raw in zip(jobs, raw_results):
+        if isinstance(raw, BaseException):
+            logger.warning(
+                '"task_id=%s fanout_job_exception idx=%d action_key=%s error=%s"',
+                ctx.task_id,
+                job.index,
+                job.action_key,
+                raw,
+            )
+            cb = CallbackBody(
+                status="FAILED",
+                error_message=f"fanout_exception: {type(raw).__name__}: {raw}",
+            )
+        else:
+            cb = raw
+        # Stamp job_index/job_action_key/total_jobs onto the trace so downstream
+        # consumers (router, persistence) can correlate the per-job callback.
+        if cb.output_data is not None and cb.output_data.trace is not None:
+            cb.output_data.trace.job_index = job.index
+            cb.output_data.trace.job_action_key = job.action_key
+            cb.output_data.trace.total_jobs = total_jobs
+        if cb.status == "COMPLETED":
+            ok_count += 1
+        else:
+            failed_count += 1
+        results.append((cb, job))
+
+    total_latency = int((time.time() - started) * 1000)
+    fanout_latency = int((time.time() - fanout_started) * 1000)
+    logger.info(
+        '"task_id=%s fanout_done total=%d ok=%d failed=%d fanout_latency_ms=%d total_latency_ms=%d"',
+        ctx.task_id,
+        total_jobs,
+        ok_count,
+        failed_count,
+        fanout_latency,
+        total_latency,
+    )
     return results
 
 

@@ -98,6 +98,8 @@ module "ecs" {
   min_capacity            = var.min_capacity
   max_capacity            = var.max_capacity
   llm_timeout             = var.llm_timeout
+  llm_fanout_enabled      = var.llm_fanout_enabled
+  llm_fanout_concurrency  = var.llm_fanout_concurrency
   callback_retry_attempts = var.callback_retry_attempts
   log_retention_days      = var.log_retention_days
   db_pool_size            = var.db_pool_size

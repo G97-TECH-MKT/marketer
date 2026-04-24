@@ -110,6 +110,18 @@ variable "llm_timeout" {
   default     = 30
 }
 
+variable "llm_fanout_enabled" {
+  description = "Enable fan-out (1xN -> Nx1) for subscription_strategy LLM batches"
+  type        = bool
+  default     = true
+}
+
+variable "llm_fanout_concurrency" {
+  description = "Max parallel single-job LLM calls inside the fan-out semaphore"
+  type        = number
+  default     = 5
+}
+
 variable "callback_retry_attempts" {
   description = "Number of callback retry attempts"
   type        = number

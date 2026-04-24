@@ -18,6 +18,14 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     extras_list_truncation: int = 10
 
+    # Fan-out for subscription_strategy multi-job batches.
+    # When enabled, reason_multi splits the batch into 1 brand_dna call + N
+    # parallel single-job calls (bounded by Semaphore) instead of 1 giant call,
+    # which exceeds Gemini's server-side ~180s deadline for large batches.
+    llm_fanout_enabled: bool = True
+    llm_fanout_concurrency: int = 5
+    llm_brand_dna_max_tokens: int = 2048
+
     # Router integration
     orch_callback_api_key: str = ""
     inbound_token: str = ""

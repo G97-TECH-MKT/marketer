@@ -36,7 +36,7 @@ from marketer.persistence import (
 from marketer.schemas.internal_context import GalleryPool
 from marketer.user_profile import UserProfile, fetch_user_profile
 from marketer.reasoner import OVERLAYS as _CODE_OVERLAYS
-from marketer.reasoner import reason, reason_multi
+from marketer.reasoner import reason, reason_multi, reason_multi_fanout
 from marketer.schemas.enrichment import CallbackBody
 
 settings = load_settings()
@@ -477,15 +477,17 @@ async def _run_multi_and_callback(
         llm_payload["client_request"] = llm_cr
         llm_envelope["payload"] = llm_payload
 
-        def _sync_multi():
-            client = GeminiClient(
+        def _build_client() -> GeminiClient:
+            return GeminiClient(
                 api_key=settings.gemini_api_key,
                 model=settings.gemini_model,
                 timeout_seconds=settings.llm_timeout_seconds,
             )
+
+        def _sync_multi():
             return reason_multi(
                 llm_envelope,
-                gemini=client,
+                gemini=_build_client(),
                 extras_truncation=settings.extras_list_truncation,
                 prompt_text_truncation_chars=settings.prompt_text_truncation_chars,
                 max_output_tokens=settings.llm_max_output_tokens,
@@ -497,7 +499,22 @@ async def _run_multi_and_callback(
 
         started = time.time()
         try:
-            results = await asyncio.to_thread(_sync_multi)
+            if settings.llm_fanout_enabled:
+                results = await reason_multi_fanout(
+                    llm_envelope,
+                    gemini=_build_client(),
+                    extras_truncation=settings.extras_list_truncation,
+                    prompt_text_truncation_chars=settings.prompt_text_truncation_chars,
+                    max_output_tokens=settings.llm_max_output_tokens,
+                    user_profile=user_profile,
+                    usp_warning=usp_warning,
+                    gallery_pool=gallery_pool,
+                    gallery_warning=gallery_warning,
+                    concurrency=settings.llm_fanout_concurrency,
+                    brand_dna_max_tokens=settings.llm_brand_dna_max_tokens,
+                )
+            else:
+                results = await asyncio.to_thread(_sync_multi)
         except Exception as exc:  # noqa: BLE001
             worker.exception('"task_id=%s reason_multi_failed"', task_id)
             results = [

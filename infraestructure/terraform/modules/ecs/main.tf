@@ -81,6 +81,8 @@ resource "aws_ecs_task_definition" "marketer" {
         { name = "LOG_LEVEL", value = "INFO" },
         { name = "GEMINI_MODEL", value = var.gemini_model },
         { name = "LLM_TIMEOUT_SECONDS", value = tostring(var.llm_timeout) },
+        { name = "LLM_FANOUT_ENABLED", value = tostring(var.llm_fanout_enabled) },
+        { name = "LLM_FANOUT_CONCURRENCY", value = tostring(var.llm_fanout_concurrency) },
         { name = "CALLBACK_RETRY_ATTEMPTS", value = tostring(var.callback_retry_attempts) },
         { name = "CALLBACK_HTTP_TIMEOUT_SECONDS", value = "30" },
         { name = "EXTRAS_LIST_TRUNCATION", value = "10" },
