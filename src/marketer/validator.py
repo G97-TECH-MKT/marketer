@@ -1,10 +1,8 @@
-"""Post-generation validator for MARKETER output (v2).
+"""Post-generation validator for MARKETER output (v2 slim).
 
-Deterministic-first per SPEC §9. For the post-focused iteration the checks are:
-- URL containment (visual_selection URLs must be in sanitized gallery).
-- Reference-role correction (role=reference URLs never land in recommended_asset_urls).
-- Surface-format gating: when InternalContext.requested_surface_format is set
-  (deterministic detection from user_request), force the LLM choice to match.
+Deterministic-first per SPEC §9. Checks:
+- Surface-format gating: when InternalContext.requested_surface_format is set,
+  force the LLM choice to match.
 - Hallucination guards on ALL text fields:
     * URLs   → must be in brief_facts.urls
     * hex    → must be in brand_tokens.palette  (palette_mismatch)
@@ -167,14 +165,7 @@ _CHANNEL_KEYWORDS: dict[str, tuple[str, ...]] = {
 def _check_cta_caption_coherence(
     cta: CallToAction, cta_line: str, warnings: list[Warning]
 ) -> None:
-    """Warn when caption.cta_line references a channel that conflicts with cta.channel.
-
-    Two cases:
-    - cta.channel is concrete → cta_line must not name a different channel.
-    - cta.channel is "none" → cta_line must not name any channel at all; the
-      caption should use non-actionable language (greeting, acknowledgment,
-      announcement) since there is no path for the user to act on.
-    """
+    """Warn when caption.cta_line references a channel that conflicts with cta.channel."""
     if not cta_line:
         return
     text = cta_line.lower()
@@ -322,72 +313,6 @@ def validate_and_correct(
         )
         enrichment.surface_format = ctx.requested_surface_format
 
-    # --- Visual selection: URL containment + role correction --------------------
-    gallery_by_url = {item.url: item for item in ctx.gallery}
-    gallery_urls = set(gallery_by_url.keys())
-    reference_urls = {
-        url for url, item in gallery_by_url.items() if item.role == "reference"
-    }
-
-    vs = enrichment.visual_selection
-
-    hallucinated = [u for u in vs.recommended_asset_urls if u not in gallery_urls]
-    if hallucinated:
-        warnings.append(
-            Warning(
-                code="visual_hallucinated",
-                message=f"{len(hallucinated)} asset URL(s) not in gallery; dropped",
-                field="visual_selection.recommended_asset_urls",
-            )
-        )
-        vs.recommended_asset_urls = [
-            u for u in vs.recommended_asset_urls if u in gallery_urls
-        ]
-
-    hallucinated_refs = [
-        u for u in vs.recommended_reference_urls if u not in gallery_urls
-    ]
-    if hallucinated_refs:
-        warnings.append(
-            Warning(
-                code="visual_hallucinated",
-                message=f"{len(hallucinated_refs)} reference URL(s) not in gallery; dropped",
-                field="visual_selection.recommended_reference_urls",
-            )
-        )
-        vs.recommended_reference_urls = [
-            u for u in vs.recommended_reference_urls if u in gallery_urls
-        ]
-
-    vs.avoid_asset_urls = [u for u in vs.avoid_asset_urls if u in gallery_urls]
-
-    misplaced = [u for u in vs.recommended_asset_urls if u in reference_urls]
-    if misplaced:
-        warnings.append(
-            Warning(
-                code="reference_used_as_asset",
-                message=f"{len(misplaced)} role=reference image(s) moved from assets to references",
-            )
-        )
-        vs.recommended_asset_urls = [
-            u for u in vs.recommended_asset_urls if u not in reference_urls
-        ]
-        for u in misplaced:
-            if u not in vs.recommended_reference_urls:
-                vs.recommended_reference_urls.append(u)
-
-    shared = set(vs.recommended_asset_urls) & set(vs.recommended_reference_urls)
-    if shared:
-        warnings.append(
-            Warning(
-                code="reference_used_as_asset",
-                message=f"{len(shared)} URL(s) appeared in both asset and reference lists; kept only in references",
-            )
-        )
-        vs.recommended_asset_urls = [
-            u for u in vs.recommended_asset_urls if u not in shared
-        ]
-
     # --- Hallucination guards on text fields ------------------------------------
     facts = ctx.brief_facts
     palette = {h.lower() for h in ctx.brand_tokens.palette}
@@ -409,14 +334,6 @@ def validate_and_correct(
         )
 
     enrichment.brand_dna = scrub("brand_dna", enrichment.brand_dna)
-    enrichment.visual_style_notes = scrub(
-        "visual_style_notes", enrichment.visual_style_notes
-    )
-    enrichment.image.concept = scrub("image.concept", enrichment.image.concept)
-    enrichment.image.generation_prompt = scrub(
-        "image.generation_prompt", enrichment.image.generation_prompt
-    )
-    enrichment.image.alt_text = scrub("image.alt_text", enrichment.image.alt_text)
     enrichment.caption.hook = scrub("caption.hook", enrichment.caption.hook)
     enrichment.caption.body = scrub("caption.body", enrichment.caption.body)
     enrichment.caption.cta_line = scrub("caption.cta_line", enrichment.caption.cta_line)
@@ -466,22 +383,6 @@ def validate_and_correct(
         )
 
     # --- Presence checks (warnings only) ---------------------------------------
-    if not enrichment.title.strip():
-        warnings.append(
-            Warning(code="field_missing", message="title empty", field="title")
-        )
-    if not enrichment.objective.strip():
-        warnings.append(
-            Warning(code="field_missing", message="objective empty", field="objective")
-        )
-    if not enrichment.image.concept.strip():
-        warnings.append(
-            Warning(
-                code="field_missing",
-                message="image.concept empty",
-                field="image.concept",
-            )
-        )
     if not enrichment.caption.hook.strip():
         warnings.append(
             Warning(
@@ -494,31 +395,5 @@ def validate_and_correct(
                 code="field_missing", message="caption.body empty", field="caption.body"
             )
         )
-
-    # do_not list cap
-    if len(enrichment.do_not) > 5:
-        warnings.append(
-            Warning(
-                code="do_not_truncated",
-                message=f"do_not list had {len(enrichment.do_not)} items; truncated to 5",
-                field="do_not",
-            )
-        )
-        enrichment.do_not = enrichment.do_not[:5]
-
-    # hashtag_strategy.suggested_volume guardrail (count, not popularity metric)
-    if enrichment.hashtag_strategy.suggested_volume > 30:
-        warnings.append(
-            Warning(
-                code="hashtag_volume_clamped",
-                message=(
-                    "hashtag_strategy.suggested_volume exceeded 30 and was clamped "
-                    "to a safe count value"
-                ),
-                field="hashtag_strategy.suggested_volume",
-            )
-        )
-        safe_count = len(enrichment.hashtag_strategy.tags)
-        enrichment.hashtag_strategy.suggested_volume = min(max(safe_count, 0), 30)
 
     return enrichment, warnings, blocking

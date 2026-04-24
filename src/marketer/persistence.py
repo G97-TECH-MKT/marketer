@@ -156,9 +156,11 @@ async def persist_on_complete(
     try:
         async with session_scope() as session:
             if callback.status == "COMPLETED" and callback.output_data is not None:
-                brand_intelligence = (
-                    callback.output_data.enrichment.brand_intelligence.model_dump()
-                )
+                enrichment = callback.output_data.enrichment
+                brand_intelligence = {
+                    "voice_register": enrichment.voice_register,
+                    "audience_persona": enrichment.audience_persona,
+                }
                 strategy = await ensure_strategy(
                     session,
                     user_id=pctx.user_id,
@@ -226,9 +228,11 @@ async def persist_on_complete_multi(
             first_bi: dict[str, Any] | None = None
             for callback, _job in results:
                 if callback.status == "COMPLETED" and callback.output_data is not None:
-                    first_bi = (
-                        callback.output_data.enrichment.brand_intelligence.model_dump()
-                    )
+                    e = callback.output_data.enrichment
+                    first_bi = {
+                        "voice_register": e.voice_register,
+                        "audience_persona": e.audience_persona,
+                    }
                     break
 
             strategy = None
