@@ -122,6 +122,18 @@ variable "llm_fanout_concurrency" {
   default     = 5
 }
 
+variable "orch_api_base_url" {
+  description = "Orchestrator base URL for POST /api/v1/jobs (subscription_strategy fan-out dispatch). Empty → sub-job dispatch to orchestrator is skipped."
+  type        = string
+  default     = ""
+}
+
+variable "orch_api_http_timeout_seconds" {
+  description = "HTTP timeout (seconds) for POST /api/v1/jobs calls to the orchestrator"
+  type        = number
+  default     = 15
+}
+
 variable "callback_retry_attempts" {
   description = "Number of callback retry attempts"
   type        = number

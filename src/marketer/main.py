@@ -394,6 +394,106 @@ async def _run_and_callback(
     )
 
 
+async def _post_orch_job(
+    *,
+    action: str,
+    client_request: dict[str, Any],
+    context: dict[str, Any],
+    correlation_id: str | None,
+    task_id: str,
+    db_job_id: str,
+    initiator_callback_url: str | None = None,
+) -> bool:
+    """POST `CreateJobRequest` to orchestrator (docs/ROUTER CONTRACT.md §2).
+
+    Called once per successful job-router sub-job after the aggregate PATCH
+    callback for the subscription_strategy task has been emitted. Returns True
+    on 2xx (orchestrator queued the new job).
+    """
+    worker = logging.getLogger("marketer.worker")
+    base = (settings.orch_api_base_url or "").rstrip("/")
+    if not base:
+        worker.warning(
+            '"task_id=%s orch_job_skipped reason=no_orch_api_base_url db_job_id=%s"',
+            task_id,
+            db_job_id,
+        )
+        return False
+
+    url = f"{base}/api/v1/jobs"
+    headers: dict[str, str] = {
+        "Content-Type": "application/json",
+        "X-Initiator": "marketer",
+    }
+    if settings.orch_callback_api_key:
+        headers["X-API-Key"] = settings.orch_callback_api_key
+    if correlation_id:
+        headers["X-Correlation-Id"] = correlation_id
+
+    body: dict[str, Any] = {
+        "action": action,
+        "client_request": client_request,
+        "context": context,
+        "idempotency_key": f"marketer:{task_id}:{db_job_id}",
+    }
+    if correlation_id:
+        body["correlation_id"] = correlation_id
+    if initiator_callback_url:
+        body["initiator_callback_url"] = initiator_callback_url
+
+    worker.info(
+        '"task_id=%s orch_job_request url=%s action=%s db_job_id=%s"',
+        task_id,
+        url,
+        action,
+        db_job_id,
+    )
+    attempts = max(1, settings.callback_retry_attempts)
+    last_error: str | None = None
+
+    for attempt in range(1, attempts + 1):
+        try:
+            async with httpx.AsyncClient(
+                timeout=settings.orch_api_http_timeout_seconds
+            ) as client:
+                resp = await client.post(url, json=body, headers=headers)
+            worker.info(
+                '"task_id=%s orch_job_response status=%s body=%s attempt=%d db_job_id=%s"',
+                task_id,
+                resp.status_code,
+                resp.text[:500],
+                attempt,
+                db_job_id,
+            )
+            if 200 <= resp.status_code < 300:
+                return True
+            # 4xx (except 409 duplicate) is terminal; retrying won't help.
+            if 400 <= resp.status_code < 500 and resp.status_code != 409:
+                last_error = f"HTTP {resp.status_code}: {resp.text[:200]}"
+                break
+            last_error = f"HTTP {resp.status_code}: {resp.text[:200]}"
+        except (httpx.HTTPError, asyncio.TimeoutError) as exc:
+            last_error = f"{type(exc).__name__}: {exc}"
+            worker.warning(
+                '"task_id=%s orch_job_error attempt=%d error=%s db_job_id=%s"',
+                task_id,
+                attempt,
+                last_error,
+                db_job_id,
+            )
+        if attempt < attempts:
+            await asyncio.sleep(min(2**attempt, 8))
+
+    worker.error(
+        '"task_id=%s orch_job_failed_after_%d_attempts error=%s db_job_id=%s"',
+        task_id,
+        attempts,
+        last_error,
+        db_job_id,
+    )
+    return False
+
+
 async def _post_dispatcher(
     account_uuid: str,
     product_uuid: str,
@@ -687,44 +787,102 @@ async def _run_multi_and_callback(
             except Exception:
                 worker.exception('"persist_passthrough_failed"')
 
-    # --- Dispatch: PATCH to router for LLM jobs, POST to dispatcher for passthrough ---
-    account_uuid = (envelope.get("payload") or {}).get("context", {}).get(
-        "account_uuid"
-    ) or ""
+    # --- Dispatch: one aggregated PATCH to router + POST /api/v1/jobs per job-router sub-job ---
+    context_out = (envelope.get("payload") or {}).get("context") or {}
+    account_uuid = context_out.get("account_uuid") or ""
 
-    # LLM job callbacks → PATCH to router
     job_index_to_db_id: dict[int, Any] = {
         sub_job.index: db_id for db_id, sub_job in created_jobs
     }
+
+    # Log per-sub-job I/O regardless of dispatch path, so we keep traceability.
     for callback_body, maybe_job in results:
         if maybe_job is None:
-            if callback_url:
-                await _patch_callback(
-                    callback_url=callback_url,
-                    body=callback_body.model_dump(mode="json"),
-                    correlation_id=correlation_id,
-                    task_id=str(task_id),
-                )
             continue
-
         worker.info(
             '"task_id=%s llm_job_io input=%s output=%s"',
             task_id,
             _job_input_summary(maybe_job),
             _callback_summary(callback_body),
         )
-        if callback_url:
-            await _patch_callback(
-                callback_url=callback_url,
-                body=callback_body.model_dump(mode="json"),
-                correlation_id=correlation_id,
-                task_id=str(task_id),
-            )
-        db_job_id = job_index_to_db_id.get(maybe_job.index)
-        if db_job_id is not None:
-            await update_dispatch_status(db_job_id, "ok")
 
-    # Passthrough jobs → POST to agentic-task-dispatcher
+    # Summarize the whole subscription_strategy run for the single PATCH.
+    total_results = len(results)
+    completed_count = sum(1 for cb, _ in results if cb.status == "COMPLETED")
+    failed_count = sum(1 for cb, _ in results if cb.status == "FAILED")
+    fatal_error: str | None = None
+    for cb, job_or_none in results:
+        if job_or_none is None and cb.status == "FAILED":
+            fatal_error = cb.error_message
+            break
+
+    # Single callback to the subscription_strategy task. Sub-jobs are
+    # *not* reported here — they go to the orchestrator as brand-new jobs
+    # via POST /api/v1/jobs below.
+    if callback_url:
+        if fatal_error is not None and completed_count == 0:
+            aggregate = CallbackBody(status="FAILED", error_message=fatal_error)
+        else:
+            aggregate = CallbackBody(status="COMPLETED")
+        worker.info(
+            '"task_id=%s subscription_strategy_callback status=%s llm_total=%d completed=%d failed=%d passthrough=%d"',
+            task_id,
+            aggregate.status,
+            total_results,
+            completed_count,
+            failed_count,
+            len(passthrough_db_jobs),
+        )
+        await _patch_callback(
+            callback_url=callback_url,
+            body=aggregate.model_dump(mode="json"),
+            correlation_id=correlation_id,
+            task_id=str(task_id),
+        )
+
+    # job-router sub-jobs → POST /api/v1/jobs to orchestrator.
+    for callback_body, maybe_job in results:
+        if maybe_job is None:
+            continue
+        if callback_body.status != "COMPLETED" or callback_body.output_data is None:
+            db_job_id = job_index_to_db_id.get(maybe_job.index)
+            if db_job_id is not None:
+                await update_dispatch_status(db_job_id, "failed")
+            continue
+
+        db_job_id = job_index_to_db_id.get(maybe_job.index)
+        if db_job_id is None:
+            # Not persisted (degraded mode) → nothing to POST for this job.
+            continue
+
+        cf_data = callback_body.output_data.data.model_dump(mode="json")
+        enrichment_dump = callback_body.output_data.enrichment.model_dump(mode="json")
+        job_client_request: dict[str, Any] = {
+            "description": maybe_job.description or "",
+            "slug": maybe_job.slug or "",
+            "product_uuid": maybe_job.product_uuid or "",
+            "cf_payload": cf_data,
+            "enrichment": enrichment_dump,
+        }
+        job_context: dict[str, Any] = {**context_out}
+        # account_uuid is required by CreateJobRequest; re-inject if missing.
+        if account_uuid and not job_context.get("account_uuid"):
+            job_context["account_uuid"] = account_uuid
+        job_context.setdefault("source_task_id", str(task_id))
+        job_context.setdefault("source_action_code", "subscription_strategy")
+        job_context["source_job_index"] = maybe_job.index
+
+        dispatch_ok = await _post_orch_job(
+            action=maybe_job.action_key,
+            client_request=job_client_request,
+            context=job_context,
+            correlation_id=correlation_id,
+            task_id=str(task_id),
+            db_job_id=str(db_job_id),
+        )
+        await update_dispatch_status(db_job_id, "ok" if dispatch_ok else "failed")
+
+    # Passthrough jobs → POST to agentic-task-dispatcher (legacy path).
     for db_job_id, job in passthrough_db_jobs:
         dispatch_ok = await _post_dispatcher(
             account_uuid=account_uuid,

@@ -92,22 +92,24 @@ module "ecs" {
   alb_arn_suffix                    = module.alb.alb_arn_suffix
   target_group_arn_suffix           = module.alb.target_group_arn_suffix
 
-  gemini_model            = var.gemini_model
-  task_cpu                = var.task_cpu
-  task_memory             = var.task_memory
-  min_capacity            = var.min_capacity
-  max_capacity            = var.max_capacity
-  llm_timeout             = var.llm_timeout
-  llm_fanout_enabled      = var.llm_fanout_enabled
-  llm_fanout_concurrency  = var.llm_fanout_concurrency
-  callback_retry_attempts = var.callback_retry_attempts
-  log_retention_days      = var.log_retention_days
-  db_pool_size            = var.db_pool_size
-  db_pool_max_overflow    = var.db_pool_max_overflow
-  db_pool_timeout_seconds = 10
-  migrator_cpu            = 512
-  migrator_memory         = 1024
-  assign_public_ip        = false
+  gemini_model                  = var.gemini_model
+  task_cpu                      = var.task_cpu
+  task_memory                   = var.task_memory
+  min_capacity                  = var.min_capacity
+  max_capacity                  = var.max_capacity
+  llm_timeout                   = var.llm_timeout
+  llm_fanout_enabled            = var.llm_fanout_enabled
+  llm_fanout_concurrency        = var.llm_fanout_concurrency
+  orch_api_base_url             = var.orch_api_base_url
+  orch_api_http_timeout_seconds = var.orch_api_http_timeout_seconds
+  callback_retry_attempts       = var.callback_retry_attempts
+  log_retention_days            = var.log_retention_days
+  db_pool_size                  = var.db_pool_size
+  db_pool_max_overflow          = var.db_pool_max_overflow
+  db_pool_timeout_seconds       = 10
+  migrator_cpu                  = 512
+  migrator_memory               = 1024
+  assign_public_ip              = false
 }
 
 module "monitoring" {

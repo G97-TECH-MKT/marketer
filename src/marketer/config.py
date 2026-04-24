@@ -32,6 +32,14 @@ class Settings(BaseSettings):
     callback_http_timeout_seconds: float = 30.0
     callback_retry_attempts: int = 2
 
+    # Orchestrator job-creation API. When marketer finishes a
+    # subscription_strategy it posts one CreateJobRequest per job-router
+    # sub-job to `{orch_api_base_url}/api/v1/jobs` (see docs/ROUTER CONTRACT.md §2).
+    # Empty → orchestrator job creation is skipped (sub-jobs stay in marketer.jobs
+    # with dispatch_status='failed').
+    orch_api_base_url: str = ""
+    orch_api_http_timeout_seconds: float = 15.0
+
     # Persistence (Postgres). Empty → degraded mode (no persistence).
     database_url: str = ""
     db_pool_size: int = 10
