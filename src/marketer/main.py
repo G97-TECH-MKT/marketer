@@ -656,7 +656,9 @@ async def _run_multi_and_callback(
                                 brand_intelligence_if_new={},
                             )
                     if strategy is not None:
-                        _account_uuid = (envelope.get("payload") or {}).get("context", {}).get("account_uuid") or ""
+                        _account_uuid = (envelope.get("payload") or {}).get(
+                            "context", {}
+                        ).get("account_uuid") or ""
                         for job in passthrough_jobs:
                             db_job = await create_job(
                                 session,
@@ -676,7 +678,10 @@ async def _run_multi_and_callback(
                                 latency_ms=0,
                                 orchestrator_agent=job.orchestrator_agent,
                                 dispatch_status="pending",
-                                callback_payload={"product_uuid": job.product_uuid, "account_uuid": _account_uuid},
+                                callback_payload={
+                                    "product_uuid": job.product_uuid,
+                                    "account_uuid": _account_uuid,
+                                },
                             )
                             passthrough_db_jobs.append((db_job.id, job))
             except Exception:
@@ -919,7 +924,9 @@ async def run_task_sync(
                                     brand_intelligence_if_new={},
                                 )
                         if strategy is not None:
-                            _account_uuid = (envelope.get("payload") or {}).get("context", {}).get("account_uuid") or ""
+                            _account_uuid = (envelope.get("payload") or {}).get(
+                                "context", {}
+                            ).get("account_uuid") or ""
                             for j in passthrough_jobs:
                                 await _create_job(
                                     session,
@@ -939,7 +946,10 @@ async def run_task_sync(
                                     latency_ms=0,
                                     orchestrator_agent=j.orchestrator_agent,
                                     dispatch_status="pending",
-                                    callback_payload={"product_uuid": j.product_uuid, "account_uuid": _account_uuid},
+                                    callback_payload={
+                                        "product_uuid": j.product_uuid,
+                                        "account_uuid": _account_uuid,
+                                    },
                                 )
                 except Exception:
                     logging.getLogger("marketer.worker").exception(
