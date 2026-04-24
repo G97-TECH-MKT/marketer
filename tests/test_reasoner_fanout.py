@@ -16,11 +16,12 @@ import json
 import threading
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
 from marketer import reasoner as reasoner_mod
+from marketer.llm.gemini import GeminiClient
 from marketer.reasoner import reason_multi_fanout
 from marketer.schemas.enrichment import (
     BrandIntelligence,
@@ -174,7 +175,11 @@ def test_fanout_calls_n_times_with_precomputed_dna(monkeypatch: pytest.MonkeyPat
     monkeypatch.setattr(reasoner_mod, "extract_brand_dna", fake_extract)
     monkeypatch.setattr(reasoner_mod, "reason", fake_reason)
 
-    results = asyncio.run(reason_multi_fanout(env, gemini=_FakeGemini(), concurrency=5))
+    results = asyncio.run(
+        reason_multi_fanout(
+            env, gemini=cast(GeminiClient, _FakeGemini()), concurrency=5
+        )
+    )
 
     assert extract_calls["n"] == 1
     assert len(results) == 3
@@ -183,6 +188,7 @@ def test_fanout_calls_n_times_with_precomputed_dna(monkeypatch: pytest.MonkeyPat
     # Each callback gets job_index/total stamped on the trace
     for idx, (cb, job) in enumerate(results):
         assert job is not None and job.index == idx
+        assert cb.output_data is not None and cb.output_data.trace is not None
         assert cb.output_data.trace.job_index == idx
         assert cb.output_data.trace.total_jobs == 3
         assert cb.output_data.trace.job_action_key == "create_post"
@@ -195,9 +201,7 @@ def test_fanout_calls_n_times_with_precomputed_dna(monkeypatch: pytest.MonkeyPat
 
 def test_fanout_partial_failure(monkeypatch: pytest.MonkeyPatch):
     env = _envelope_with_three_create_post_jobs()
-    monkeypatch.setattr(
-        reasoner_mod, "extract_brand_dna", lambda *_a, **_kw: "DNA"
-    )
+    monkeypatch.setattr(reasoner_mod, "extract_brand_dna", lambda *_a, **_kw: "DNA")
 
     def fake_reason(envelope_data, gemini, *_a, **_kw):  # noqa: ARG001
         description = envelope_data["payload"]["client_request"]["description"]
@@ -207,7 +211,11 @@ def test_fanout_partial_failure(monkeypatch: pytest.MonkeyPatch):
 
     monkeypatch.setattr(reasoner_mod, "reason", fake_reason)
 
-    results = asyncio.run(reason_multi_fanout(env, gemini=_FakeGemini(), concurrency=5))
+    results = asyncio.run(
+        reason_multi_fanout(
+            env, gemini=cast(GeminiClient, _FakeGemini()), concurrency=5
+        )
+    )
 
     assert len(results) == 3
     statuses = [cb.status for cb, _ in results]
@@ -234,7 +242,11 @@ def test_fanout_brand_dna_failure_falls_back(monkeypatch: pytest.MonkeyPatch):
 
     monkeypatch.setattr(reasoner_mod, "reason", fake_reason)
 
-    results = asyncio.run(reason_multi_fanout(env, gemini=_FakeGemini(), concurrency=5))
+    results = asyncio.run(
+        reason_multi_fanout(
+            env, gemini=cast(GeminiClient, _FakeGemini()), concurrency=5
+        )
+    )
 
     assert len(results) == 3
     assert all(cb.status == "COMPLETED" for cb, _ in results)
@@ -271,7 +283,11 @@ def test_fanout_respects_concurrency_limit(monkeypatch: pytest.MonkeyPatch):
 
     monkeypatch.setattr(reasoner_mod, "reason", fake_reason)
 
-    results = asyncio.run(reason_multi_fanout(env, gemini=_FakeGemini(), concurrency=2))
+    results = asyncio.run(
+        reason_multi_fanout(
+            env, gemini=cast(GeminiClient, _FakeGemini()), concurrency=2
+        )
+    )
 
     assert len(results) == 6
     assert all(cb.status == "COMPLETED" for cb, _ in results)
@@ -307,11 +323,16 @@ def test_flag_off_routes_to_legacy_reason_multi(monkeypatch: pytest.MonkeyPatch)
     monkeypatch.setattr(main_mod, "reason_multi_fanout", fake_fanout)
     monkeypatch.setattr(main_mod, "reason_multi", fake_legacy)
 
-    # Reproduce the branch from `_run_multi_and_callback`:
-    async def _branch(flag_value: bool):
+    # Reproduce the branch from `_run_multi_and_callback`. We cast to Any so
+    # mypy doesn't complain about the legacy signatures — the monkeypatched
+    # stubs accept *args/**kwargs and we only care about which one is called.
+    fanout_callable = cast(Any, main_mod.reason_multi_fanout)
+    legacy_callable = cast(Any, main_mod.reason_multi)
+
+    async def _branch(flag_value: bool) -> Any:
         if flag_value:
-            return await main_mod.reason_multi_fanout()
-        return await asyncio.to_thread(main_mod.reason_multi)
+            return await fanout_callable()
+        return await asyncio.to_thread(legacy_callable)
 
     # Flag OFF → legacy
     asyncio.run(_branch(False))
