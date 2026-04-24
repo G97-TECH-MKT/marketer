@@ -296,6 +296,33 @@ async def _run_and_callback(
         await persist_user_profile(pctx.raw_brief_id, user_profile)
 
     action_code = envelope.get("action_code")
+    payload = envelope.get("payload") or {}
+    client_request = payload.get("client_request") or {}
+
+    def _callback_summary(cb: CallbackBody) -> dict[str, Any]:
+        summary: dict[str, Any] = {
+            "status": cb.status,
+            "error": (cb.error_message or "")[:240] if cb.error_message else None,
+        }
+        if cb.output_data:
+            warnings = cb.output_data.warnings or []
+            summary["warnings"] = [w.code for w in warnings][:5]
+            if cb.output_data.trace:
+                summary["trace"] = {
+                    "action_code": cb.output_data.trace.action_code,
+                    "latency_ms": cb.output_data.trace.latency_ms,
+                    "input_tokens": cb.output_data.trace.input_tokens,
+                    "output_tokens": cb.output_data.trace.output_tokens,
+                    "job_index": cb.output_data.trace.job_index,
+                }
+            if cb.output_data.data:
+                summary["data"] = {
+                    "total_items": cb.output_data.data.total_items,
+                    "resources_count": len(cb.output_data.data.resources or []),
+                    "client_request_len": len(cb.output_data.data.client_request or ""),
+                    "client_dna_len": len(cb.output_data.data.client_dna or ""),
+                }
+        return summary
 
     # --- subscription_strategy: multi-job branch ---
     if action_code == "subscription_strategy":
@@ -341,6 +368,16 @@ async def _run_and_callback(
             error_message=f"internal_error: {type(exc).__name__}: {exc}",
         )
     latency_ms = int((time.time() - started) * 1000)
+    worker.info(
+        '"task_id=%s single_job_io input=%s output=%s"',
+        task_id,
+        {
+            "action_code": action_code,
+            "description_len": len(client_request.get("description") or ""),
+            "has_jobs": bool(client_request.get("jobs")),
+        },
+        _callback_summary(callback),
+    )
 
     if pctx is not None:
         await persist_on_complete(pctx, envelope, callback, latency_ms)
@@ -438,6 +475,43 @@ async def _run_multi_and_callback(
     worker = logging.getLogger("marketer.worker")
     from marketer.normalizer import _extract_subscription_jobs
     from marketer.schemas.internal_context import SubscriptionJob
+
+    def _job_input_summary(job: SubscriptionJob) -> dict[str, Any]:
+        return {
+            "job_index": job.index,
+            "action_key": job.action_key,
+            "orchestrator_agent": job.orchestrator_agent,
+            "slug": job.slug,
+            "product_uuid": job.product_uuid,
+            "description_len": len(job.description or ""),
+            "description_preview": (job.description or "")[:160],
+        }
+
+    def _callback_summary(cb: CallbackBody) -> dict[str, Any]:
+        summary: dict[str, Any] = {
+            "status": cb.status,
+            "error": (cb.error_message or "")[:240] if cb.error_message else None,
+        }
+        if cb.output_data:
+            warnings = cb.output_data.warnings or []
+            summary["warnings"] = [w.code for w in warnings][:5]
+            if cb.output_data.trace:
+                summary["trace"] = {
+                    "action_code": cb.output_data.trace.action_code,
+                    "latency_ms": cb.output_data.trace.latency_ms,
+                    "input_tokens": cb.output_data.trace.input_tokens,
+                    "output_tokens": cb.output_data.trace.output_tokens,
+                    "job_index": cb.output_data.trace.job_index,
+                    "total_jobs": cb.output_data.trace.total_jobs,
+                }
+            if cb.output_data.data:
+                summary["data"] = {
+                    "total_items": cb.output_data.data.total_items,
+                    "resources_count": len(cb.output_data.data.resources or []),
+                    "client_request_len": len(cb.output_data.data.client_request or ""),
+                    "client_dna_len": len(cb.output_data.data.client_dna or ""),
+                }
+        return summary
 
     # --- Split jobs: LLM vs passthrough ---
     payload = envelope.get("payload") or {}
@@ -626,6 +700,12 @@ async def _run_multi_and_callback(
                 )
             continue
 
+        worker.info(
+            '"task_id=%s llm_job_io input=%s output=%s"',
+            task_id,
+            _job_input_summary(maybe_job),
+            _callback_summary(callback_body),
+        )
         if callback_url:
             await _patch_callback(
                 callback_url=callback_url,
@@ -643,6 +723,12 @@ async def _run_multi_and_callback(
             account_uuid=account_uuid,
             product_uuid=job.product_uuid or "",
             task_id=str(task_id),
+        )
+        worker.info(
+            '"task_id=%s passthrough_job_io input=%s output=%s"',
+            task_id,
+            _job_input_summary(job),
+            {"dispatch_status": "ok" if dispatch_ok else "failed"},
         )
         await update_dispatch_status(db_job_id, "ok" if dispatch_ok else "failed")
 
