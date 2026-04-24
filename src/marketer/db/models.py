@@ -169,6 +169,7 @@ class Job(Base):
     error: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     orchestrator_agent: Mapped[str | None] = mapped_column(Text, nullable=True)
     dispatch_status: Mapped[str | None] = mapped_column(Text, nullable=True)
+    callback_payload: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     latency_ms: Mapped[int | None] = mapped_column(Integer)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

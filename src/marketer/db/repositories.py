@@ -130,6 +130,7 @@ async def create_job(
     error: dict[str, Any] | None = None,
     orchestrator_agent: str | None = None,
     dispatch_status: str | None = None,
+    callback_payload: dict[str, Any] | None = None,
 ) -> Job:
     now = datetime.now(timezone.utc)
     row = Job(
@@ -143,6 +144,7 @@ async def create_job(
         error=error,
         orchestrator_agent=orchestrator_agent,
         dispatch_status=dispatch_status,
+        callback_payload=callback_payload,
         latency_ms=latency_ms,
         started_at=now if status in ("running", "done", "failed") else None,
         completed_at=now if status in ("done", "failed") else None,

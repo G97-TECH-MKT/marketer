@@ -174,6 +174,7 @@ async def persist_on_complete(
                     output=callback.model_dump(mode="json"),
                     status="done",
                     latency_ms=latency_ms,
+                    callback_payload=callback.model_dump(mode="json"),
                 )
                 await mark_raw_brief(
                     session, raw_brief_id=pctx.raw_brief_id, status="done"
@@ -196,6 +197,7 @@ async def persist_on_complete(
                         status="failed",
                         latency_ms=latency_ms,
                         error={"message": callback.error_message or "unknown_error"},
+                        callback_payload=callback.model_dump(mode="json"),
                     )
                 await mark_raw_brief(
                     session, raw_brief_id=pctx.raw_brief_id, status="failed"
@@ -265,6 +267,7 @@ async def persist_on_complete_multi(
                         latency_ms=latency_ms,
                         orchestrator_agent=job.orchestrator_agent,
                         dispatch_status="pending",
+                        callback_payload=callback.model_dump(mode="json"),
                     )
                     created_jobs.append((db_job.id, job))
                 else:
@@ -281,6 +284,7 @@ async def persist_on_complete_multi(
                         error={"message": callback.error_message or "unknown_error"},
                         orchestrator_agent=job.orchestrator_agent,
                         dispatch_status="failed",
+                        callback_payload=callback.model_dump(mode="json"),
                     )
                     created_jobs.append((db_job.id, job))
 
