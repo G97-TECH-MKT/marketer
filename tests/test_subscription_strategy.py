@@ -76,18 +76,29 @@ class TestNormalizerSubscriptionStrategy:
             normalize(data)
 
     def test_invalid_job_items_skipped_with_warning(self):
+        # LLM jobs without description are NO LONGER skipped: a slug-derived
+        # fallback description is used so the row is preserved (incl. its
+        # orchestrator_agent). Only truly invalid items (non-dicts) are dropped.
         data = _load("subscription_strategy.json")
         data["payload"]["client_request"]["jobs"] = [
             {"action_key": "create_post", "description": "Valid job"},
-            {"action_key": "create_post"},  # missing description → skipped
+            {
+                "action_key": "create_post",
+                "slug": "RRSS-POST",
+                "orchestrator_agent": "job-router",
+            },
             "not_a_dict",
         ]
         ctx, warnings = normalize(data)
         assert ctx.subscription_jobs is not None
-        assert len(ctx.subscription_jobs) == 1
+        assert len(ctx.subscription_jobs) == 2
         codes = {w.code for w in warnings}
-        assert "job_missing_description" in codes
+        assert "job_missing_description_fallback" in codes
         assert "job_invalid" in codes
+        fallback_job = ctx.subscription_jobs[1]
+        assert fallback_job.orchestrator_agent == "job-router"
+        assert fallback_job.slug == "RRSS-POST"
+        assert fallback_job.description and "RRSS-POST" in fallback_job.description
 
     def test_empty_action_key_defaults_to_create_prod_line(self):
         data = _load("subscription_strategy.json")
@@ -109,15 +120,31 @@ class TestNormalizerSubscriptionStrategy:
         assert len(ctx.subscription_jobs) == 1
         assert ctx.subscription_jobs[0].action_key == "create_prod_line"
 
-    def test_all_jobs_missing_description_raises(self):
-        # LLM-path jobs (create_post) without description are skipped → no valid jobs → ValueError
+    def test_llm_jobs_missing_description_use_fallback(self):
+        # LLM-path jobs (create_post / edit_post) without description are now
+        # accepted: a slug-derived fallback is injected so the row is persisted
+        # together with its orchestrator_agent (instead of being dropped).
         data = _load("subscription_strategy.json")
         data["payload"]["client_request"]["jobs"] = [
-            {"action_key": "create_post"},
-            {"action_key": "edit_post"},
+            {
+                "action_key": "create_post",
+                "slug": "RRSS-POST",
+                "orchestrator_agent": "job-router",
+            },
+            {
+                "action_key": "edit_post",
+                "slug": "RRSS-EDIT",
+                "orchestrator_agent": "job-router",
+            },
         ]
-        with pytest.raises(ValueError, match="subscription_strategy requires"):
-            normalize(data)
+        ctx, warnings = normalize(data)
+        assert len(ctx.subscription_jobs) == 2
+        assert all(j.orchestrator_agent == "job-router" for j in ctx.subscription_jobs)
+        assert all(j.description for j in ctx.subscription_jobs)
+        assert (
+            sum(1 for w in warnings if w.code == "job_missing_description_fallback")
+            == 2
+        )
 
 
 class TestQuantityExpansion:

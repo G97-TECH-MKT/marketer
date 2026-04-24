@@ -868,26 +868,36 @@ def _extract_subscription_jobs(
             continue
         action_key = _clean_string(item.get("action_key")) or "create_prod_line"
         description = _clean_string(item.get("description"))
+
+        # Router fields (need slug early to build a fallback description below).
+        slug = _clean_string(item.get("slug"))
+        orch_agent = _clean_string(item.get("orchestrator_agent"))
+        product_uuid = _clean_string(item.get("product_uuid"))
+
+        # LLM jobs (create_post / edit_post) used to be skipped when description
+        # was empty. That dropped the row and lost its `orchestrator_agent`
+        # (e.g. RRSS-POST), so we now substitute a slug-derived fallback and
+        # warn instead of dropping.
         _llm_keys = {"create_post", "edit_post"}
         if not description and action_key in _llm_keys:
+            description = (
+                f"Generate a {slug} post" if slug else f"Generate a {action_key}"
+            )
             warnings.append(
                 Warning(
-                    code="job_missing_description",
-                    message=f"jobs[{idx}] has no description — skipped",
+                    code="job_missing_description_fallback",
+                    message=(
+                        f"jobs[{idx}] has no description — using fallback "
+                        f"derived from slug={slug!r}"
+                    ),
                     field=f"jobs[{idx}].description",
                 )
             )
-            continue
 
         # Quantity: expand into N entries
         raw_qty = item.get("quantity", 1)
         quantity = max(1, int(raw_qty) if isinstance(raw_qty, (int, float)) else 1)
         quantity = min(quantity, MAX_QUANTITY_PER_JOB)
-
-        # Router fields
-        slug = _clean_string(item.get("slug"))
-        orch_agent = _clean_string(item.get("orchestrator_agent"))
-        product_uuid = _clean_string(item.get("product_uuid"))
 
         for _ in range(quantity):
             expanded.append(
